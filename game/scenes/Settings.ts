@@ -9,9 +9,10 @@ export const Settings = {
         const W = game.screen.width, H = game.screen.height;
 
         // Dimmed backdrop
-        game.ui.panel({ anchor: 'center', w: W, h: H, safeArea: false, style: 'dark' });
+        game.ui.panel({ anchor: 'center', w: W, h: H, z: 40, safeArea: false, style: 'dark' });
 
         const menu = game.ui.window({
+            z: 41,
             anchor: 'center',
             w: Math.min(W - 96, 540),
             h: 'auto',
@@ -108,7 +109,7 @@ export const Settings = {
             onClick: () => game.scenes.pop()
         });
 
-        game.ui.muteButton();
+        game.ui.muteButton({ z: 44 });
 
         menu.ui.y = -H;
         game.tween.to(menu.ui, { y: 0 }, { duration: 0.35, ease: 'easeOutBack' });

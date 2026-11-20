@@ -10,6 +10,10 @@ import { Title } from './scenes/Title.js';
 import { Play } from './scenes/Play.js';
 import { Pause } from './scenes/Pause.js';
 import { Settings } from './scenes/Settings.js';
+import { Playground } from './scenes/Playground.js';
+import { ParkMap } from './scenes/ParkMap.js';
+import { Story } from './scenes/Story.js';
+import { Celebration } from './scenes/Celebration.js';
 
 paintArt();
 // Load the pixel-friendly menu skin and character art before either scene.
@@ -18,6 +22,7 @@ game.controls.bind('jump', { keys: ['Space', 'ArrowUp', 'KeyW', 'Touch:jump'], p
 game.controls.bind('run', { keys: ['ShiftLeft', 'ShiftRight', 'Touch:run'], pad: ['x'] });
 game.controls.bind('crouch', { keys: ['ArrowDown', 'KeyS', 'KeyC', 'Touch:crouch', 'Touch:down'], pad: ['lb'] });
 game.controls.bind('sit', { keys: ['KeyE', 'Touch:sit'], pad: ['b'] });
+game.controls.bind('interact', { keys: ['KeyF'], pad: ['y'] });
 game.controls.bind('pause', { keys: ['Escape', 'KeyP', 'Touch:pause'], pad: ['start'] });
 // Vertical keyboard actions have their own bindings; they must not normalize
 // the horizontal move axis as if this side-view game had diagonal movement.
@@ -35,11 +40,30 @@ await game.assets.load([
     { kind: 'image', key: 'treat-atlas', url: 'assets/treat-atlas.png', w: 48, h: 48, cols: 4, rows: 1 },
 ]);
 await game.assets.load(assets, { pack: 'title' });
+// Trimmed atlases preserve every variant from the original, irregular sprite sheets.
+for (const [key, w, h, cols] of [
+    ['houses', 256, 240, 4], ['people', 96, 160, 4], ['beds', 128, 96, 4],
+    ['boxes', 96, 96, 6], ['food', 64, 64, 6], ['insects', 40, 40, 6],
+    ['sticks', 64, 64, 6], ['bushes', 128, 112, 6], ['rocks', 160, 112, 7],
+    ['portal', 192, 240, 4], ['villain-dogs', 112, 112, 8], ['treats', 48, 48, 4], ['clouds', 192, 128, 6],
+] as const) {
+    await game.assets.load([{ kind: 'image', key: `park-${key}`, url: `assets/park-${key}.png`, w, h, cols, rows: 1 }]);
+}
+await game.assets.load([
+    { kind: 'image', key: 'sky-sun', url: 'assets/sky-sun.png' },
+    { kind: 'image', key: 'sky-moon', url: 'assets/sky-moon.png' },
+    { kind: 'image', key: 'sky-cloud', url: 'assets/sky-cloud.png' },
+    { kind: 'image', key: 'sky-star', url: 'assets/sky-star.png' },
+]);
 
 game.scenes.register(Title);
 game.scenes.register(Play);
 game.scenes.register(Pause);
 game.scenes.register(Settings);
+game.scenes.register(Playground);
+game.scenes.register(ParkMap);
+game.scenes.register(Story);
+game.scenes.register(Celebration);
 addDebugControls();
 
 await game.start();

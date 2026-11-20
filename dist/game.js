@@ -41114,15 +41114,6 @@ function paintArt() {
     ctx.fillRect(0, 144, 2400, 576);
     ctx.fillStyle = "#e7e7cf";
     ctx.fillRect(0, 272, 2400, 448);
-    ctx.fillStyle = "#f2dfad";
-    ctx.fillRect(1008, 128, 80, 64);
-    ctx.fillRect(1016, 120, 64, 80);
-    ctx.fillStyle = "#f7efcf";
-    for (const [x, y, w] of [[90, 170, 150], [480, 212, 180], [1220, 156, 160], [1760, 180, 200], [2180, 232, 160]]) {
-      ctx.fillRect(x, y, w, 12);
-      ctx.fillRect(x + 20, y - 12, w - 60, 12);
-      ctx.fillRect(x + 40, y - 24, w - 100, 12);
-    }
   }, { res: 1 });
   game.paint("tunnel", 260, 100, (ctx) => {
     ctx.fillStyle = "#343d36";
@@ -41208,7 +41199,7 @@ function isMobileView() {
 }
 function setTouchOverride(value) {
   touchOverride = value;
-  if (game.scenes.current === "play") {
+  if (game.scenes.current === "play" || game.scenes.current === "meadow") {
     game.touch.visible = value ?? isMobileView();
   }
 }
@@ -41350,7 +41341,7 @@ var WALK_STRIDE = 144;
 var RUN_STRIDE = 172;
 var CRAWL_STRIDE = 80;
 var MOTION_EPSILON = 0.01;
-var run = { spawnX: 220, tokyo: null };
+var run = { spawnX: 220, tokyo: null, scene: "play" };
 function makeBody(x, feet, height, vx = 0, vy = 0) {
   return game.spawn({
     id: "tokyo-body",
@@ -41585,20 +41576,129 @@ function spawnTokyo(x, feet) {
   return sprite;
 }
 
+// game/sky.ts
+var CELESTIAL_X = 1060;
+var CELESTIAL_Y = 174;
+var SUN_WIDTH = 94;
+var MOON_HEIGHT = 90;
+var SUN_BOB = 2;
+var MOON_BOB = 3;
+var STAR_MIN_ALPHA = 0.38;
+var STAR_PULSE_ALPHA = 0.56;
+var TWINKLE_SPEED = 1.4;
+var CLOUD_WRAP_MARGIN = 180;
+var CLOUD_BASE_SPEED = 4;
+var CLOUD_SPEED_STEP = 0.65;
+var CLOUDS = [
+  { x: 100, y: 210, width: 164 },
+  { x: 326, y: 258, width: 124 },
+  { x: 565, y: 181, width: 192 },
+  { x: 791, y: 242, width: 148 },
+  { x: 1100, y: 266, width: 176 },
+  { x: 1320, y: 203, width: 116 }
+];
+var STARS = [
+  [52, 155, 12],
+  [156, 238, 17],
+  [263, 178, 11],
+  [357, 291, 14],
+  [458, 139, 19],
+  [553, 247, 12],
+  [656, 171, 15],
+  [756, 285, 20],
+  [856, 148, 12],
+  [939, 232, 17],
+  [1165, 156, 15],
+  [1233, 287, 11],
+  [94, 310, 10],
+  [690, 327, 12],
+  [1150, 329, 13]
+];
+function spawnSky(isNight) {
+  const sun = game.spawn({
+    id: "park-sun",
+    texture: "sky-sun",
+    x: CELESTIAL_X,
+    y: CELESTIAL_Y,
+    width: SUN_WIDTH,
+    layer: "back",
+    z: -4.8,
+    visible: !isNight()
+  });
+  const moon = game.spawn({
+    id: "park-moon",
+    texture: "sky-moon",
+    x: CELESTIAL_X,
+    y: CELESTIAL_Y,
+    height: MOON_HEIGHT,
+    layer: "back",
+    z: -4.8,
+    visible: isNight()
+  });
+  const stars = STARS.map(([x, y, height], i) => game.spawn({
+    id: `sky-star-${i}`,
+    texture: "sky-star",
+    x,
+    y,
+    height,
+    layer: "back",
+    z: -4.9,
+    visible: isNight()
+  }));
+  const clouds = CLOUDS.map((cloud, i) => game.spawn({
+    id: `park-cloud-${i}`,
+    texture: "sky-cloud",
+    ...cloud,
+    layer: "back",
+    z: -4.6
+  }));
+  let elapsed = 0;
+  const update = () => {
+    const night = isNight();
+    const scrollX = game.camera.x - game.screen.width / 2;
+    const scrollY = game.camera.y - game.screen.height / 2;
+    sun.visible = !night;
+    moon.visible = night;
+    sun.x = moon.x = CELESTIAL_X + scrollX;
+    sun.y = CELESTIAL_Y + scrollY + deterministicMath.sin(elapsed * 0.35) * SUN_BOB;
+    moon.y = CELESTIAL_Y + scrollY + deterministicMath.sin(elapsed * 0.3) * MOON_BOB;
+    stars.forEach((star, i) => {
+      star.visible = night;
+      star.x = STARS[i][0] + scrollX;
+      star.y = STARS[i][1] + scrollY;
+      star.alpha = STAR_MIN_ALPHA + (deterministicMath.sin(elapsed * TWINKLE_SPEED + i * 1.7) + 1) / 2 * STAR_PULSE_ALPHA;
+    });
+    clouds.forEach((cloud, i) => {
+      const span = game.screen.width + CLOUD_WRAP_MARGIN * 2;
+      cloud.x = (CLOUDS[i].x + CLOUD_WRAP_MARGIN + elapsed * (CLOUD_BASE_SPEED + i * CLOUD_SPEED_STEP)) % span - CLOUD_WRAP_MARGIN + scrollX;
+      cloud.y = CLOUDS[i].y + scrollY;
+      cloud.tint = night ? "#8999c3" : "#ffffff";
+      cloud.alpha = night ? 0.7 : 0.94;
+    });
+  };
+  update();
+  game.step("sky-sprites", (dt) => {
+    elapsed += dt;
+    update();
+  }, { after: "rig-follow.camera" });
+}
+
 // game/scenery.ts
 var GROUND = 560;
 var WORLD_WIDTH = 2400;
 var TREE_BASELINE = 120;
 var FLOWER_BASELINE = 29;
-function spawnScenery(title = false) {
+function spawnScenery(title = false, worldWidth = WORLD_WIDTH, isNight = () => false) {
+  if (title) game.camera.snap(game.screen.width / 2, game.screen.height / 2, 1);
   game.background.color("#c8ded6");
-  game.spawn({ id: "meadow-sky", texture: "meadow", x: WORLD_WIDTH / 2, y: 360, layer: "back", z: -5 });
+  const sky = game.spawn({ id: "meadow-sky", texture: "meadow", x: worldWidth / 2, y: 360, width: worldWidth, height: 720, layer: "back", z: -5 });
+  spawnSky(isNight);
   const mountains = game.spawn({
     id: "distant-mountains",
     texture: "mountains",
-    x: WORLD_WIDTH / 2,
+    x: worldWidth / 2,
     y: title ? 470 : 370,
-    width: 2800,
+    width: worldWidth + 400,
     height: 360,
     layer: "back",
     z: -4
@@ -41606,9 +41706,9 @@ function spawnScenery(title = false) {
   const hills = game.spawn({
     id: "rolling-hills",
     texture: "hills",
-    x: WORLD_WIDTH / 2,
+    x: worldWidth / 2,
     y: 474,
-    width: 2800,
+    width: worldWidth + 400,
     height: 172,
     layer: "back",
     z: -3
@@ -41632,7 +41732,7 @@ function spawnScenery(title = false) {
       z: -1
     });
   }
-  for (let x = 64; x < WORLD_WIDTH; x += 128) {
+  for (let x = 64; x < worldWidth; x += 128) {
     game.spawn({
       id: "grassland-tile",
       texture: "grassland",
@@ -41659,9 +41759,10 @@ function spawnScenery(title = false) {
   }
   game.step("scenery-parallax", () => {
     const scroll = game.camera.x - game.screen.width / 2;
-    mountains.x = WORLD_WIDTH / 2 + scroll * 0.75;
-    hills.x = WORLD_WIDTH / 2 + scroll * 0.35;
+    mountains.x = worldWidth / 2 + scroll * 0.75;
+    hills.x = worldWidth / 2 + scroll * 0.35;
   }, { after: "rig-follow.camera" });
+  return { sky, mountains };
 }
 
 // game/meadow.ts
@@ -41922,10 +42023,77 @@ function cheatCollectAllTreats() {
   return `Collected all ${currentTreats.total} treats! Flag raised.`;
 }
 
+// game/playground.ts
+var PARK_WIDTH = 6400;
+var PARK_GROUND = 560;
+var PARK_AREAS = [
+  { name: "Home & rest", x: 240, description: "Beds, doghouse and a warm welcome" },
+  { name: "Fetch lawn", x: 1110, description: "Bring a stick back to the mail carrier" },
+  { name: "Adventure yard", x: 1980, description: "Crates, stepping rocks and a crawl tunnel" },
+  { name: "Wildlife garden", x: 3230, description: "Sniff six bushes; watch six tiny creatures" },
+  { name: "Picnic corner", x: 4250, description: "Sample six snacks and say hello" },
+  { name: "Dog club & portal", x: 5270, description: "Befriend four rivals and find the gateway" }
+];
+var BADGE_NAMES = ["Cozy paws", "Fetch star", "Treat explorer", "Hide & seek", "Super sniffer", "Picnic pal", "Dog whisperer", "Hello, neighbor"];
+var park = {
+  treats: [],
+  sniffed: [],
+  snacks: [],
+  friends: [],
+  greeted: [],
+  rested: false,
+  fetched: false,
+  hidden: false,
+  carrying: -1,
+  night: false,
+  celebrated: false,
+  message: "Welcome! Walk right, meet your neighbors, and press F to play.",
+  messageTime: 7
+};
+function badges() {
+  return [
+    park.rested,
+    park.fetched,
+    park.treats.length === 12,
+    park.hidden,
+    park.sniffed.length === 6,
+    park.snacks.length === 6,
+    park.friends.length === 4,
+    park.greeted.length === 4
+  ];
+}
+function say(message) {
+  park.message = message;
+  park.messageTime = 5;
+}
+function startPlayground() {
+  park.treats = [];
+  park.sniffed = [];
+  park.snacks = [];
+  park.friends = [];
+  park.greeted = [];
+  park.rested = false;
+  park.fetched = false;
+  park.hidden = false;
+  park.carrying = -1;
+  park.night = false;
+  park.celebrated = false;
+  say("Welcome! Walk right, meet your neighbors, and press F to play.");
+  visitArea(PARK_AREAS[0].x);
+}
+function visitArea(x) {
+  run.spawnX = x;
+  game.scenes.go("play");
+}
+function currentArea(x) {
+  return PARK_AREAS.filter((area) => x >= area.x - 180).pop()?.name ?? PARK_AREAS[0].name;
+}
+
 // game/debug.ts
 function addDebugControls() {
   game.inspect.state(() => ({
     ...run,
+    playground: { ...park, badges: badges() },
     mobileView: isMobileView(),
     touchVisible: game.touch?.visible ?? false,
     fullscreen: game.commands.isFullscreen,
@@ -41940,12 +42108,39 @@ function addDebugControls() {
   }));
   game.cheats.add({
     name: "screen",
-    does: "Open title, play, pause, or settings",
+    does: "Open title, play, meadow, story, parkmap, celebration, pause, or settings",
     args: "name",
     run: (name) => {
-      const target = name === "settings" ? "settings" : name === "play" ? "play" : name === "pause" ? "pause" : "title";
+      const target = ["settings", "play", "pause", "story", "meadow", "parkmap", "celebration"].includes(name ?? "") ? name : "title";
       game.scenes.go(target);
       return `Switched to screen: ${target}`;
+    }
+  });
+  game.cheats.add({
+    name: "park",
+    args: "area|x|new|complete|night",
+    does: "Visit home, fetch, yard, garden, picnic, dogs, portal, or any x; new resets; complete unlocks portal; night toggles sky",
+    run: (area) => {
+      if (area === "status") return JSON.stringify({ ...park, badges: badges(), tokyo: run.tokyo });
+      if (area === "new") {
+        startPlayground();
+        return "New playground visit";
+      }
+      if (area === "night") {
+        park.night = !park.night;
+        return `Night: ${park.night}`;
+      }
+      if (area === "complete") {
+        park.rested = park.fetched = park.hidden = true;
+        park.treats = Array.from({ length: 12 }, (_, i) => i);
+        park.sniffed = park.snacks = Array.from({ length: 6 }, (_, i) => i);
+        park.friends = park.greeted = Array.from({ length: 4 }, (_, i) => i);
+        visitArea(6120);
+        return "All park activities completed; F at portal uses the normal celebration path";
+      }
+      const positions = { home: 240, fetch: 1110, yard: 1980, garden: 3230, picnic: 4250, dogs: 5270, portal: 6120 };
+      visitArea(positions[area ?? "home"] ?? deterministicMath.max(100, deterministicMath.min(6300, Number(area) || PARK_AREAS[0].x)));
+      return `Playground x=${run.spawnX}`;
     }
   });
   game.cheats.add({
@@ -41961,7 +42156,7 @@ function addDebugControls() {
         flag: 2240
       };
       run.spawnX = places[area ?? "start"] ?? 220;
-      game.scenes.go("play");
+      game.scenes.go("meadow");
       return `Tokyo placed at ${area ?? "start"} (x: ${run.spawnX})`;
     }
   });
@@ -42032,72 +42227,66 @@ var Title = {
   enter() {
     game.touch.visible = false;
     spawnScenery(true);
-    const fsBtn = addFullscreenButton({ anchor: "top-right", x: -16, y: 16 });
+    addFullscreenButton({ anchor: "top-right", x: -16, y: 16 });
     game.ui.button({
       id: "settings-btn",
       anchor: "top-right",
       x: -80,
       y: 16,
-      w: 56,
       h: 56,
       style: "icon",
       icon: "settings",
       accessibleLabel: "Settings",
       onClick: () => game.scenes.push("settings")
     });
-    if (isMobileView()) {
-      addRotateButton({ anchor: "top-right", x: -144, y: 16 });
-    }
-    game.text("A LITTLE DOG. A WIDE WORLD.", 640, 165, { size: 18, font: "mono-bold", color: "#566952" });
-    game.text("TOKYO'S JOURNEY", 640, 225, {
+    game.text("A LITTLE DOG. A WORLD OF POSSIBILITIES.", 640, 112, { size: 18, font: "mono-bold", color: "#566952" });
+    game.text("TOKYO'S JOURNEY", 640, 173, {
       size: 62,
       font: "mono-bold",
       color: "#33483d",
       shadow: { color: "#eff0cb", x: 4, y: 4 }
     });
-    game.text(
-      "A 16-bit platformer starring Tokyo, our golden girl.",
-      640,
-      285,
-      { size: 19, font: "mono", color: "#566952" }
-    );
-    const tokyo = game.spawn({ id: "title-tokyo", texture: "tokyo", x: 640, y: 388, scale: 2.5, layer: "world" });
-    let elapsed = 0;
+    game.text("What kind of day shall we have?", 640, 236, { size: 22, font: "mono", color: "#566952" });
+    const tokyo = game.spawn({ id: "title-tokyo", texture: "tokyo", x: 640, y: 334, scale: 2.3, layer: "world" });
+    game.spawn({ id: "title-butterfly", texture: "park-insects", frame: 0, x: 536, y: 304, width: 38, layer: "world" });
+    game.spawn({ id: "title-stick", texture: "park-sticks", frame: 0, x: 751, y: 371, width: 46, layer: "world" });
     game.ui.button({
+      id: "choose-playground",
       anchor: "center",
-      y: 145,
-      h: 62,
-      text: "Explore the meadow",
+      x: -260,
+      y: 95,
+      h: 76,
+      text: "Playground",
       style: "good",
-      icon: "play",
-      onClick: () => {
-        run.spawnX = 220;
-        game.scenes.go("play");
-      }
+      icon: "paw",
+      onClick: startPlayground
     });
-    const startHint = isMobileView() ? "TAP PLAY TO START" : "ENTER / SPACE TO START";
-    game.text(startHint, 640, 594, {
-      size: 16,
-      font: "mono-bold",
-      color: "#f7efcf",
-      shadow: { color: "#493c36", x: 2, y: 2 }
+    game.ui.button({
+      id: "choose-story",
+      anchor: "center",
+      x: 260,
+      y: 95,
+      h: 76,
+      text: "Story Mode",
+      style: "blue",
+      icon: "book",
+      onClick: () => game.scenes.go("story")
     });
+    game.text("FREE PLAY / A park full of discoveries", 380, 522, { size: 16, font: "mono-bold", color: "#33483d" });
+    game.text("CHAPTER 01 / The Movement Meadow", 900, 522, { size: 16, font: "mono-bold", color: "#33483d" });
     game.text(
-      "Walk, run, leap, crouch - or take a moment to sit.",
+      "Fetch. Sniff. Make friends. Find your own adventure.",
       640,
-      668,
-      { size: 17, font: "mono", color: "#e7dfb8" }
+      610,
+      { size: 19, font: "mono", color: "#f7efcf", shadow: { color: "#253c36", x: 2, y: 2 } }
     );
+    game.text("ENTER: PLAYGROUND     /     2: STORY MODE", 640, 665, { size: 16, font: "mono-bold", color: "#e7dfb8" });
+    let elapsed = 0;
     game.step("title", (dt) => {
       elapsed += dt;
       tokyo.setFrame(deterministicMath.floor(elapsed * 5) % 8);
-      if (fsBtn?.alive) {
-        fsBtn.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
-      }
-      if (game.input.keyPressed("Space") || game.input.keyPressed("Enter")) {
-        run.spawnX = 220;
-        game.scenes.go("play");
-      }
+      if (game.input.keyPressed("Enter") || game.input.keyPressed("Space")) startPlayground();
+      if (game.input.keyPressed("Digit2")) game.scenes.go("story");
     });
   }
 };
@@ -42105,8 +42294,9 @@ var Title = {
 // game/scenes/Play.ts
 var STATES2 = ["idle", "walking", "running", "jumping", "crouching", "sitting"];
 var Play = {
-  name: "play",
+  name: "meadow",
   enter() {
+    run.scene = "meadow";
     game.touch.visible = getTouchOverride() ?? isMobileView();
     spawnMeadow();
     game.physics.gravity(0, 1500);
@@ -42181,7 +42371,7 @@ var Play = {
       }
       if (game.input.keyPressed("KeyR")) {
         run.spawnX = 220;
-        game.scenes.go("play");
+        game.scenes.go("meadow");
         return;
       }
       if (getTouchOverride() === null) {
@@ -42213,8 +42403,8 @@ var Pause = {
   enter() {
     game.touch.visible = false;
     const W = game.screen.width, H = game.screen.height;
-    game.ui.panel({ anchor: "center", w: W, h: H, safeArea: false, style: "dark" });
-    const menu = game.ui.window({ anchor: "center", w: deterministicMath.min(W - 96, 460), h: "auto", title: "Paused", titleHeight: 56, layout: { padding: 24, gap: 14, align: "stretch" } });
+    game.ui.panel({ anchor: "center", w: W, h: H, z: 20, safeArea: false, style: "dark" });
+    const menu = game.ui.window({ anchor: "center", z: 21, w: deterministicMath.min(W - 96, 460), h: "auto", title: "Paused", titleHeight: 56, layout: { padding: 24, gap: 14, align: "stretch" } });
     game.ui.button({ parent: menu, h: 80, text: "Resume", style: "good", icon: "play", onClick: () => game.scenes.pop() });
     game.ui.button({ parent: menu, h: 72, text: "Settings", icon: "settings", onClick: () => game.scenes.push("settings") });
     const fsMenuItem = game.ui.button({
@@ -42230,9 +42420,15 @@ var Pause = {
         }
       }
     });
-    game.ui.button({ parent: menu, h: 72, text: "Restart", icon: "restart", onClick: () => game.scenes.go("play") });
+    game.ui.button({ parent: menu, h: 72, text: "Restart", icon: "restart", onClick: () => {
+      if (run.scene === "play") startPlayground();
+      else {
+        run.spawnX = 220;
+        game.scenes.go("meadow");
+      }
+    } });
     game.ui.button({ parent: menu, h: 72, text: "Title", icon: "home", onClick: () => game.scenes.go("title") });
-    game.ui.muteButton();
+    game.ui.muteButton({ z: 24 });
     menu.ui.y = -H;
     game.tween.to(menu.ui, { y: 0 }, { duration: 0.35, ease: "easeOutBack" });
     game.step("pause", () => {
@@ -42256,8 +42452,9 @@ var Settings = {
   enter() {
     game.touch.visible = false;
     const W = game.screen.width, H = game.screen.height;
-    game.ui.panel({ anchor: "center", w: W, h: H, safeArea: false, style: "dark" });
+    game.ui.panel({ anchor: "center", w: W, h: H, z: 40, safeArea: false, style: "dark" });
     const menu = game.ui.window({
+      z: 41,
       anchor: "center",
       w: deterministicMath.min(W - 96, 540),
       h: "auto",
@@ -42330,7 +42527,7 @@ var Settings = {
       text: "Back to Game",
       onClick: () => game.scenes.pop()
     });
-    game.ui.muteButton();
+    game.ui.muteButton({ z: 44 });
     menu.ui.y = -H;
     game.tween.to(menu.ui, { y: 0 }, { duration: 0.35, ease: "easeOutBack" });
     game.step("settings", () => {
@@ -42350,6 +42547,1144 @@ var Settings = {
   }
 };
 
+// game/park-art.json
+var park_art_default = {
+  treats: [
+    [
+      48,
+      48,
+      43,
+      44
+    ],
+    [
+      48,
+      48,
+      43,
+      44
+    ],
+    [
+      48,
+      48,
+      44,
+      43
+    ],
+    [
+      48,
+      48,
+      41,
+      44
+    ]
+  ],
+  insects: [
+    [
+      40,
+      40,
+      35,
+      36
+    ],
+    [
+      40,
+      40,
+      36,
+      34
+    ],
+    [
+      40,
+      40,
+      36,
+      28
+    ],
+    [
+      40,
+      40,
+      36,
+      28
+    ],
+    [
+      40,
+      40,
+      36,
+      22
+    ],
+    [
+      40,
+      40,
+      36,
+      21
+    ]
+  ],
+  people: [
+    [
+      96,
+      160,
+      90,
+      156
+    ],
+    [
+      96,
+      160,
+      58,
+      156
+    ],
+    [
+      96,
+      160,
+      92,
+      126
+    ],
+    [
+      96,
+      160,
+      92,
+      114
+    ]
+  ],
+  portal: [
+    [
+      192,
+      240,
+      187,
+      236
+    ],
+    [
+      192,
+      240,
+      188,
+      220
+    ],
+    [
+      192,
+      240,
+      188,
+      221
+    ],
+    [
+      192,
+      240,
+      176,
+      236
+    ]
+  ],
+  food: [
+    [
+      64,
+      64,
+      60,
+      41
+    ],
+    [
+      64,
+      64,
+      60,
+      31
+    ],
+    [
+      64,
+      64,
+      60,
+      42
+    ],
+    [
+      64,
+      64,
+      60,
+      53
+    ],
+    [
+      64,
+      64,
+      60,
+      31
+    ],
+    [
+      64,
+      64,
+      60,
+      52
+    ]
+  ],
+  houses: [
+    [
+      256,
+      240,
+      247,
+      236
+    ],
+    [
+      256,
+      240,
+      252,
+      209
+    ],
+    [
+      256,
+      240,
+      252,
+      192
+    ],
+    [
+      256,
+      240,
+      241,
+      236
+    ]
+  ],
+  bushes: [
+    [
+      128,
+      112,
+      111,
+      108
+    ],
+    [
+      128,
+      112,
+      124,
+      59
+    ],
+    [
+      128,
+      112,
+      55,
+      108
+    ],
+    [
+      128,
+      112,
+      110,
+      108
+    ],
+    [
+      128,
+      112,
+      104,
+      108
+    ],
+    [
+      128,
+      112,
+      108,
+      108
+    ]
+  ],
+  sticks: [
+    [
+      64,
+      64,
+      57,
+      60
+    ],
+    [
+      64,
+      64,
+      55,
+      60
+    ],
+    [
+      64,
+      64,
+      60,
+      60
+    ],
+    [
+      64,
+      64,
+      56,
+      60
+    ],
+    [
+      64,
+      64,
+      58,
+      60
+    ],
+    [
+      64,
+      64,
+      53,
+      60
+    ]
+  ],
+  clouds: [
+    [
+      192,
+      128,
+      188,
+      59
+    ],
+    [
+      192,
+      128,
+      188,
+      59
+    ],
+    [
+      192,
+      128,
+      188,
+      120
+    ],
+    [
+      192,
+      128,
+      188,
+      64
+    ],
+    [
+      192,
+      128,
+      188,
+      110
+    ],
+    [
+      192,
+      128,
+      188,
+      102
+    ]
+  ],
+  "villain-dogs": [
+    [
+      112,
+      112,
+      92,
+      108
+    ],
+    [
+      112,
+      112,
+      108,
+      106
+    ],
+    [
+      112,
+      112,
+      102,
+      108
+    ],
+    [
+      112,
+      112,
+      108,
+      99
+    ],
+    [
+      112,
+      112,
+      108,
+      99
+    ],
+    [
+      112,
+      112,
+      108,
+      97
+    ],
+    [
+      112,
+      112,
+      95,
+      108
+    ],
+    [
+      112,
+      112,
+      108,
+      103
+    ]
+  ],
+  beds: [
+    [
+      128,
+      96,
+      118,
+      92
+    ],
+    [
+      128,
+      96,
+      124,
+      84
+    ],
+    [
+      128,
+      96,
+      100,
+      92
+    ],
+    [
+      128,
+      96,
+      95,
+      92
+    ]
+  ],
+  rocks: [
+    [
+      160,
+      112,
+      141,
+      108
+    ],
+    [
+      160,
+      112,
+      156,
+      72
+    ],
+    [
+      160,
+      112,
+      156,
+      100
+    ],
+    [
+      160,
+      112,
+      156,
+      84
+    ],
+    [
+      160,
+      112,
+      156,
+      39
+    ],
+    [
+      160,
+      112,
+      156,
+      86
+    ],
+    [
+      160,
+      112,
+      156,
+      95
+    ]
+  ],
+  boxes: [
+    [
+      96,
+      96,
+      89,
+      92
+    ],
+    [
+      96,
+      96,
+      92,
+      75
+    ],
+    [
+      96,
+      96,
+      92,
+      90
+    ],
+    [
+      96,
+      96,
+      92,
+      83
+    ],
+    [
+      96,
+      96,
+      84,
+      92
+    ],
+    [
+      96,
+      96,
+      92,
+      89
+    ]
+  ]
+};
+
+// game/parkMap.ts
+var TREE_SPACING = 620;
+var FLOWER_SPACING = 112;
+function parkProp(id2, texture, frame, x, height, feet = PARK_GROUND, back = false) {
+  const [cellWidth, cellHeight, , artHeight] = park_art_default[texture][frame];
+  const scale2 = height / artHeight;
+  return game.spawn({
+    id: id2,
+    texture: `park-${texture}`,
+    frame,
+    x,
+    y: feet - (cellHeight / 2 - 2) * scale2,
+    width: cellWidth * scale2,
+    height: cellHeight * scale2,
+    layer: back ? "back" : "world",
+    z: back ? 1 : 4,
+    tags: ["park-prop"]
+  });
+}
+function terrain(id2, x, y, w, h, oneWay = false) {
+  game.spawn({
+    id: id2,
+    x,
+    y: y + h / 2,
+    width: w,
+    height: h,
+    visible: false,
+    tags: ["terrain"],
+    body: { type: "static", friction: 0, ...oneWay ? { oneWay: "up" } : {} }
+  });
+}
+function spawnParkMap() {
+  const scenery = spawnScenery(false, PARK_WIDTH, () => park.night);
+  terrain("park-ground", PARK_WIDTH / 2, PARK_GROUND, PARK_WIDTH, 180);
+  terrain("park-left-wall", -30, 0, 60, 720);
+  terrain("park-right-wall", PARK_WIDTH + 30, 0, 60, 720);
+  for (let x = 700; x < PARK_WIDTH; x += TREE_SPACING) {
+    game.spawn({
+      id: `park-tree-${x}`,
+      texture: "trees",
+      frame: deterministicMath.floor(x / TREE_SPACING) % 4,
+      x,
+      y: 412,
+      scale: 2.6,
+      layer: "back",
+      z: 0
+    });
+  }
+  for (let x = 2400; x < PARK_WIDTH; x += FLOWER_SPACING) {
+    game.spawn({
+      id: `park-flower-${x}`,
+      texture: "flowers",
+      frame: deterministicMath.floor(x / FLOWER_SPACING) % 8,
+      x,
+      y: PARK_GROUND - 12,
+      layer: "world",
+      z: 0
+    });
+  }
+  parkProp("home-cottage", "houses", 0, 260, 228, PARK_GROUND, true);
+  parkProp("neighborhood-house", "houses", 1, 1480, 215, PARK_GROUND, true);
+  parkProp("tokyo-doghouse", "houses", 2, 650, 150, PARK_GROUND, true);
+  parkProp("park-cabin", "houses", 3, 4660, 220, PARK_GROUND, true);
+  const rocks = [
+    { x: 2070, h: 62 },
+    { x: 2290, h: 92 },
+    { x: 2500, h: 45 },
+    { x: 3130, h: 28 },
+    { x: 2420, h: 30, feet: 395 },
+    { x: 3710, h: 58 },
+    { x: 3890, h: 70 }
+  ];
+  rocks.forEach((r, i) => {
+    const sprite = parkProp(`rock-${i + 1}`, "rocks", i, r.x, r.h, r.feet ?? PARK_GROUND);
+    terrain(`rock-top-${i + 1}`, r.x, (r.feet ?? PARK_GROUND) - r.h + 8, sprite.width * 0.78, 12, true);
+  });
+  for (const [i, x] of [1810, 1930, 2180, 2670, 2820, 2980].entries()) {
+    const h = i === 4 ? 124 : 76;
+    parkProp(`box-${i + 1}`, "boxes", i, x, h, i === 4 ? 416 : PARK_GROUND);
+    if (i !== 1 && i !== 4 && i !== 5) terrain(`box-top-${i + 1}`, x, PARK_GROUND - h + 5, 70, 12, true);
+  }
+  game.spawn({
+    id: "park-low-tunnel",
+    texture: "tunnel",
+    x: 2850,
+    y: 466,
+    layer: "world",
+    z: 5,
+    tags: ["terrain"],
+    body: { type: "static" }
+  });
+  game.step("park-sky", () => {
+    scenery.sky.tint = park.night ? "#526187" : "#ffffff";
+    scenery.mountains.tint = park.night ? "#667596" : "#ffffff";
+  });
+}
+
+// game/entities/ParkWildlife.ts
+var DOG_SPEED = 34;
+var DOG_FOLLOW_SPEED = 75;
+var DOG_PERSONAL_SPACE = 90;
+var DOG_NAMES = ["Dash", "Dumpling", "Patch", "Bruno"];
+function parkSparkles(x, y) {
+  game.particles.burst({
+    x,
+    y,
+    count: 12,
+    layer: "front",
+    frame: "particle:star",
+    speed: [35, 100],
+    lifespan: [0.3, 0.8],
+    color: ["#ffe39a", "#f7fcdf"]
+  });
+}
+function spawnParkWildlife(interactions) {
+  for (let i = 0; i < 4; i++) {
+    const home = 5100 + i * 250;
+    const dog = game.spawn({
+      id: `park-dog-${i + 1}`,
+      texture: "park-villain-dogs",
+      frame: i,
+      x: home,
+      y: PARK_GROUND - 46,
+      height: 92,
+      layer: "world",
+      z: 8,
+      tags: ["park-dog"],
+      data: { home, direction: i % 2 ? 1 : -1, friendly: park.friends.includes(i), mood: "patrolling", clock: i }
+    });
+    const name = game.text(
+      DOG_NAMES[i],
+      dog.x,
+      PARK_GROUND - 112,
+      { size: 15, font: "mono-bold", color: "#374b3e", layer: "world" }
+    );
+    interactions.push({
+      x: () => dog.x,
+      y: PARK_GROUND - 35,
+      radius: 115,
+      prompt: () => dog.data.friendly ? `F: play with ${DOG_NAMES[i]}` : `E: sit, then F: befriend ${DOG_NAMES[i]}`,
+      act: () => {
+        if (!run.tokyo?.seated && !dog.data.friendly) {
+          say(`${DOG_NAMES[i]} is shy. Sit with E, then press F to say hello.`);
+          return;
+        }
+        if (!dog.data.friendly) {
+          park.friends.push(i);
+          dog.data.friendly = true;
+        }
+        say(`${DOG_NAMES[i]} trusts Tokyo! A happy little play-bow.`);
+        parkSparkles(dog.x, dog.y);
+        game.tween.to(dog, { y: PARK_GROUND - 66 }, { duration: 0.2, yoyo: true });
+      }
+    });
+    game.step(`dog-behavior-${i}`, (dt) => {
+      const d = dog.data, tokyo = run.tokyo;
+      d.clock += dt;
+      const dx = (tokyo?.x ?? home) - dog.x;
+      const nearby = deterministicMath.abs(dx) < 180;
+      if (d.friendly && nearby && deterministicMath.abs(dx) > DOG_PERSONAL_SPACE) {
+        d.direction = deterministicMath.sign(dx);
+        dog.x += d.direction * DOG_FOLLOW_SPEED * dt;
+        d.mood = "following";
+      } else if (!d.friendly && nearby && tokyo?.sprinting && deterministicMath.abs(dx) < 130) {
+        d.direction = -deterministicMath.sign(dx);
+        dog.x += d.direction * DOG_SPEED * dt;
+        d.mood = "shy";
+      } else if (nearby) {
+        d.mood = d.friendly ? "happy" : "curious";
+        d.direction = deterministicMath.sign(dx) || 1;
+      } else {
+        d.mood = "patrolling";
+        dog.x += d.direction * DOG_SPEED * dt;
+        if (deterministicMath.abs(dog.x - home) > 80) d.direction = dog.x > home ? -1 : 1;
+      }
+      dog.x = deterministicMath.max(home - 150, deterministicMath.min(home + 150, dog.x));
+      dog.sx = d.direction;
+      dog.setFrame(i + deterministicMath.floor(d.clock * 2) % 2 * 4);
+      dog.tint = d.friendly ? "#fff3ca" : "#ffffff";
+      name.x = dog.x;
+      name.text = `${DOG_NAMES[i]}${d.friendly ? " / FRIEND" : ""}`;
+    });
+  }
+  for (let i = 0; i < 6; i++) {
+    const x = 3220 + i * 115;
+    const insect = parkProp(
+      `garden-insect-${i + 1}`,
+      "insects",
+      i,
+      x,
+      i < 3 ? 32 : 26,
+      i < 3 ? 440 : PARK_GROUND - 2
+    );
+    let elapsed = i;
+    game.step(`insect-behavior-${i}`, (dt) => {
+      elapsed += dt;
+      const flee = run.tokyo && deterministicMath.abs(run.tokyo.x - insect.x) < 110 ? 1 : 0;
+      insect.x = x + deterministicMath.sin(elapsed * (i === 2 ? 1.8 : 0.8)) * (flee ? 65 : 30);
+      if (i < 3) {
+        insect.y = 420 + deterministicMath.sin(elapsed * 2 + i) * 30 - flee * 35;
+        insect.sy = 0.7 + deterministicMath.abs(deterministicMath.sin(elapsed * 12)) * 0.3;
+      } else if (i === 4) insect.y = PARK_GROUND - 16 - deterministicMath.max(0, deterministicMath.sin(elapsed * 2.6)) * (flee ? 70 : 30);
+      else insect.y = PARK_GROUND - 15;
+      insect.sx = deterministicMath.cos(elapsed * 0.8) > 0 ? 1 : -1;
+    });
+  }
+}
+
+// game/entities/ParkActivities.ts
+var INTERACTION_RANGE = 92;
+var REST_SECONDS = 2;
+var TREAT_POSITIONS = [
+  [470, 515],
+  [1190, 510],
+  [1790, 425],
+  [2070, 450],
+  [2290, 415],
+  [2420, 345],
+  [2760, 535],
+  [2925, 535],
+  [3440, 505],
+  [4020, 505],
+  [4960, 510],
+  [6100, 505]
+];
+var PEOPLE_X = [470, 1050, 4340, 4870];
+var PEOPLE_LINES = [
+  "Welcome home, Tokyo! Try a bed, then follow the path to the fetch lawn.",
+  "Fetch time! Pick up a stick with F and bring it back to me.",
+  "Good girl! The picnic is yours to explore. F to sample each snack.",
+  "The dogs look tough, but they are shy. Sit with E, then greet each with F."
+];
+var FOOD_NAMES = ["kibble bowl", "roast", "sausage links", "cheese", "fish plate", "birthday cake"];
+var BUSH_X = [3250, 3370, 3500, 3620, 3750, 3880];
+function spawnParkActivities() {
+  const interactions = [];
+  let nearest;
+  let hidingTime = 0, restTime = 0;
+  const restSpots = [350, 710, 4530, 5740];
+  [260, 1480, 650, 4660].forEach((x, i) => interactions.push({
+    x: () => x,
+    y: PARK_GROUND - 25,
+    prompt: () => ["F: knock at home", "F: visit the neighbor", "F: settle into the doghouse", "F: switch the cabin lantern / day-night"][i],
+    act: () => {
+      if (i === 3) {
+        park.night = !park.night;
+        say(park.night ? "The cabin lantern glows. Time for moonlight adventures!" : "Good morning! The whole park is awake.");
+      } else if (i === 2 && run.tokyo?.grounded) {
+        run.tokyo.seated = true;
+        run.tokyo.sitPhase = "down";
+        run.tokyo.sitTime = 0;
+        say("Home sweet doghouse. Stay cozy for a moment.");
+      } else say(i === 0 ? "Home is always here for Tokyo. Her favorite bed is just to the right." : "A friendly wave from the window! The fetch lawn is a favorite around here.");
+    }
+  }));
+  restSpots.forEach((x, i) => {
+    parkProp(`park-bed-${i + 1}`, "beds", i, x, i === 2 ? 94 : 58);
+    interactions.push({ x: () => x, y: PARK_GROUND - 25, prompt: () => "F: curl up / E: get up", act: () => {
+      const d = run.tokyo;
+      if (!d || !d.grounded) return;
+      d.seated = true;
+      d.sitPhase = "down";
+      d.sitTime = 0;
+      d.crouchToggled = false;
+      say("A cozy rest. Stay seated for two seconds to earn Cozy paws.");
+    } });
+  });
+  PEOPLE_X.forEach((x, i) => {
+    const person = parkProp(`park-person-${i + 1}`, "people", i, x, i === 2 ? 100 : 158, PARK_GROUND, true);
+    interactions.push({
+      x: () => x,
+      y: PARK_GROUND - 35,
+      prompt: () => i === 1 && park.carrying >= 0 ? "F: return the fetch stick" : "F: say hello",
+      act: () => {
+        if (!park.greeted.includes(i)) park.greeted.push(i);
+        if (i === 1 && park.carrying >= 0) {
+          park.carrying = -1;
+          park.fetched = true;
+          say("Perfect fetch! The mail carrier cheers for Tokyo. Fetch star earned!");
+          parkSparkles(x, PARK_GROUND - 80);
+        } else say(PEOPLE_LINES[i]);
+        game.tween.to(person, { y: person.y - 8 }, { duration: 0.2, yoyo: true });
+      }
+    });
+  });
+  for (let i = 0; i < 6; i++) {
+    const x = 1270 + i * 86;
+    const stick = parkProp(`fetch-stick-${i + 1}`, "sticks", i, x, 40);
+    interactions.push({
+      x: () => x,
+      y: PARK_GROUND - 20,
+      available: () => park.carrying !== i,
+      prompt: () => park.carrying >= 0 ? "F: swap fetch sticks" : "F: pick up a fetch stick",
+      act: () => {
+        park.carrying = i;
+        say("Stick collected! Bring it left to the mail carrier, or F in open space to toss it.");
+      }
+    });
+    game.step(`fetch-stick-${i}`, () => {
+      const d = run.tokyo;
+      if (park.carrying === i && d) {
+        stick.x = d.x + d.facing * 42;
+        stick.y = d.feet - 42;
+        stick.rot = d.facing * 0.5;
+        stick.z = 12;
+      } else {
+        stick.x = x;
+        stick.y = PARK_GROUND - 20;
+        stick.rot = 0;
+        stick.z = 4;
+      }
+    });
+  }
+  BUSH_X.forEach((x, i) => {
+    const bush = parkProp(`sniff-bush-${i + 1}`, "bushes", i, x, i === 2 ? 136 : 85, PARK_GROUND, true);
+    interactions.push({
+      x: () => x,
+      y: PARK_GROUND - 28,
+      prompt: () => park.sniffed.includes(i) ? "F: sniff this familiar scent" : "F: sniff for a surprise",
+      act: () => {
+        if (!park.sniffed.includes(i)) park.sniffed.push(i);
+        say(`Sniff sniff! ${["Berry scent", "Fresh rain", "A squirrel trail", "Wildflowers", "Cool moss", "Autumn leaves"][i]}. Bushes explored: ${park.sniffed.length}/6.`);
+        parkSparkles(x, PARK_GROUND - 65);
+        game.tween.to(bush, { rot: 0.08 }, { duration: 0.12, yoyo: true });
+      }
+    });
+  });
+  for (let i = 0; i < 6; i++) {
+    const x = 4060 + i * 91;
+    const food = parkProp(`picnic-food-${i + 1}`, "food", i, x, 50);
+    food.alpha = park.snacks.includes(i) ? 0.4 : 1;
+    interactions.push({
+      x: () => x,
+      y: PARK_GROUND - 20,
+      prompt: () => park.snacks.includes(i) ? `F: sniff the ${FOOD_NAMES[i]}` : `F: sample the ${FOOD_NAMES[i]}`,
+      act: () => {
+        if (!park.snacks.includes(i)) park.snacks.push(i);
+        food.alpha = 0.4;
+        parkSparkles(x, food.y);
+        say(`Yum! Tokyo sampled the ${FOOD_NAMES[i]}. Picnic discoveries: ${park.snacks.length}/6.`);
+      }
+    });
+  }
+  interactions.push({ x: () => 1930, y: PARK_GROUND - 25, prompt: () => "DOWN + F: hide in the open box", act: () => {
+    if (!run.tokyo?.crouched) {
+      say("Hold DOWN or C to crouch, then press F to hide in the open box.");
+      return;
+    }
+    hidingTime = 1.4;
+    park.hidden = true;
+    say("Peekaboo! Tokyo found her hiding place. Hide & seek earned!");
+    parkSparkles(1930, 500);
+  } });
+  let crateOpened = false;
+  interactions.push({ x: () => 2980, y: PARK_GROUND - 25, prompt: () => crateOpened ? "F: investigate the empty reward crate" : "F: open the mystery crate", act: () => {
+    if (crateOpened) {
+      say("The mystery crate is empty. More adventures wait to the right!");
+      return;
+    }
+    crateOpened = true;
+    parkSparkles(2980, 500);
+    say("A shower of golden stars! The mystery crate says: follow your nose into the garden.");
+  } });
+  const portal = parkProp("park-portal", "portal", 0, 6210, 235, PARK_GROUND, true);
+  interactions.push({
+    x: () => 6210,
+    y: PARK_GROUND - 50,
+    radius: 145,
+    prompt: () => badges().every(Boolean) ? "F: celebrate a perfect park day!" : "F: inspect the magical gateway",
+    act: () => {
+      if (!badges().every(Boolean)) {
+        say(`The portal glows with friendship. Find all 8 activity badges! Check your Park map.`);
+        return;
+      }
+      park.celebrated = true;
+      parkSparkles(6210, 400);
+      game.scenes.push("celebration");
+    }
+  });
+  TREAT_POSITIONS.forEach(([x, y], i) => {
+    if (park.treats.includes(i)) return;
+    const treat = game.spawn({
+      id: `park-treat-${i + 1}`,
+      texture: "park-treats",
+      frame: i % 4,
+      x,
+      y,
+      width: 38,
+      layer: "world",
+      z: 9,
+      tags: ["park-treat"],
+      data: { collected: false }
+    });
+    let elapsed = i;
+    game.step(`park-treat-${i}`, (dt) => {
+      elapsed += dt;
+      if (treat.data.collected) return;
+      treat.y = y + deterministicMath.sin(elapsed * 3) * 5;
+      const d = run.tokyo;
+      if (d && deterministicMath.abs(d.x - x) < 43 && deterministicMath.abs(d.feet - 25 - treat.y) < 42) {
+        treat.data.collected = true;
+        park.treats.push(i);
+        parkSparkles(x, treat.y);
+        say(`Tasty discovery! Treats ${park.treats.length}/12${park.treats.length === 12 ? " - Treat explorer earned!" : "."}`);
+        game.tween.to(treat, { y: treat.y - 30, alpha: 0 }, { duration: 0.25, onComplete: () => treat.destroy() });
+      }
+    }, { after: "tokyo-visual" });
+  });
+  spawnParkWildlife(interactions);
+  const interact = () => {
+    const d = run.tokyo;
+    if (!d) return;
+    if (nearest) nearest.act();
+    else if (park.carrying >= 0) {
+      const thrown = parkProp("thrown-stick", "sticks", park.carrying, d.x + d.facing * 50, 40, d.feet - 50);
+      park.carrying = -1;
+      game.tween.to(
+        thrown,
+        { x: d.x + d.facing * 260, y: PARK_GROUND - 20, rot: d.facing * 5 },
+        { duration: 0.7, onComplete: () => thrown.destroy() }
+      );
+      say("Wheee! The fetch sticks are back on the lawn whenever you want another go.");
+    } else say("Woof! Find a neighbor, bush, bed, snack or stick to interact with.");
+  };
+  game.step("park-interactions", (dt) => {
+    const d = run.tokyo;
+    if (!d) return;
+    park.messageTime = deterministicMath.max(0, park.messageTime - dt);
+    hidingTime = deterministicMath.max(0, hidingTime - dt);
+    for (const tokyo of game.roster.tagged("tokyo")) tokyo.alpha = hidingTime > 0 && deterministicMath.abs(d.x - 1930) < 75 ? 0.25 : 1;
+    const atBed = restSpots.some((x) => deterministicMath.abs(d.x - x) < 70);
+    restTime = atBed && d.seated && d.grounded ? restTime + dt : 0;
+    if (restTime >= REST_SECONDS && !park.rested) {
+      park.rested = true;
+      say("Cozy paws earned! Tokyo is ready for another adventure.");
+      parkSparkles(d.x, d.feet - 40);
+    }
+    nearest = interactions.filter((item) => (item.available?.() ?? true) && deterministicMath.abs(d.x - item.x()) < (item.radius ?? INTERACTION_RANGE) && deterministicMath.abs(d.feet - 25 - item.y) < 95).sort((a, b) => deterministicMath.abs(d.x - a.x()) - deterministicMath.abs(d.x - b.x()))[0];
+    if (game.controls.justPressed("interact")) interact();
+    portal.setFrame(badges().every(Boolean) ? 1 + deterministicMath.floor(game.clock.time * 3) % 3 : 0);
+  }, { after: "tokyo-visual" });
+  return { interact, prompt: () => nearest?.prompt() ?? (park.carrying >= 0 ? "F: toss stick / return it to the mail carrier" : "Explore freely - M opens your park map") };
+}
+
+// game/scenes/Playground.ts
+var GRAVITY = 1500;
+var Playground = {
+  name: "play",
+  enter() {
+    run.scene = "play";
+    game.camera.snap(deterministicMath.max(640, deterministicMath.min(PARK_WIDTH - 640, run.spawnX + 90)), 360, 1);
+    game.touch.visible = getTouchOverride() ?? isMobileView();
+    spawnParkMap();
+    game.physics.gravity(0, GRAVITY);
+    const tokyo = spawnTokyo(run.spawnX, PARK_GROUND);
+    const activities = spawnParkActivities();
+    game.rig.follow(tokyo);
+    game.rig.bounds({ x: 0, y: 0, w: PARK_WIDTH, h: 720 });
+    game.rig.deadzone = { w: 140, h: 260 };
+    game.rig.smoothing = 0.12;
+    game.rig.offset = { x: 90, y: -80 };
+    game.rig.lookAhead = 0.2;
+    const shadow = game.spawn({
+      id: "park-tokyo-shadow",
+      texture: "shadow",
+      x: tokyo.x,
+      y: PARK_GROUND - 2,
+      layer: "world",
+      z: 1,
+      alpha: 0.25
+    });
+    const hud = game.graphics({ layer: "hud" });
+    hud.draw((ctx) => {
+      ctx.fillStyle = "#253c36";
+      ctx.fillRect(0, 0, 1280, 96);
+      ctx.fillRect(0, 618, 1280, 102);
+      ctx.fillStyle = "#d6c68b";
+      ctx.fillRect(0, 94, 1280, 2);
+      ctx.fillRect(0, 618, 1280, 2);
+    });
+    game.text("TOKYO'S PLAYGROUND", 30, 28, { size: 25, font: "mono-bold", align: "left", color: "#f5e2a8" });
+    const area = game.text("", 30, 65, { size: 17, font: "mono", align: "left", color: "#bfcfae" });
+    const tally = game.text("", 640, 30, { size: 18, font: "mono-bold", color: "#f5e2a8" });
+    game.ui.pauseButton();
+    game.ui.muteButton();
+    addFullscreenButton({ anchor: "top-right", x: -144, y: 16 });
+    game.ui.button({
+      id: "park-map-button",
+      anchor: "top-right",
+      x: -210,
+      y: 16,
+      h: 56,
+      icon: "map",
+      style: "icon",
+      accessibleLabel: "Park map and activity badges",
+      onClick: () => game.scenes.push("parkmap")
+    });
+    game.ui.button({
+      id: "day-night-button",
+      anchor: "top-right",
+      x: -276,
+      y: 16,
+      h: 56,
+      icon: "moon",
+      style: "icon",
+      accessibleLabel: "Toggle day and night",
+      onClick: () => {
+        park.night = !park.night;
+      }
+    });
+    const act = game.ui.button({
+      id: "park-interact-button",
+      anchor: "bottom-right",
+      x: -28,
+      y: -28,
+      h: 54,
+      text: "Interact",
+      icon: "paw",
+      style: "good",
+      onClick: () => {
+        interactRequested = true;
+      }
+    });
+    let interactRequested = false;
+    const prompt = game.text("", 560, 645, { size: 18, font: "mono-bold", color: "#f5e2a8" });
+    const message = game.text("", 560, 678, { size: 15, font: "mono", color: "#c6d6b6" });
+    const controls = game.text(
+      "A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   F interact   M map",
+      640,
+      112,
+      { size: 15, font: "mono-bold", color: "#354c42", shadow: { color: "#eff0cb", x: 1, y: 1 } }
+    );
+    game.step("playground-hud", () => {
+      if (game.controls.justPressed("pause")) {
+        game.scenes.push("pause");
+        return;
+      }
+      if (game.input.keyPressed("KeyM")) {
+        game.scenes.push("parkmap");
+        return;
+      }
+      if (game.input.keyPressed("KeyR")) {
+        startPlayground();
+        return;
+      }
+      if (game.input.keyPressed("KeyN")) park.night = !park.night;
+      if (getTouchOverride() === null) game.touch.visible = isMobileView();
+      area.text = currentArea(tokyo.x);
+      tally.text = `TREATS ${park.treats.length}/12  |  BADGES ${badges().filter(Boolean).length}/8`;
+      controls.text = game.touch.visible ? "STICK move / down to crawl    JUMP / RUN / SIT    INTERACT to play    MAP for activities" : "A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   F interact   M map";
+      prompt.text = game.touch.visible ? activities.prompt().replaceAll("F:", "Interact:").replaceAll("E:", "Sit:").replaceAll("DOWN +", "Crouch +") : activities.prompt();
+      message.text = park.messageTime > 0 ? park.message : "No timer. No damage. Just a very good day for a dog.";
+      shadow.x = tokyo.x;
+      shadow.alpha = deterministicMath.max(0, 0.25 - deterministicMath.max(0, PARK_GROUND - tokyo.data.feet) / 800);
+      if (interactRequested) {
+        interactRequested = false;
+        activities.interact();
+      }
+      act.ui.text = park.carrying >= 0 ? "Play / fetch" : "Interact";
+    }, { after: "park-interactions" });
+  },
+  exit() {
+    game.touch.visible = false;
+  }
+};
+
+// game/scenes/ParkMap.ts
+var ParkMap = {
+  name: "parkmap",
+  enter() {
+    game.touch.visible = false;
+    game.ui.panel({ anchor: "center", w: 1280, h: 720, z: 20, style: "dark", safeArea: false });
+    game.text("A GOOD DAY AT THE PARK", 640, 58, { z: 21, size: 35, font: "mono-bold", color: "#f5e2a8" });
+    game.text(
+      "Choose a neighborhood to stroll there. Your discoveries stay with you.",
+      640,
+      102,
+      { z: 21, size: 17, font: "mono", color: "#c6d6b6" }
+    );
+    PARK_AREAS.forEach((area, i) => {
+      const x = i % 3 * 390 - 390, y = deterministicMath.floor(i / 3) * 125 - 175;
+      game.ui.button({
+        id: `map-area-${i + 1}`,
+        anchor: "center",
+        x,
+        y,
+        z: 21,
+        h: 60,
+        text: area.name,
+        icon: "pin",
+        style: i === 0 ? "good" : "flat",
+        onClick: () => visitArea(area.x)
+      });
+      game.text(area.description, 640 + x, 360 + y + 48, { z: 21, size: 13, font: "mono", color: "#c6d6b6" });
+    });
+    const earned = badges();
+    const progress = [
+      "rest for 2 seconds",
+      "return a stick",
+      `${park.treats.length}/12 treats`,
+      "crouch + F at open box",
+      `${park.sniffed.length}/6 bushes`,
+      `${park.snacks.length}/6 snacks`,
+      `${park.friends.length}/4 dogs`,
+      `${park.greeted.length}/4 people`
+    ];
+    BADGE_NAMES.forEach((name, i) => {
+      const x = 170 + i % 4 * 315, y = 470 + deterministicMath.floor(i / 4) * 76;
+      game.text(
+        `${earned[i] ? "[YES]" : "[   ]"} ${name}`,
+        x,
+        y,
+        { z: 21, size: 16, font: "mono-bold", color: earned[i] ? "#ffe19a" : "#e5edda" }
+      );
+      game.text(progress[i], x, y + 24, { z: 21, size: 13, font: "mono", color: "#b8ccb0" });
+    });
+    game.ui.button({ id: "map-close", anchor: "bottom", y: -26, z: 21, h: 54, text: "Back to Tokyo", icon: "back", style: "good", onClick: () => game.scenes.pop() });
+    game.step("parkmap", () => {
+      if (game.input.keyPressed("Escape") || game.input.keyPressed("KeyM")) game.scenes.pop();
+    });
+  },
+  exit() {
+    game.touch.visible = getTouchOverride() ?? isMobileView();
+  }
+};
+
+// game/scenes/Story.ts
+var Story = {
+  name: "story",
+  enter() {
+    game.touch.visible = false;
+    spawnScenery(true);
+    game.text("STORY MODE", 640, 122, { size: 48, font: "mono-bold", color: "#33483d" });
+    game.text("Every journey begins with a little courage.", 640, 185, { size: 21, font: "mono", color: "#52674f" });
+    game.spawn({ id: "story-portal", texture: "park-portal", frame: 1, x: 985, y: 425, height: 240, layer: "world" });
+    game.spawn({ id: "story-tokyo", texture: "tokyo", x: 306, y: 480, scale: 2, layer: "world" });
+    game.text("CHAPTER 01 / THE MOVEMENT MEADOW", 640, 282, { size: 24, font: "mono-bold", color: "#33483d" });
+    game.text("Ten treats wait beyond Tokyo's front door.", 640, 335, { size: 18, font: "mono", color: "#435d49" });
+    game.text("Leap, crawl the tunnel, and raise the flag.", 640, 368, { size: 18, font: "mono", color: "#435d49" });
+    game.ui.button({
+      id: "story-chapter",
+      anchor: "center",
+      y: 90,
+      h: 66,
+      text: "Begin chapter 1",
+      icon: "play",
+      style: "good",
+      onClick: () => {
+        run.spawnX = 220;
+        game.scenes.go("meadow");
+      }
+    });
+    game.ui.button({ id: "story-back", anchor: "center", y: 180, h: 56, text: "Choose a mode", icon: "back", style: "flat", onClick: () => game.scenes.go("title") });
+    game.text(
+      "More chapters will follow. The playground is open for free play now.",
+      640,
+      651,
+      { size: 16, font: "mono", color: "#f7efcf", shadow: { color: "#253c36", x: 2, y: 2 } }
+    );
+    game.step("story", () => {
+      if (game.input.keyPressed("Escape")) game.scenes.go("title");
+    });
+  }
+};
+
+// game/scenes/Celebration.ts
+var Celebration = {
+  name: "celebration",
+  enter() {
+    game.touch.visible = false;
+    game.ui.panel({ anchor: "center", w: 1280, h: 720, z: 20, safeArea: false, style: "dark" });
+    game.spawn({ id: "celebration-tokyo", texture: "tokyo", frame: 42, x: 640, y: 270, z: 21, scale: 3, layer: "hud" });
+    game.text("THE BEST KIND OF ADVENTURE", 640, 125, { z: 21, size: 36, font: "mono-bold", color: "#f5df96" });
+    game.text("Eight badges. New friends. One very happy Tokyo.", 640, 385, { z: 21, size: 24, font: "mono", color: "#e6edda" });
+    game.ui.button({ id: "celebrate-continue", anchor: "center", y: 110, z: 21, h: 64, text: "Keep playing", icon: "paw", style: "good", onClick: () => game.scenes.pop() });
+    game.ui.button({ id: "celebrate-new", anchor: "center", y: 195, z: 21, h: 56, text: "A new park day", icon: "restart", style: "flat", onClick: startPlayground });
+    game.step("celebration", () => {
+      if (game.input.keyPressed("Escape")) game.scenes.pop();
+    });
+  }
+};
+
 // game/main.ts
 paintArt();
 game.ui.theme = "block";
@@ -42357,6 +43692,7 @@ game.controls.bind("jump", { keys: ["Space", "ArrowUp", "KeyW", "Touch:jump"], p
 game.controls.bind("run", { keys: ["ShiftLeft", "ShiftRight", "Touch:run"], pad: ["x"] });
 game.controls.bind("crouch", { keys: ["ArrowDown", "KeyS", "KeyC", "Touch:crouch", "Touch:down"], pad: ["lb"] });
 game.controls.bind("sit", { keys: ["KeyE", "Touch:sit"], pad: ["b"] });
+game.controls.bind("interact", { keys: ["KeyF"], pad: ["y"] });
 game.controls.bind("pause", { keys: ["Escape", "KeyP", "Touch:pause"], pad: ["start"] });
 game.controls.bindMove({ left: ["ArrowLeft", "KeyA", "Touch:left"], right: ["ArrowRight", "KeyD", "Touch:right"], up: [], down: [] });
 await game.typography.prepare(["mono", "mono-bold"]);
@@ -42372,10 +43708,37 @@ await game.assets.load([
   { kind: "image", key: "treat-atlas", url: "assets/treat-atlas.png", w: 48, h: 48, cols: 4, rows: 1 }
 ]);
 await game.assets.load(assets_default, { pack: "title" });
+for (const [key, w, h, cols] of [
+  ["houses", 256, 240, 4],
+  ["people", 96, 160, 4],
+  ["beds", 128, 96, 4],
+  ["boxes", 96, 96, 6],
+  ["food", 64, 64, 6],
+  ["insects", 40, 40, 6],
+  ["sticks", 64, 64, 6],
+  ["bushes", 128, 112, 6],
+  ["rocks", 160, 112, 7],
+  ["portal", 192, 240, 4],
+  ["villain-dogs", 112, 112, 8],
+  ["treats", 48, 48, 4],
+  ["clouds", 192, 128, 6]
+]) {
+  await game.assets.load([{ kind: "image", key: `park-${key}`, url: `assets/park-${key}.png`, w, h, cols, rows: 1 }]);
+}
+await game.assets.load([
+  { kind: "image", key: "sky-sun", url: "assets/sky-sun.png" },
+  { kind: "image", key: "sky-moon", url: "assets/sky-moon.png" },
+  { kind: "image", key: "sky-cloud", url: "assets/sky-cloud.png" },
+  { kind: "image", key: "sky-star", url: "assets/sky-star.png" }
+]);
 game.scenes.register(Title);
 game.scenes.register(Play);
 game.scenes.register(Pause);
 game.scenes.register(Settings);
+game.scenes.register(Playground);
+game.scenes.register(ParkMap);
+game.scenes.register(Story);
+game.scenes.register(Celebration);
 addDebugControls();
 await game.start();
 game.scenes.go("title");

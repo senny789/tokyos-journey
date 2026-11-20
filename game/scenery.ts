@@ -1,4 +1,5 @@
 import { game } from './engine.js';
+import { spawnSky } from './sky.js';
 
 const GROUND = 560;
 const WORLD_WIDTH = 2400;
@@ -6,13 +7,15 @@ const TREE_BASELINE = 120;
 const FLOWER_BASELINE = 29;
 
 /** Shared scenery, with distant layers moving more slowly than the meadow. */
-export function spawnScenery(title = false): void {
+export function spawnScenery(title = false, worldWidth = WORLD_WIDTH, isNight: () => boolean = () => false) {
+    if (title) game.camera.snap(game.screen.width / 2, game.screen.height / 2, 1);
     game.background.color('#c8ded6');
-    game.spawn({ id: 'meadow-sky', texture: 'meadow', x: WORLD_WIDTH / 2, y: 360, layer: 'back', z: -5 });
+    const sky = game.spawn({ id: 'meadow-sky', texture: 'meadow', x: worldWidth / 2, y: 360, width: worldWidth, height: 720, layer: 'back', z: -5 });
+    spawnSky(isNight);
     const mountains = game.spawn({ id: 'distant-mountains', texture: 'mountains',
-        x: WORLD_WIDTH / 2, y: title ? 470 : 370, width: 2800, height: 360, layer: 'back', z: -4 });
+        x: worldWidth / 2, y: title ? 470 : 370, width: worldWidth + 400, height: 360, layer: 'back', z: -4 });
     const hills = game.spawn({ id: 'rolling-hills', texture: 'hills',
-        x: WORLD_WIDTH / 2, y: 474, width: 2800, height: 172, layer: 'back', z: -3 });
+        x: worldWidth / 2, y: 474, width: worldWidth + 400, height: 172, layer: 'back', z: -3 });
     const trees = title
         ? [{ x: 120, frame: 0, scale: 2.5 }, { x: 1160, frame: 3, scale: 2.8 }]
         : [{ x: 40, frame: 0, scale: 2.8 }, { x: 370, frame: 1, scale: 2.6 },
@@ -23,7 +26,7 @@ export function spawnScenery(title = false): void {
             y: GROUND - (TREE_BASELINE - 64) * tree.scale, scale: tree.scale,
             layer: 'back', z: -1 });
     }
-    for (let x = 64; x < WORLD_WIDTH; x += 128) {
+    for (let x = 64; x < worldWidth; x += 128) {
         game.spawn({ id: 'grassland-tile', texture: 'grassland', x, y: GROUND + 80,
             width: 128, height: 160, layer: 'world', z: -2 });
     }
@@ -35,7 +38,8 @@ export function spawnScenery(title = false): void {
     }
     game.step('scenery-parallax', () => {
         const scroll = game.camera.x - game.screen.width / 2;
-        mountains.x = WORLD_WIDTH / 2 + scroll * 0.75;
-        hills.x = WORLD_WIDTH / 2 + scroll * 0.35;
+        mountains.x = worldWidth / 2 + scroll * 0.75;
+        hills.x = worldWidth / 2 + scroll * 0.35;
     }, { after: 'rig-follow.camera' });
+    return { sky, mountains };
 }

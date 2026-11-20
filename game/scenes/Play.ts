@@ -8,8 +8,9 @@ import { getSettings } from '../settings.js';
 const STATES: TokyoState[] = ['idle', 'walking', 'running', 'jumping', 'crouching', 'sitting'];
 
 export const Play = {
-    name: 'play',
+    name: 'meadow',
     enter(): void {
+        run.scene = 'meadow';
         game.touch.visible = getTouchOverride() ?? isMobileView();
         spawnMeadow();
         game.physics.gravity(0, 1500);
@@ -90,7 +91,7 @@ export const Play = {
 
         game.step('meadow-hud', () => {
             if (game.controls.justPressed('pause')) { game.scenes.push('pause'); return; }
-            if (game.input.keyPressed('KeyR')) { run.spawnX = 220; game.scenes.go('play'); return; }
+            if (game.input.keyPressed('KeyR')) { run.spawnX = 220; game.scenes.go('meadow'); return; }
 
             if (getTouchOverride() === null) {
                 const shouldShow = isMobileView();

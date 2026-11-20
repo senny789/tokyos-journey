@@ -19,7 +19,7 @@ export type TokyoData = {
     x: number; feet: number; vx: number; vy: number; frame: number;
     runToggled: boolean; crouchToggled: boolean; sprinting: boolean;
 };
-export const run: { spawnX: number; tokyo: TokyoData | null } = { spawnX: 220, tokyo: null };
+export const run: { spawnX: number; tokyo: TokyoData | null; scene: 'play' | 'meadow' } = { spawnX: 220, tokyo: null, scene: 'play' };
 
 function makeBody(x: number, feet: number, height: number, vx = 0, vy = 0) {
     // Terrain only: a replaced posture body can survive until the step ends.

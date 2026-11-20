@@ -5,12 +5,6 @@ export function paintArt(): void {
         ctx.fillStyle = '#c8ded6'; ctx.fillRect(0, 0, 2400, 720);
         ctx.fillStyle = '#d7e3d2'; ctx.fillRect(0, 144, 2400, 576);
         ctx.fillStyle = '#e7e7cf'; ctx.fillRect(0, 272, 2400, 448);
-        ctx.fillStyle = '#f2dfad'; ctx.fillRect(1008, 128, 80, 64); ctx.fillRect(1016, 120, 64, 80);
-        ctx.fillStyle = '#f7efcf';
-        for (const [x, y, w] of [[90, 170, 150], [480, 212, 180], [1220, 156, 160], [1760, 180, 200], [2180, 232, 160]]) {
-            ctx.fillRect(x, y, w, 12); ctx.fillRect(x + 20, y - 12, w - 60, 12);
-            ctx.fillRect(x + 40, y - 24, w - 100, 12);
-        }
     }, { res: 1 });
     game.paint('tunnel', 260, 100, ctx => {
         ctx.fillStyle = '#343d36'; ctx.fillRect(0, 0, 260, 100);
