@@ -13,14 +13,14 @@ import { Pause } from './scenes/Pause.js';
 paintArt();
 // Load the pixel-friendly menu skin and character art before either scene.
 game.ui.theme = 'block';
-game.controls.bind('jump', { keys: ['Space', 'ArrowUp', 'KeyW'], pad: ['a'] });
-game.controls.bind('run', { keys: ['ShiftLeft', 'ShiftRight'], pad: ['x'] });
-game.controls.bind('crouch', { keys: ['ArrowDown', 'KeyS', 'KeyC'], pad: ['lb'] });
-game.controls.bind('sit', { keys: ['KeyE'], pad: ['b'] });
-game.controls.bind('pause', { keys: ['Escape', 'KeyP'], pad: ['start'] });
+game.controls.bind('jump', { keys: ['Space', 'ArrowUp', 'KeyW', 'Touch:jump'], pad: ['a'] });
+game.controls.bind('run', { keys: ['ShiftLeft', 'ShiftRight', 'Touch:run'], pad: ['x'] });
+game.controls.bind('crouch', { keys: ['ArrowDown', 'KeyS', 'KeyC', 'Touch:crouch', 'Touch:down'], pad: ['lb'] });
+game.controls.bind('sit', { keys: ['KeyE', 'Touch:sit'], pad: ['b'] });
+game.controls.bind('pause', { keys: ['Escape', 'KeyP', 'Touch:pause'], pad: ['start'] });
 // Vertical keyboard actions have their own bindings; they must not normalize
 // the horizontal move axis as if this side-view game had diagonal movement.
-game.controls.bindMove({ left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], up: [], down: [] });
+game.controls.bindMove({ left: ['ArrowLeft', 'KeyA', 'Touch:left'], right: ['ArrowRight', 'KeyD', 'Touch:right'], up: [], down: [] });
 await game.typography.prepare(['mono', 'mono-bold']);
 await game.assets.load([{ kind: 'image', key: 'tokyo', url: 'assets/tokyo.png', w: 64, h: 64, cols: 8, rows: 6 }]);
 await game.assets.load([{ kind: 'image', key: 'tokyo-crouch', url: 'assets/tokyo-crouch.png', w: 64, h: 64, cols: 8, rows: 2 }]);

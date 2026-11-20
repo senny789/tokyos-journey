@@ -63,6 +63,7 @@ export function spawnTokyo(x: number, feet: number) {
         layer: 'world', z: 10, scale: SPRITE_SCALE, tags: ['tokyo'], data: initialData(x, feet) });
     let body = makeBody(x, feet, STAND_HEIGHT);
     let height = STAND_HEIGHT;
+    let wasJump = false, wasSit = false;
     const d = sprite.data;
     run.tokyo = d;
     // A short foot probe also covers the frame when a resized or sleeping body
@@ -95,8 +96,11 @@ export function spawnTokyo(x: number, feet: number) {
     game.step('tokyo-controls', dt => {
         const move = game.controls.axis('move').x;
         const sprint = game.controls.pressed('run');
-        const jump = game.controls.pressed('jump'), jumpPressed = game.controls.justPressed('jump');
-        const crouch = game.controls.pressed('crouch'), sitPressed = game.controls.justPressed('sit');
+        const jump = game.controls.pressed('jump'), jumpPressed = game.controls.justPressed('jump') || (jump && !wasJump);
+        wasJump = jump;
+        const crouch = game.controls.pressed('crouch');
+        const sit = game.controls.pressed('sit'), sitPressed = game.controls.justPressed('sit') || (sit && !wasSit);
+        wasSit = sit;
         const wasGrounded = d.grounded;
         d.jumpLock = Math.max(0, d.jumpLock - dt);
         d.postureGrace = Math.max(0, d.postureGrace - dt);

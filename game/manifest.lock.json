@@ -25,7 +25,8 @@
     "core-2d": "3.0.0-4",
     "ui-skins": "3.0.0-2",
     "physics-2d": "3.0.0-4",
-    "ui-skin-block": "3.0.0-2"
+    "ui-skin-block": "3.0.0-2",
+    "controls-touch": "3.0.0-4"
   },
   "order": [
     "render-auto",
@@ -52,7 +53,8 @@
     "core-2d",
     "ui-skins",
     "physics-2d",
-    "ui-skin-block"
+    "ui-skin-block",
+    "controls-touch"
   ],
   "artifacts": {
     "render-auto": "233c749db053767143311495227320095efde37b6c4cb89c9e64cafa24a4d14d",
@@ -79,6 +81,7 @@
     "core-2d": "372252cc16265d3f96f2c18a040f3586f8418526c6cd15fe79a192b7b42dbc1f",
     "ui-skins": "9c16f877ebbc0f33ffe1888cfdd9d4e0bbcdafd5f0bbf3b9640fc8797d3598c4",
     "physics-2d": "41dfcc40bbd0bfb4051017abe98a6c86d4e10868e60ff9de239cfeceeb376a2b",
-    "ui-skin-block": "19037dadff6e6b2c22d60a5b875a12cdd3c77a1300bfe53adb565f7a87affb64"
+    "ui-skin-block": "19037dadff6e6b2c22d60a5b875a12cdd3c77a1300bfe53adb565f7a87affb64",
+    "controls-touch": "1001a28ebab4b6977b70a834fcfb45b80affc7844b374b7639872e9677d13e3e"
   }
 }

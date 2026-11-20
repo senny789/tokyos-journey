@@ -8,8 +8,8 @@
     "assets/tokyo-crouch.png": "81a9d4192ef0740ebf0089d4779b138a2333995a7d2f90c04cfbdd28fa3e5892",
     "assets/tokyo.png": "3c405b3019a1c41e2ea60ef568360168e26095b599f5ab9af3eff9d6b98438af",
     "assets/trees.png": "8f03aeabfb126c441be0b98c272579a1b2ef2eb5aef2917d85a868bd2835cd6f",
-    "build.json": "05c957381ed4275114ce00c2f99898d1aca50f538501b34aaac838cfb7467aa1",
-    "game.js": "5dcfab079fd4282ee40e7cec2710198b7901aa0417e964d2af32192f79332ed2",
+    "build.json": "f7e175d1b78c3ad1d02cfcecbcde5a483ffb3fe5bc30c9fc9f3642003fc281e3",
+    "game.js": "74aa730faea7c1347542ce9c9e130c1328d7f148b1a3135f82733967bda664ba",
     "index.html": "e6000fc5f397ce749ff1f1242da947e94b4cade79cef46e95c9d9e72f221b4bb",
     "text-shaper.wasm": "67cf5be0116894e5b38038ddbd4fc9b0bf979317b3ecdbd0ece2d67edc960f7d"
   }

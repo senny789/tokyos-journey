@@ -11539,8 +11539,8 @@ async function loadFontFaceSourceFont(prepared, config, signal) {
   const workerRasters = prepared.initialRasters.filter(({ operation }) => workerRasterKinds.includes(operation.format.kind)).map(({ operation, descriptor: descriptor2 }) => runtimeBakeRaster(operation.format, descriptor2));
   const selectedRuntimeBake = prepared.runtimeBake ?? config.runtimeBake;
   const runtimeBake = async (request) => {
-    const bake = selectedRuntimeBake ?? await loadDefaultRuntimeBake(request.sourceUrl);
-    return bake({
+    const bake2 = selectedRuntimeBake ?? await loadDefaultRuntimeBake(request.sourceUrl);
+    return bake2({
       ...request,
       ...prepared.unicodeRanges === void 0 ? {} : { unicodeRanges: prepared.unicodeRanges },
       rasters: workerRasters
@@ -40879,8 +40879,220 @@ function uiSkinBlock(options = {}) {
   } };
 }
 
+// game/node_modules/@phaser-ae/controls-touch/dist/index.js
+var DISC = 0;
+var RING = 1;
+function bake(size) {
+  if (typeof OffscreenCanvas === "undefined") return null;
+  const c = new OffscreenCanvas(size * 2, size);
+  const g = c.getContext("2d");
+  if (!g) return c;
+  const r = size / 2 - 2;
+  g.fillStyle = "#ffffff";
+  g.beginPath();
+  g.arc(size / 2, size / 2, r, 0, deterministicMath.PI * 2);
+  g.fill();
+  g.strokeStyle = "#ffffff";
+  g.lineWidth = deterministicMath.max(2, size * 0.06);
+  g.beginPath();
+  g.arc(size + size / 2, size / 2, r - g.lineWidth / 2, 0, deterministicMath.PI * 2);
+  g.stroke();
+  return c;
+}
+function controlsTouch(opts = {}) {
+  return {
+    id: "controls-touch",
+    requires: ["world:screen", "typography"],
+    attach(k) {
+      const assets = k.assets;
+      const SIZE = 128;
+      const FIRST = assets.addStrip("touch-controls", bake(SIZE), SIZE, SIZE, 2);
+      const layers = k.roster.layers;
+      const layer = opts.layer ?? layers.find((l) => l === "hud") ?? layers[layers.length - 1];
+      const alpha = opts.alpha ?? 0.35;
+      const touchDevice = k.input.touchDevice;
+      let visible = opts.touchOnly === false ? true : touchDevice;
+      const buttons = [];
+      const held = /* @__PURE__ */ new Set();
+      const stickVec = { x: 0, y: 0 };
+      let ring = null, thumb = null, stickPtr = null;
+      const S = opts.stick;
+      const press = (code, down) => {
+        if (!code) return;
+        if (down === held.has(code)) return;
+        if (down) held.add(code);
+        else held.delete(code);
+        k.input.press(code, down);
+      };
+      const at = (anchor, x, y) => {
+        const W = k.screen.width, H = k.screen.height;
+        const safe = k.screen.safe ?? { top: 0, right: 0, bottom: 0, left: 0 };
+        return { x: anchor.endsWith("right") ? W - safe.right - x : safe.left + x, y: anchor.startsWith("bottom") ? H - safe.bottom - y : safe.top + y };
+      };
+      const typography3 = k.registry.get("typography", "typography");
+      let fontsReady = false;
+      k.hooks.on("boot.domReady", async () => {
+        fontsReady = true;
+        place();
+        await typography3.prepare();
+      });
+      const addButton = (spec) => {
+        const r = spec.r ?? 34;
+        const h = k.roster.spawn({ id: "touch-button", owner: "controls-touch", tags: ["touch-control"], layer, x: 0, y: 0, width: r * 2, height: r * 2, frame: FIRST + DISC, tint: spec.tint ?? "#ffffff", alpha, visible });
+        buttons.push({ spec, h, down: false, ptr: null, label: null });
+        place();
+      };
+      const prune = () => {
+        for (let i = buttons.length - 1; i >= 0; i--) {
+          const b = buttons[i];
+          if (b.h.alive) continue;
+          press(b.spec.code, false);
+          if (b.label?.alive) b.label.kill();
+          buttons.splice(i, 1);
+        }
+      };
+      const relabel = (b) => {
+        if (!b.spec.label || !fontsReady || b.label?.alive) return;
+        b.label = typography3.label({ x: 0, y: 0, text: b.spec.label, align: "center", layer });
+      };
+      const place = () => {
+        prune();
+        for (const b of buttons) {
+          relabel(b);
+          const r = b.spec.r ?? 34, p = at(b.spec.anchor ?? "bottom-right", b.spec.x ?? 70, b.spec.y ?? 70);
+          b.h.x = p.x;
+          b.h.y = p.y;
+          b.h.width = r * 2;
+          b.h.height = r * 2;
+          b.h.visible = visible;
+          b.h.alpha = alpha * (b.down ? 2.2 : 1);
+          if (b.label) {
+            b.label.x = p.x;
+            b.label.y = p.y - 7;
+            b.label.visible = visible;
+          }
+          b.h.snap();
+        }
+        if (S && ring && thumb) {
+          const r = S.r ?? 50, p = at(S.anchor ?? "bottom-left", S.x ?? 70, S.y ?? 70);
+          ring.x = p.x;
+          ring.y = p.y;
+          ring.width = r * 2;
+          ring.height = r * 2;
+          ring.visible = visible;
+          thumb.x = p.x + stickVec.x * r * 0.6;
+          thumb.y = p.y + stickVec.y * r * 0.6;
+          thumb.width = r * 0.8;
+          thumb.height = r * 0.8;
+          thumb.visible = visible;
+          ring.snap();
+          thumb.snap();
+        }
+      };
+      if (S) {
+        ring = k.roster.spawn({ id: "touch-stick", owner: "controls-touch", tags: ["touch-control"], layer, x: 0, y: 0, width: 1, height: 1, frame: FIRST + RING, tint: S.tint ?? "#ffffff", alpha, visible });
+        thumb = k.roster.spawn({ id: "touch-thumb", owner: "controls-touch", tags: ["touch-control"], layer, x: 0, y: 0, width: 1, height: 1, frame: FIRST + DISC, tint: S.tint ?? "#ffffff", alpha, visible });
+      }
+      for (const b of opts.buttons ?? []) addButton(b);
+      place();
+      k.hooks.on("app.resize", () => place());
+      k.simulate.add("controls-touch", {}, () => {
+        if (!visible) return;
+        if (buttons.some((b) => !b.h.alive || fontsReady && b.spec.label && !b.label?.alive)) place();
+        const ptrs = k.input.gameplay.pointers;
+        for (const b of buttons) {
+          const r = b.spec.r ?? 34;
+          if (b.ptr !== null) {
+            const p = ptrs.find((q) => q.id === b.ptr);
+            if (!p || !p.down) {
+              b.ptr = null;
+              b.down = false;
+              press(b.spec.code, false);
+            }
+            continue;
+          }
+          for (const p of ptrs) {
+            if (!p.pressed || stickPtr === p.id) continue;
+            const dx = p.x - b.h.x, dy = p.y - b.h.y;
+            if (dx * dx + dy * dy <= r * r) {
+              b.ptr = p.id;
+              b.down = true;
+              press(b.spec.code, true);
+              break;
+            }
+          }
+        }
+        if (S && ring) {
+          const r = S.r ?? 50, dz = S.deadzone ?? 0.35;
+          if (stickPtr !== null) {
+            const p = ptrs.find((q) => q.id === stickPtr);
+            if (!p || !p.down) {
+              stickPtr = null;
+              stickVec.x = 0;
+              stickVec.y = 0;
+            } else {
+              const dx = (p.x - ring.x) / r, dy = (p.y - ring.y) / r;
+              const len = deterministicMath.hypot(dx, dy) || 1, s = deterministicMath.min(1, len) / len;
+              stickVec.x = dx * s;
+              stickVec.y = dy * s;
+            }
+          } else {
+            for (const p of ptrs) {
+              if (!p.pressed) continue;
+              const dx = p.x - ring.x, dy = p.y - ring.y;
+              if (dx * dx + dy * dy <= r * r * 1.44) {
+                stickPtr = p.id;
+                stickVec.x = dx / r;
+                stickVec.y = dy / r;
+                break;
+              }
+            }
+          }
+          press(S.codes.left, stickVec.x < -dz);
+          press(S.codes.right, stickVec.x > dz);
+          press(S.codes.up, stickVec.y < -dz);
+          press(S.codes.down, stickVec.y > dz);
+        }
+        place();
+      });
+      k.own(() => {
+        for (const c of held) k.input.press(c, false);
+        held.clear();
+      });
+      return { touch: {
+        get visible() {
+          return visible;
+        },
+        set visible(v) {
+          if (v === visible) return;
+          visible = v;
+          if (!v) {
+            for (const c of [...held]) press(c, false);
+            stickVec.x = 0;
+            stickVec.y = 0;
+            stickPtr = null;
+            for (const b of buttons) {
+              b.ptr = null;
+              b.down = false;
+            }
+          }
+          place();
+        },
+        get stick() {
+          return { x: stickVec.x, y: stickVec.y };
+        },
+        get held() {
+          return [...held];
+        },
+        button: addButton,
+        touchDevice
+      } };
+    }
+  };
+}
+
 // game/engine.ts
-var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen()).use(follow()).use(controls2d()).use(maths()).use(color()).use(typography2()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 }));
+var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen()).use(follow()).use(controls2d()).use(maths()).use(color()).use(typography2()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "stick": { "codes": { "left": "Touch:left", "right": "Touch:right", "up": "Touch:up", "down": "Touch:down" }, "anchor": "bottom-left", "x": 125, "y": 175, "r": 65, "deadzone": 0.25, "tint": "#f4d888" }, "buttons": [{ "code": "Touch:jump", "label": "JUMP", "anchor": "bottom-right", "x": 110, "y": 160, "r": 46, "tint": "#f4d888" }, { "code": "Touch:crouch", "label": "CROUCH", "anchor": "bottom-right", "x": 110, "y": 265, "r": 36, "tint": "#c4d098" }, { "code": "Touch:run", "label": "RUN", "anchor": "bottom-right", "x": 215, "y": 160, "r": 36, "tint": "#e7dfb8" }, { "code": "Touch:sit", "label": "SIT", "anchor": "bottom-right", "x": 215, "y": 265, "r": 36, "tint": "#a8c0a0" }], "touchOnly": true, "alpha": 0.45 }));
 var game = composed.game;
 var signals = composed.signals;
 
@@ -41048,6 +41260,7 @@ function spawnTokyo(x, feet) {
   });
   let body = makeBody(x, feet, STAND_HEIGHT);
   let height = STAND_HEIGHT;
+  let wasJump = false, wasSit = false;
   const d = sprite.data;
   run.tokyo = d;
   const hasSupport = () => {
@@ -41085,8 +41298,11 @@ function spawnTokyo(x, feet) {
   game.step("tokyo-controls", (dt) => {
     const move2 = game.controls.axis("move").x;
     const sprint = game.controls.pressed("run");
-    const jump = game.controls.pressed("jump"), jumpPressed = game.controls.justPressed("jump");
-    const crouch = game.controls.pressed("crouch"), sitPressed = game.controls.justPressed("sit");
+    const jump = game.controls.pressed("jump"), jumpPressed = game.controls.justPressed("jump") || jump && !wasJump;
+    wasJump = jump;
+    const crouch = game.controls.pressed("crouch");
+    const sit = game.controls.pressed("sit"), sitPressed = game.controls.justPressed("sit") || sit && !wasSit;
+    wasSit = sit;
     const wasGrounded = d.grounded;
     d.jumpLock = deterministicMath.max(0, d.jumpLock - dt);
     d.postureGrace = deterministicMath.max(0, d.postureGrace - dt);
@@ -41156,9 +41372,62 @@ function spawnTokyo(x, feet) {
   return sprite;
 }
 
+// game/mobile.ts
+var touchOverride = null;
+function isMobileView() {
+  if (touchOverride !== null) return touchOverride;
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("mobile") || params.has("touch")) return true;
+    if (params.get("desktop") === "true" || params.has("nomobile")) return false;
+  }
+  return Boolean(game.input.touchDevice || game.touch?.touchDevice);
+}
+function setTouchOverride(value) {
+  touchOverride = value;
+  if (game.scenes.current === "play") {
+    game.touch.visible = value ?? isMobileView();
+  }
+}
+function getTouchOverride() {
+  return touchOverride;
+}
+function addFullscreenButton(spec = {}) {
+  const getIcon = () => game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+  const btn = game.ui.button({
+    id: "fullscreen-btn",
+    accessibleLabel: "Toggle Fullscreen",
+    anchor: spec.anchor ?? "top-right",
+    x: spec.x ?? -152,
+    y: spec.y ?? 16,
+    w: 56,
+    h: 56,
+    style: "icon",
+    icon: getIcon(),
+    onClick: (b) => {
+      void (async () => {
+        try {
+          await game.commands.fullscreen();
+        } catch (err) {
+          console.error("Fullscreen toggle error:", err);
+        }
+        if (b && "ui" in b) {
+          b.ui.icon = getIcon();
+        }
+      })();
+    }
+  });
+  return btn;
+}
+
 // game/debug.ts
 function addDebugControls() {
-  game.inspect.state(() => run);
+  game.inspect.state(() => ({
+    ...run,
+    mobileView: isMobileView(),
+    touchVisible: game.touch?.visible ?? false,
+    fullscreen: game.commands.isFullscreen
+  }));
   game.cheats.add({
     name: "screen",
     does: "Open title or play",
@@ -41177,6 +41446,27 @@ function addDebugControls() {
       run.spawnX = places[area ?? "start"] ?? 220;
       game.scenes.go("play");
       return `Tokyo at ${area ?? "start"}`;
+    }
+  });
+  game.cheats.add({
+    name: "touch",
+    does: "Toggle touch controls: on, off, auto",
+    args: "mode",
+    run: (mode) => {
+      if (mode === "on") setTouchOverride(true);
+      else if (mode === "off") setTouchOverride(false);
+      else setTouchOverride(null);
+      return `Touch controls: ${game.touch.visible ? "VISIBLE" : "HIDDEN"} (override: ${mode ?? "auto"})`;
+    }
+  });
+  game.cheats.add({
+    name: "fullscreen",
+    does: "Toggle fullscreen: on, off",
+    args: "mode",
+    run: (mode) => {
+      const want = mode === "on" ? true : mode === "off" ? false : !game.commands.isFullscreen;
+      void game.commands.fullscreen(want);
+      return `Fullscreen command sent (target: ${want ? "ON" : "OFF"})`;
     }
   });
 }
@@ -41264,7 +41554,9 @@ function spawnScenery(title = false) {
 var Title = {
   name: "title",
   enter() {
+    game.touch.visible = false;
     spawnScenery(true);
+    const fsBtn = addFullscreenButton({ anchor: "top-right", x: -16, y: 16 });
     game.text("A LITTLE DOG. A WIDE WORLD.", 640, 165, { size: 18, font: "mono-bold", color: "#566952" });
     game.text("TOKYO'S JOURNEY", 640, 225, {
       size: 62,
@@ -41292,7 +41584,8 @@ var Title = {
         game.scenes.go("play");
       }
     });
-    game.text("ENTER / SPACE TO START", 640, 594, {
+    const startHint = isMobileView() ? "TAP PLAY TO START" : "ENTER / SPACE TO START";
+    game.text(startHint, 640, 594, {
       size: 16,
       font: "mono-bold",
       color: "#f7efcf",
@@ -41307,6 +41600,9 @@ var Title = {
     game.step("title", (dt) => {
       elapsed += dt;
       tokyo.setFrame(deterministicMath.floor(elapsed * 5) % 8);
+      if (fsBtn?.alive) {
+        fsBtn.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+      }
       if (game.input.keyPressed("Space") || game.input.keyPressed("Enter")) {
         run.spawnX = 220;
         game.scenes.go("play");
@@ -41383,6 +41679,7 @@ var STATES2 = ["idle", "walking", "running", "jumping", "crouching", "sitting"];
 var Play = {
   name: "play",
   enter() {
+    game.touch.visible = getTouchOverride() ?? isMobileView();
     spawnMeadow();
     game.physics.gravity(0, 1500);
     const tokyo = spawnTokyo(run.spawnX, GROUND_Y);
@@ -41406,6 +41703,7 @@ var Play = {
     game.text("A golden girl. A little adventure.", 42, 104, { size: 16, font: "mono", color: "#657760", align: "left" });
     game.ui.pauseButton();
     game.ui.muteButton();
+    const fsBtn = addFullscreenButton({ anchor: "top-right", x: -152, y: 16 });
     const footer = game.graphics({ layer: "hud" });
     footer.draw((ctx) => {
       ctx.fillStyle = "#253c36";
@@ -41415,16 +41713,11 @@ var Play = {
     });
     const labels = STATES2.map((state, index) => game.text(
       state.toUpperCase(),
-      85 + index * 154,
+      290 + index * 140,
       647,
-      { size: 17, font: "mono-bold", color: "#81958b" }
+      { size: 17, font: "mono-bold", color: "#81958b", align: "center" }
     ));
-    game.text(
-      "A/D WALK   SHIFT RUN   SPACE JUMP   DOWN/C CROUCH   E SIT / STAND   R RESET",
-      40,
-      690,
-      { size: 16, font: "mono", color: "#c3d1b2", align: "left" }
-    );
+    const hintsLabel = game.text("", 640, 690, { size: 16, font: "mono", color: "#c3d1b2", align: "center" });
     const telemetry = game.text("", 1228, 648, { size: 16, font: "mono-bold", color: "#e4ca7c", align: "right" });
     game.step("meadow-hud", () => {
       if (game.controls.justPressed("pause")) {
@@ -41436,14 +41729,25 @@ var Play = {
         game.scenes.go("play");
         return;
       }
+      if (getTouchOverride() === null) {
+        const shouldShow = isMobileView();
+        if (game.touch.visible !== shouldShow) game.touch.visible = shouldShow;
+      }
+      if (fsBtn?.alive) {
+        fsBtn.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+      }
       labels.forEach((label, index) => {
         label.color = STATES2[index] === tokyo.data.state ? "#f4d888" : "#81958b";
       });
+      hintsLabel.text = game.touch.visible ? "STICK MOVE / CROUCH   \u2022   JUMP   \u2022   RUN   \u2022   SIT" : "A/D WALK   SHIFT RUN   SPACE JUMP   DOWN/C CROUCH   E SIT / STAND   R RESET";
       telemetry.text = `${deterministicMath.round(deterministicMath.abs(tokyo.data.vx))} px/s`;
       shadow.x = tokyo.x;
       shadow.y = GROUND_Y - 2;
       shadow.alpha = deterministicMath.max(0, 0.25 - deterministicMath.max(0, GROUND_Y - tokyo.data.feet) / 800);
     }, { after: "tokyo-visual" });
+  },
+  exit() {
+    game.touch.visible = false;
   }
 };
 
@@ -41451,30 +41755,53 @@ var Play = {
 var Pause = {
   name: "pause",
   enter() {
+    game.touch.visible = false;
     const W = game.screen.width, H = game.screen.height;
     game.ui.panel({ anchor: "center", w: W, h: H, safeArea: false, style: "dark" });
     const menu = game.ui.window({ anchor: "center", w: deterministicMath.min(W - 96, 460), h: "auto", title: "Paused", titleHeight: 56, layout: { padding: 24, gap: 14, align: "stretch" } });
     game.ui.button({ parent: menu, h: 80, text: "Resume", style: "good", icon: "play", onClick: () => game.scenes.pop() });
+    const fsMenuItem = game.ui.button({
+      parent: menu,
+      h: 72,
+      text: game.commands.isFullscreen ? "Exit Fullscreen" : "Fullscreen",
+      icon: game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen",
+      onClick: async (b) => {
+        await game.commands.fullscreen();
+        if (b && "ui" in b) {
+          b.ui.text = game.commands.isFullscreen ? "Exit Fullscreen" : "Fullscreen";
+          b.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+        }
+      }
+    });
     game.ui.button({ parent: menu, h: 72, text: "Restart", icon: "restart", onClick: () => game.scenes.go("play") });
     game.ui.button({ parent: menu, h: 72, text: "Title", icon: "home", onClick: () => game.scenes.go("title") });
     game.ui.muteButton();
     menu.ui.y = -H;
     game.tween.to(menu.ui, { y: 0 }, { duration: 0.35, ease: "easeOutBack" });
     game.step("pause", () => {
+      if (fsMenuItem?.alive) {
+        fsMenuItem.ui.text = game.commands.isFullscreen ? "Exit Fullscreen" : "Fullscreen";
+        fsMenuItem.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+      }
       if (game.input.keyPressed("Escape") || game.input.keyPressed("KeyP")) game.scenes.pop();
     });
+  },
+  exit() {
+    if (isMobileView()) {
+      game.touch.visible = true;
+    }
   }
 };
 
 // game/main.ts
 paintArt();
 game.ui.theme = "block";
-game.controls.bind("jump", { keys: ["Space", "ArrowUp", "KeyW"], pad: ["a"] });
-game.controls.bind("run", { keys: ["ShiftLeft", "ShiftRight"], pad: ["x"] });
-game.controls.bind("crouch", { keys: ["ArrowDown", "KeyS", "KeyC"], pad: ["lb"] });
-game.controls.bind("sit", { keys: ["KeyE"], pad: ["b"] });
-game.controls.bind("pause", { keys: ["Escape", "KeyP"], pad: ["start"] });
-game.controls.bindMove({ left: ["ArrowLeft", "KeyA"], right: ["ArrowRight", "KeyD"], up: [], down: [] });
+game.controls.bind("jump", { keys: ["Space", "ArrowUp", "KeyW", "Touch:jump"], pad: ["a"] });
+game.controls.bind("run", { keys: ["ShiftLeft", "ShiftRight", "Touch:run"], pad: ["x"] });
+game.controls.bind("crouch", { keys: ["ArrowDown", "KeyS", "KeyC", "Touch:crouch", "Touch:down"], pad: ["lb"] });
+game.controls.bind("sit", { keys: ["KeyE", "Touch:sit"], pad: ["b"] });
+game.controls.bind("pause", { keys: ["Escape", "KeyP", "Touch:pause"], pad: ["start"] });
+game.controls.bindMove({ left: ["ArrowLeft", "KeyA", "Touch:left"], right: ["ArrowRight", "KeyD", "Touch:right"], up: [], down: [] });
 await game.typography.prepare(["mono", "mono-bold"]);
 await game.assets.load([{ kind: "image", key: "tokyo", url: "assets/tokyo.png", w: 64, h: 64, cols: 8, rows: 6 }]);
 await game.assets.load([{ kind: "image", key: "tokyo-crouch", url: "assets/tokyo-crouch.png", w: 64, h: 64, cols: 8, rows: 2 }]);

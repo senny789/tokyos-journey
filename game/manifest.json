@@ -45,7 +45,71 @@
     },
     {
       "id": "ui-skin-block",
-      "options": { "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 }
+      "options": {
+        "color": "#dbbb72",
+        "surface": "#33483d",
+        "radius": 0,
+        "depth": 4
+      }
+    },
+    {
+      "id": "controls-touch",
+      "options": {
+        "stick": {
+          "codes": {
+            "left": "Touch:left",
+            "right": "Touch:right",
+            "up": "Touch:up",
+            "down": "Touch:down"
+          },
+          "anchor": "bottom-left",
+          "x": 125,
+          "y": 175,
+          "r": 65,
+          "deadzone": 0.25,
+          "tint": "#f4d888"
+        },
+        "buttons": [
+          {
+            "code": "Touch:jump",
+            "label": "JUMP",
+            "anchor": "bottom-right",
+            "x": 110,
+            "y": 160,
+            "r": 46,
+            "tint": "#f4d888"
+          },
+          {
+            "code": "Touch:crouch",
+            "label": "CROUCH",
+            "anchor": "bottom-right",
+            "x": 110,
+            "y": 265,
+            "r": 36,
+            "tint": "#c4d098"
+          },
+          {
+            "code": "Touch:run",
+            "label": "RUN",
+            "anchor": "bottom-right",
+            "x": 215,
+            "y": 160,
+            "r": 36,
+            "tint": "#e7dfb8"
+          },
+          {
+            "code": "Touch:sit",
+            "label": "SIT",
+            "anchor": "bottom-right",
+            "x": 215,
+            "y": 265,
+            "r": 36,
+            "tint": "#a8c0a0"
+          }
+        ],
+        "touchOnly": true,
+        "alpha": 0.45
+      }
     }
   ]
 }
