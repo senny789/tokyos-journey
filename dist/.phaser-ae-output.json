@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "files": {
+    "assets/flowers.png": "b087c76136fd0fd54a9d1484b1a5a24c56090237d31225ca2a6697c5b9d7e33d",
+    "assets/grassland.png": "4f0a3f51dc078822a5c71d68fa8a5e232747864f547fba83132079683e525f81",
+    "assets/hills.png": "a295b27a67b4959e422c997da772faa6f61cddbf2ce096709528e2d1cc90098d",
+    "assets/mountains.png": "009f0ebafc77c3931e63efbe5ac01f5136c7d6665eeb9c5c64e21bfcab04dd87",
+    "assets/tokyo-crouch.png": "81a9d4192ef0740ebf0089d4779b138a2333995a7d2f90c04cfbdd28fa3e5892",
+    "assets/tokyo.png": "3c405b3019a1c41e2ea60ef568360168e26095b599f5ab9af3eff9d6b98438af",
+    "assets/trees.png": "8f03aeabfb126c441be0b98c272579a1b2ef2eb5aef2917d85a868bd2835cd6f",
+    "build.json": "05c957381ed4275114ce00c2f99898d1aca50f538501b34aaac838cfb7467aa1",
+    "game.js": "5dcfab079fd4282ee40e7cec2710198b7901aa0417e964d2af32192f79332ed2",
+    "index.html": "e6000fc5f397ce749ff1f1242da947e94b4cade79cef46e95c9d9e72f221b4bb",
+    "text-shaper.wasm": "67cf5be0116894e5b38038ddbd4fc9b0bf979317b3ecdbd0ece2d67edc960f7d"
+  }
+}
