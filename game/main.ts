@@ -9,6 +9,7 @@ import { addDebugControls } from './debug.js';
 import { Title } from './scenes/Title.js';
 import { Play } from './scenes/Play.js';
 import { Pause } from './scenes/Pause.js';
+import { Settings } from './scenes/Settings.js';
 
 paintArt();
 // Load the pixel-friendly menu skin and character art before either scene.
@@ -31,12 +32,14 @@ await game.assets.load([
     { kind: 'image', key: 'hills', url: 'assets/hills.png' },
     { kind: 'image', key: 'mountains', url: 'assets/mountains.png' },
     { kind: 'image', key: 'flowers', url: 'assets/flowers.png', w: 32, h: 32, cols: 4, rows: 2 },
+    { kind: 'image', key: 'treat-atlas', url: 'assets/treat-atlas.png', w: 48, h: 48, cols: 4, rows: 1 },
 ]);
 await game.assets.load(assets, { pack: 'title' });
 
 game.scenes.register(Title);
 game.scenes.register(Play);
 game.scenes.register(Pause);
+game.scenes.register(Settings);
 addDebugControls();
 
 await game.start();

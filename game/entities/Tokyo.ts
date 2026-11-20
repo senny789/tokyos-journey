@@ -1,4 +1,5 @@
 import { game } from '../engine.js';
+import { getSettings } from '../settings.js';
 
 const WALK_SPEED = 160, RUN_SPEED = 300, CROUCH_SPEED = 70;
 const ACCELERATION = 1500, BRAKING = 2200, JUMP_SPEED = 570;
@@ -16,6 +17,7 @@ export type TokyoData = {
     coyote: number; jumpBuffer: number; jumpLock: number; landing: number; postureGrace: number;
     crouchAmount: number; crouchMotion: 'none' | 'lowering' | 'idle' | 'crawling' | 'rising'; gait: number;
     x: number; feet: number; vx: number; vy: number; frame: number;
+    runToggled: boolean; crouchToggled: boolean; sprinting: boolean;
 };
 export const run: { spawnX: number; tokyo: TokyoData | null } = { spawnX: 220, tokyo: null };
 
@@ -31,7 +33,8 @@ function initialData(x: number, feet: number): TokyoData {
     return { state: 'idle', elapsed: 0, facing: 1, grounded: false, crouched: false, seated: false,
         sitPhase: 'hold', sitTime: 0, coyote: 0, jumpBuffer: 0, jumpLock: 0, landing: 0, postureGrace: 0,
         crouchAmount: 0, crouchMotion: 'none', gait: 0,
-        x, feet, vx: 0, vy: 0, frame: 0 };
+        x, feet, vx: 0, vy: 0, frame: 0,
+        runToggled: false, crouchToggled: false, sprinting: false };
 }
 function approach(value: number, target: number, amount: number): number {
     return value < target ? Math.min(value + amount, target) : Math.max(value - amount, target);
@@ -63,7 +66,7 @@ export function spawnTokyo(x: number, feet: number) {
         layer: 'world', z: 10, scale: SPRITE_SCALE, tags: ['tokyo'], data: initialData(x, feet) });
     let body = makeBody(x, feet, STAND_HEIGHT);
     let height = STAND_HEIGHT;
-    let wasJump = false, wasSit = false;
+    let wasJump = false, wasSit = false, wasRun = false, wasCrouch = false;
     const d = sprite.data;
     run.tokyo = d;
     // A short foot probe also covers the frame when a resized or sleeping body
@@ -94,11 +97,51 @@ export function spawnTokyo(x: number, feet: number) {
         height = nextHeight; d.postureGrace = 0.05;
     };
     game.step('tokyo-controls', dt => {
+        const settings = getSettings();
         const move = game.controls.axis('move').x;
-        const sprint = game.controls.pressed('run');
+        const runRaw = game.controls.pressed('run');
+        const runJustPressed = game.controls.justPressed('run') || (runRaw && !wasRun);
+        wasRun = runRaw;
+
+        if (settings.runBehavior === 'toggle') {
+            if (runJustPressed) {
+                d.runToggled = !d.runToggled;
+            }
+        } else {
+            d.runToggled = false;
+        }
+
+        const sprint = settings.runBehavior === 'toggle'
+            ? (d.runToggled || runRaw)
+            : runRaw;
+        d.sprinting = sprint;
+
         const jump = game.controls.pressed('jump'), jumpPressed = game.controls.justPressed('jump') || (jump && !wasJump);
         wasJump = jump;
-        const crouch = game.controls.pressed('crouch');
+
+        const crouchRaw = game.controls.pressed('crouch');
+        const crouchJustPressed = game.controls.justPressed('crouch') || (crouchRaw && !wasCrouch);
+        wasCrouch = crouchRaw;
+
+        if (settings.crouchBehavior === 'toggle') {
+            if (crouchJustPressed) {
+                if (d.crouchToggled) {
+                    if (canStand()) d.crouchToggled = false;
+                } else {
+                    d.crouchToggled = true;
+                }
+            }
+            if (jumpPressed && canStand() && d.crouchToggled) {
+                d.crouchToggled = false;
+            }
+        } else {
+            d.crouchToggled = false;
+        }
+
+        const crouch = settings.crouchBehavior === 'toggle'
+            ? (d.crouchToggled || crouchRaw)
+            : crouchRaw;
+
         const sit = game.controls.pressed('sit'), sitPressed = game.controls.justPressed('sit') || (sit && !wasSit);
         wasSit = sit;
         const wasGrounded = d.grounded;
@@ -142,7 +185,7 @@ export function spawnTokyo(x: number, feet: number) {
         const distance = Math.abs(body.x - d.x);
         d.x = body.x; d.feet = body.y + height / 2; d.vx = body.body.vx; d.vy = body.body.vy;
         const moving = distance > MOTION_EPSILON && Math.abs(d.vx) > 5;
-        const stride = d.crouchAmount > 0 ? CRAWL_STRIDE : game.controls.pressed('run') ? RUN_STRIDE : WALK_STRIDE;
+        const stride = d.crouchAmount > 0 ? CRAWL_STRIDE : d.sprinting ? RUN_STRIDE : WALK_STRIDE;
         if (d.grounded && moving && !d.seated) d.gait = (d.gait + distance / stride) % 1;
         d.crouchMotion = d.crouchAmount === 0 ? 'none'
             : !d.crouched ? 'rising'
@@ -153,7 +196,7 @@ export function spawnTokyo(x: number, feet: number) {
         if (!d.grounded || d.landing > 0) next = 'jumping';
         else if (d.seated || standingUp) next = 'sitting';
         else if (d.crouchAmount > 0) next = 'crouching';
-        else if (Math.abs(d.vx) > 12) next = game.controls.pressed('run') ? 'running' : 'walking';
+        else if (Math.abs(d.vx) > 12) next = d.sprinting ? 'running' : 'walking';
         d.elapsed = next === d.state ? d.elapsed + dt : 0; d.state = next;
         d.frame = animationFrame(d);
         sprite.x = Math.round(d.x); sprite.y = Math.round(d.feet - FOOT_OFFSET);

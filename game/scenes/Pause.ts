@@ -10,6 +10,7 @@ export const Pause = {
         game.ui.panel({ anchor: 'center', w: W, h: H, safeArea: false, style: 'dark' });
         const menu = game.ui.window({ anchor: 'center', w: Math.min(W - 96, 460), h: 'auto', title: 'Paused', titleHeight: 56, layout: { padding: 24, gap: 14, align: 'stretch' } });
         game.ui.button({ parent: menu, h: 80, text: 'Resume', style: 'good', icon: 'play', onClick: () => game.scenes.pop() });
+        game.ui.button({ parent: menu, h: 72, text: 'Settings', icon: 'settings', onClick: () => game.scenes.push('settings') });
         const fsMenuItem = game.ui.button({
             parent: menu,
             h: 72,

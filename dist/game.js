@@ -7307,9 +7307,9 @@ function installWebGpu(k, prepared, deferRegistration = false) {
         }
         const pic = tex ? own.get(tex) : null;
         if (tex && !pic) continue;
-        const screen2 = table2.space === "screen";
+        const screen3 = table2.space === "screen";
         if (inst) pass.setVertexBuffer(0, inst);
-        pass.setBindGroup(0, pic ? screen2 ? pic.bindScreen : pic.bind : screen2 ? bindScreen : bind);
+        pass.setBindGroup(0, pic ? screen3 ? pic.bindScreen : pic.bind : screen3 ? bindScreen : bind);
         pass.setPipeline(pipelineFor(blend2, grid));
         pass.draw(grid ? 6 * GRID_X * GRID_Y : 6, count, 0, first);
         drawCalls++;
@@ -9351,25 +9351,25 @@ var Gather2d = class {
     return this.list;
   }
 };
-function installCamera2d(cam, screen2) {
+function installCamera2d(cam, screen3) {
   const r = cam.render;
   const c = cam;
   const rel = (wx, wy, cx, cy) => c.wrap ? { x: wrapDelta(wx - cx, c.wrap.w), y: wrapDelta(wy - cy, c.wrap.h) } : { x: wx - cx, y: wy - cy };
-  const toWorld = (sx, sy) => ({ x: (sx - screen2.width / 2) / cam.zoom + cam.x, y: (sy - screen2.height / 2) / cam.zoom + cam.y });
+  const toWorld = (sx, sy) => ({ x: (sx - screen3.width / 2) / cam.zoom + cam.x, y: (sy - screen3.height / 2) / cam.zoom + cam.y });
   const toScreen = (wx, wy) => {
     const d = rel(wx, wy, cam.x, cam.y);
-    return { x: d.x * cam.zoom + screen2.width / 2, y: d.y * cam.zoom + screen2.height / 2 };
+    return { x: d.x * cam.zoom + screen3.width / 2, y: d.y * cam.zoom + screen3.height / 2 };
   };
   const project = (wx, wy) => {
     const d = rel(wx, wy, r.x, r.y);
-    return { x: d.x * r.zoom + screen2.width / 2, y: d.y * r.zoom + screen2.height / 2 };
+    return { x: d.x * r.zoom + screen3.width / 2, y: d.y * r.zoom + screen3.height / 2 };
   };
   const view = () => {
-    const w = screen2.width / cam.zoom, h = screen2.height / cam.zoom;
+    const w = screen3.width / cam.zoom, h = screen3.height / cam.zoom;
     return { x: cam.x - w / 2, y: cam.y - h / 2, w, h, cx: cam.x, cy: cam.y };
   };
   cam.install(toWorld, toScreen, project);
-  cam.snap(screen2.width / 2, screen2.height / 2);
+  cam.snap(screen3.width / 2, screen3.height / 2);
   return { toWorld, toScreen, view };
 }
 
@@ -9422,7 +9422,7 @@ function side(opts = {}) {
 
 // game/node_modules/@phaser-ae/world-screen/dist/index.js
 var UNDERLAY = "underlay";
-function screen(opts = {}) {
+function screen2(opts = {}) {
   const asked = opts.layers ?? ["hud", "overlay"];
   if (asked.indexOf(UNDERLAY) > 0) throw new Error(`world-screen: "${UNDERLAY}" draws under the world's pieces, so it is always the first screen layer; leave it out of layers or list it first (got ${JSON.stringify(asked)})`);
   const over = asked.filter((l) => l !== UNDERLAY);
@@ -35437,7 +35437,7 @@ function renderTexture() {
         for (const t of [...dirty]) t.flush();
       });
       const create = (spec) => {
-        const screen2 = spec.width === void 0 && spec.height === void 0;
+        const screen3 = spec.width === void 0 && spec.height === void 0;
         const W = deterministicMath.max(1, deterministicMath.round(spec.width ?? k.screen.width)), H = deterministicMath.max(1, deterministicMath.round(spec.height ?? k.screen.height));
         const canvas = new OffscreenCanvas(W, H);
         const g = canvas.getContext("2d");
@@ -35445,7 +35445,7 @@ function renderTexture() {
         const size = `${big ? "own:" : ""}${W}x${H}`;
         const reused = spare.get(size)?.pop();
         const frame = reused ?? (big ? k.assets.addCanvas(`texture-${++n}`, canvas, W, H) : k.assets.addStrip(`texture-${++n}`, canvas, W, H, 1));
-        const h = k.spawn({ id: spec.id ?? "texture", owner: "render-texture", tags: spec.tags ?? ["texture"], x: spec.x ?? (screen2 ? k.screen.width / 2 : 0), y: spec.y ?? (screen2 ? k.screen.height / 2 : 0), width: W, height: H, frame, layer: spec.layer, visible: spec.visible });
+        const h = k.spawn({ id: spec.id ?? "texture", owner: "render-texture", tags: spec.tags ?? ["texture"], x: spec.x ?? (screen3 ? k.screen.width / 2 : 0), y: spec.y ?? (screen3 ? k.screen.height / 2 : 0), width: W, height: H, frame, layer: spec.layer, visible: spec.visible });
         let flushes = 0;
         const a = (alpha) => {
           dirty.add(t);
@@ -41092,7 +41092,7 @@ function controlsTouch(opts = {}) {
 }
 
 // game/engine.ts
-var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen()).use(follow()).use(controls2d()).use(maths()).use(color()).use(typography2()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "stick": { "codes": { "left": "Touch:left", "right": "Touch:right", "up": "Touch:up", "down": "Touch:down" }, "anchor": "bottom-left", "x": 125, "y": 175, "r": 65, "deadzone": 0.25, "tint": "#f4d888" }, "buttons": [{ "code": "Touch:jump", "label": "JUMP", "anchor": "bottom-right", "x": 110, "y": 160, "r": 46, "tint": "#f4d888" }, { "code": "Touch:crouch", "label": "CROUCH", "anchor": "bottom-right", "x": 110, "y": 265, "r": 36, "tint": "#c4d098" }, { "code": "Touch:run", "label": "RUN", "anchor": "bottom-right", "x": 215, "y": 160, "r": 36, "tint": "#e7dfb8" }, { "code": "Touch:sit", "label": "SIT", "anchor": "bottom-right", "x": 215, "y": 265, "r": 36, "tint": "#a8c0a0" }], "touchOnly": true, "alpha": 0.45 }));
+var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(controls2d()).use(maths()).use(color()).use(typography2()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "stick": { "codes": { "left": "Touch:left", "right": "Touch:right", "up": "Touch:up", "down": "Touch:down" }, "anchor": "bottom-left", "x": 125, "y": 175, "r": 65, "deadzone": 0.25, "tint": "#f4d888" }, "buttons": [{ "code": "Touch:jump", "label": "JUMP", "anchor": "bottom-right", "x": 110, "y": 160, "r": 46, "tint": "#f4d888" }, { "code": "Touch:crouch", "label": "CROUCH", "anchor": "bottom-right", "x": 110, "y": 265, "r": 36, "tint": "#c4d098" }, { "code": "Touch:run", "label": "RUN", "anchor": "bottom-right", "x": 215, "y": 160, "r": 36, "tint": "#e7dfb8" }, { "code": "Touch:sit", "label": "SIT", "anchor": "bottom-right", "x": 215, "y": 265, "r": 36, "tint": "#a8c0a0" }], "touchOnly": true, "alpha": 0.45 }));
 var game = composed.game;
 var signals = composed.signals;
 
@@ -41147,6 +41147,187 @@ function paintArt() {
     ctx.fillRect(8, 2, 44, 6);
     ctx.fillRect(0, 4, 60, 2);
   }, { res: 1 });
+  game.paint("goal-flag", 48, 96, (ctx) => {
+    ctx.fillStyle = "#3c3226";
+    ctx.fillRect(8, 6, 6, 90);
+    ctx.fillStyle = "#594a38";
+    ctx.fillRect(10, 6, 2, 90);
+    ctx.fillStyle = "#f5c842";
+    ctx.fillRect(6, 0, 10, 8);
+    ctx.fillStyle = "#ffe992";
+    ctx.fillRect(8, 2, 4, 4);
+    ctx.fillStyle = "#c7382c";
+    ctx.fillRect(14, 8, 32, 34);
+    ctx.fillStyle = "#e85848";
+    ctx.fillRect(16, 10, 28, 14);
+    ctx.fillStyle = "#9b241a";
+    ctx.fillRect(14, 40, 32, 2);
+    ctx.fillStyle = "#ffeaa7";
+    ctx.fillRect(26, 26, 8, 7);
+    ctx.fillRect(27, 24, 6, 2);
+    ctx.fillRect(22, 19, 3, 4);
+    ctx.fillRect(27, 16, 4, 4);
+    ctx.fillRect(33, 19, 3, 4);
+    ctx.clearRect(42, 36, 6, 6);
+    ctx.clearRect(40, 8, 8, 2);
+  }, { res: 1 });
+  game.paint("sparkle", 16, 16, (ctx) => {
+    ctx.fillStyle = "#ffd358";
+    ctx.fillRect(7, 1, 2, 14);
+    ctx.fillRect(1, 7, 14, 2);
+    ctx.fillStyle = "#fff4a3";
+    ctx.fillRect(6, 6, 4, 4);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(7, 7, 2, 2);
+  }, { res: 1 });
+  game.paint("treat-icon", 24, 24, (ctx) => {
+    ctx.fillStyle = "#e6a845";
+    ctx.fillRect(3, 4, 4, 5);
+    ctx.fillRect(3, 15, 4, 5);
+    ctx.fillRect(17, 4, 4, 5);
+    ctx.fillRect(17, 15, 4, 5);
+    ctx.fillRect(5, 9, 14, 6);
+    ctx.fillStyle = "#ffd175";
+    ctx.fillRect(4, 5, 2, 3);
+    ctx.fillRect(18, 5, 2, 3);
+    ctx.fillRect(7, 10, 10, 2);
+  }, { res: 1 });
+}
+
+// game/mobile.ts
+var touchOverride = null;
+var forceHorizontal = false;
+function isMobileView() {
+  if (touchOverride !== null) return touchOverride;
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("mobile") || params.has("touch")) return true;
+    if (params.get("desktop") === "true" || params.has("nomobile")) return false;
+  }
+  return Boolean(game.input.touchDevice || game.touch?.touchDevice);
+}
+function setTouchOverride(value) {
+  touchOverride = value;
+  if (game.scenes.current === "play") {
+    game.touch.visible = value ?? isMobileView();
+  }
+}
+function getTouchOverride() {
+  return touchOverride;
+}
+function isForcedHorizontal() {
+  return forceHorizontal;
+}
+async function rotateToHorizontal(enable) {
+  const want = enable ?? !forceHorizontal;
+  forceHorizontal = want;
+  if (want && !game.commands.isFullscreen) {
+    try {
+      await game.commands.fullscreen(true);
+    } catch {
+    }
+  }
+  try {
+    if (typeof screen !== "undefined" && "orientation" in screen) {
+      const orient = screen.orientation;
+      if (want && typeof orient.lock === "function") {
+        await orient.lock("landscape");
+      } else if (!want && typeof orient.unlock === "function") {
+        orient.unlock();
+      }
+    }
+  } catch {
+  }
+  return forceHorizontal;
+}
+function addFullscreenButton(spec = {}) {
+  const getIcon = () => game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+  const btn = game.ui.button({
+    id: "fullscreen-btn",
+    accessibleLabel: "Toggle Fullscreen",
+    anchor: spec.anchor ?? "top-right",
+    x: spec.x ?? -152,
+    y: spec.y ?? 16,
+    w: 56,
+    h: 56,
+    style: "icon",
+    icon: getIcon(),
+    onClick: (b) => {
+      void (async () => {
+        try {
+          await game.commands.fullscreen();
+        } catch (err) {
+          console.error("Fullscreen toggle error:", err);
+        }
+        if (b && "ui" in b) {
+          b.ui.icon = getIcon();
+        }
+      })();
+    }
+  });
+  return btn;
+}
+function addRotateButton(spec = {}) {
+  const btn = game.ui.button({
+    id: "rotate-btn",
+    accessibleLabel: "Rotate to Horizontal Mode",
+    anchor: spec.anchor ?? "top-right",
+    x: spec.x ?? -216,
+    y: spec.y ?? 16,
+    w: 56,
+    h: 56,
+    style: "icon",
+    icon: "redo",
+    onClick: () => {
+      void rotateToHorizontal();
+    }
+  });
+  return btn;
+}
+
+// game/settings.ts
+var activeSettings = null;
+function getDefaultSettings() {
+  const isMobile = isMobileView();
+  return {
+    runBehavior: isMobile ? "toggle" : "hold",
+    crouchBehavior: isMobile ? "toggle" : "hold"
+  };
+}
+function getSettings() {
+  if (activeSettings) return activeSettings;
+  const defaults = getDefaultSettings();
+  try {
+    const saved = game.save.read("controls-settings", null);
+    if (saved && typeof saved === "object" && (saved.runBehavior === "hold" || saved.runBehavior === "toggle") && (saved.crouchBehavior === "hold" || saved.crouchBehavior === "toggle")) {
+      activeSettings = { ...defaults, ...saved };
+      return activeSettings;
+    }
+  } catch {
+  }
+  activeSettings = { ...defaults };
+  return activeSettings;
+}
+function updateSettings(partial) {
+  const current = getSettings();
+  activeSettings = { ...current, ...partial };
+  try {
+    game.save.write("controls-settings", activeSettings);
+  } catch {
+  }
+  return activeSettings;
+}
+function toggleRunBehavior() {
+  const current = getSettings();
+  const next = current.runBehavior === "toggle" ? "hold" : "toggle";
+  updateSettings({ runBehavior: next });
+  return next;
+}
+function toggleCrouchBehavior() {
+  const current = getSettings();
+  const next = current.crouchBehavior === "toggle" ? "hold" : "toggle";
+  updateSettings({ crouchBehavior: next });
+  return next;
 }
 
 // game/entities/Tokyo.ts
@@ -41215,7 +41396,10 @@ function initialData(x, feet) {
     feet,
     vx: 0,
     vy: 0,
-    frame: 0
+    frame: 0,
+    runToggled: false,
+    crouchToggled: false,
+    sprinting: false
   };
 }
 function approach2(value, target, amount) {
@@ -41260,7 +41444,7 @@ function spawnTokyo(x, feet) {
   });
   let body = makeBody(x, feet, STAND_HEIGHT);
   let height = STAND_HEIGHT;
-  let wasJump = false, wasSit = false;
+  let wasJump = false, wasSit = false, wasRun = false, wasCrouch = false;
   const d = sprite.data;
   run.tokyo = d;
   const hasSupport = () => {
@@ -41296,11 +41480,40 @@ function spawnTokyo(x, feet) {
     d.postureGrace = 0.05;
   };
   game.step("tokyo-controls", (dt) => {
+    const settings = getSettings();
     const move2 = game.controls.axis("move").x;
-    const sprint = game.controls.pressed("run");
+    const runRaw = game.controls.pressed("run");
+    const runJustPressed = game.controls.justPressed("run") || runRaw && !wasRun;
+    wasRun = runRaw;
+    if (settings.runBehavior === "toggle") {
+      if (runJustPressed) {
+        d.runToggled = !d.runToggled;
+      }
+    } else {
+      d.runToggled = false;
+    }
+    const sprint = settings.runBehavior === "toggle" ? d.runToggled || runRaw : runRaw;
+    d.sprinting = sprint;
     const jump = game.controls.pressed("jump"), jumpPressed = game.controls.justPressed("jump") || jump && !wasJump;
     wasJump = jump;
-    const crouch = game.controls.pressed("crouch");
+    const crouchRaw = game.controls.pressed("crouch");
+    const crouchJustPressed = game.controls.justPressed("crouch") || crouchRaw && !wasCrouch;
+    wasCrouch = crouchRaw;
+    if (settings.crouchBehavior === "toggle") {
+      if (crouchJustPressed) {
+        if (d.crouchToggled) {
+          if (canStand()) d.crouchToggled = false;
+        } else {
+          d.crouchToggled = true;
+        }
+      }
+      if (jumpPressed && canStand() && d.crouchToggled) {
+        d.crouchToggled = false;
+      }
+    } else {
+      d.crouchToggled = false;
+    }
+    const crouch = settings.crouchBehavior === "toggle" ? d.crouchToggled || crouchRaw : crouchRaw;
     const sit = game.controls.pressed("sit"), sitPressed = game.controls.justPressed("sit") || sit && !wasSit;
     wasSit = sit;
     const wasGrounded = d.grounded;
@@ -41352,7 +41565,7 @@ function spawnTokyo(x, feet) {
     d.vx = body.body.vx;
     d.vy = body.body.vy;
     const moving = distance > MOTION_EPSILON && deterministicMath.abs(d.vx) > 5;
-    const stride = d.crouchAmount > 0 ? CRAWL_STRIDE : game.controls.pressed("run") ? RUN_STRIDE : WALK_STRIDE;
+    const stride = d.crouchAmount > 0 ? CRAWL_STRIDE : d.sprinting ? RUN_STRIDE : WALK_STRIDE;
     if (d.grounded && moving && !d.seated) d.gait = (d.gait + distance / stride) % 1;
     d.crouchMotion = d.crouchAmount === 0 ? "none" : !d.crouched ? "rising" : d.crouchAmount < 1 ? "lowering" : moving ? "crawling" : "idle";
     const standingUp = !d.seated && d.sitPhase === "up" && d.sitTime < SIT_TRANSITION;
@@ -41360,7 +41573,7 @@ function spawnTokyo(x, feet) {
     if (!d.grounded || d.landing > 0) next = "jumping";
     else if (d.seated || standingUp) next = "sitting";
     else if (d.crouchAmount > 0) next = "crouching";
-    else if (deterministicMath.abs(d.vx) > 12) next = game.controls.pressed("run") ? "running" : "walking";
+    else if (deterministicMath.abs(d.vx) > 12) next = d.sprinting ? "running" : "walking";
     d.elapsed = next === d.state ? d.elapsed + dt : 0;
     d.state = next;
     d.frame = animationFrame(d);
@@ -41370,105 +41583,6 @@ function spawnTokyo(x, feet) {
     sprite.setTexture(d.state === "crouching" ? "tokyo-crouch" : "tokyo", d.frame);
   }, { after: "physics-2d", before: "rig-follow.camera" });
   return sprite;
-}
-
-// game/mobile.ts
-var touchOverride = null;
-function isMobileView() {
-  if (touchOverride !== null) return touchOverride;
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has("mobile") || params.has("touch")) return true;
-    if (params.get("desktop") === "true" || params.has("nomobile")) return false;
-  }
-  return Boolean(game.input.touchDevice || game.touch?.touchDevice);
-}
-function setTouchOverride(value) {
-  touchOverride = value;
-  if (game.scenes.current === "play") {
-    game.touch.visible = value ?? isMobileView();
-  }
-}
-function getTouchOverride() {
-  return touchOverride;
-}
-function addFullscreenButton(spec = {}) {
-  const getIcon = () => game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
-  const btn = game.ui.button({
-    id: "fullscreen-btn",
-    accessibleLabel: "Toggle Fullscreen",
-    anchor: spec.anchor ?? "top-right",
-    x: spec.x ?? -152,
-    y: spec.y ?? 16,
-    w: 56,
-    h: 56,
-    style: "icon",
-    icon: getIcon(),
-    onClick: (b) => {
-      void (async () => {
-        try {
-          await game.commands.fullscreen();
-        } catch (err) {
-          console.error("Fullscreen toggle error:", err);
-        }
-        if (b && "ui" in b) {
-          b.ui.icon = getIcon();
-        }
-      })();
-    }
-  });
-  return btn;
-}
-
-// game/debug.ts
-function addDebugControls() {
-  game.inspect.state(() => ({
-    ...run,
-    mobileView: isMobileView(),
-    touchVisible: game.touch?.visible ?? false,
-    fullscreen: game.commands.isFullscreen
-  }));
-  game.cheats.add({
-    name: "screen",
-    does: "Open title or play",
-    args: "name",
-    run: (name) => {
-      game.scenes.go(name === "play" ? "play" : "title");
-      return name ?? "title";
-    }
-  });
-  game.cheats.add({
-    name: "place",
-    does: "Start beside a practice area: start, jumps, tunnel, rest",
-    args: "area",
-    run: (area) => {
-      const places = { start: 220, jumps: 460, tunnel: 1400, rest: 2160 };
-      run.spawnX = places[area ?? "start"] ?? 220;
-      game.scenes.go("play");
-      return `Tokyo at ${area ?? "start"}`;
-    }
-  });
-  game.cheats.add({
-    name: "touch",
-    does: "Toggle touch controls: on, off, auto",
-    args: "mode",
-    run: (mode) => {
-      if (mode === "on") setTouchOverride(true);
-      else if (mode === "off") setTouchOverride(false);
-      else setTouchOverride(null);
-      return `Touch controls: ${game.touch.visible ? "VISIBLE" : "HIDDEN"} (override: ${mode ?? "auto"})`;
-    }
-  });
-  game.cheats.add({
-    name: "fullscreen",
-    does: "Toggle fullscreen: on, off",
-    args: "mode",
-    run: (mode) => {
-      const want = mode === "on" ? true : mode === "off" ? false : !game.commands.isFullscreen;
-      void game.commands.fullscreen(want);
-      return `Fullscreen command sent (target: ${want ? "ON" : "OFF"})`;
-    }
-  });
 }
 
 // game/scenery.ts
@@ -41550,67 +41664,6 @@ function spawnScenery(title = false) {
   }, { after: "rig-follow.camera" });
 }
 
-// game/scenes/Title.ts
-var Title = {
-  name: "title",
-  enter() {
-    game.touch.visible = false;
-    spawnScenery(true);
-    const fsBtn = addFullscreenButton({ anchor: "top-right", x: -16, y: 16 });
-    game.text("A LITTLE DOG. A WIDE WORLD.", 640, 165, { size: 18, font: "mono-bold", color: "#566952" });
-    game.text("TOKYO'S JOURNEY", 640, 225, {
-      size: 62,
-      font: "mono-bold",
-      color: "#33483d",
-      shadow: { color: "#eff0cb", x: 4, y: 4 }
-    });
-    game.text(
-      "A 16-bit platformer starring Tokyo, our golden girl.",
-      640,
-      285,
-      { size: 19, font: "mono", color: "#566952" }
-    );
-    const tokyo = game.spawn({ id: "title-tokyo", texture: "tokyo", x: 640, y: 388, scale: 2.5, layer: "world" });
-    let elapsed = 0;
-    game.ui.button({
-      anchor: "center",
-      y: 145,
-      h: 62,
-      text: "Explore the meadow",
-      style: "good",
-      icon: "play",
-      onClick: () => {
-        run.spawnX = 220;
-        game.scenes.go("play");
-      }
-    });
-    const startHint = isMobileView() ? "TAP PLAY TO START" : "ENTER / SPACE TO START";
-    game.text(startHint, 640, 594, {
-      size: 16,
-      font: "mono-bold",
-      color: "#f7efcf",
-      shadow: { color: "#493c36", x: 2, y: 2 }
-    });
-    game.text(
-      "Walk, run, leap, crouch - or take a moment to sit.",
-      640,
-      668,
-      { size: 17, font: "mono", color: "#e7dfb8" }
-    );
-    game.step("title", (dt) => {
-      elapsed += dt;
-      tokyo.setFrame(deterministicMath.floor(elapsed * 5) % 8);
-      if (fsBtn?.alive) {
-        fsBtn.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
-      }
-      if (game.input.keyPressed("Space") || game.input.keyPressed("Enter")) {
-        run.spawnX = 220;
-        game.scenes.go("play");
-      }
-    });
-  }
-};
-
 // game/meadow.ts
 var MEADOW_WIDTH = 2400;
 var GROUND_Y = 560;
@@ -41674,6 +41727,381 @@ function sign(id2, text2, x, y) {
   });
 }
 
+// game/entities/Treats.ts
+var TREAT_LOCATIONS = [
+  { x: 380, y: 505, frame: 0 },
+  // Walkway start
+  { x: 620, y: 420, frame: 1 },
+  // Above Ledge 1 (first leap)
+  { x: 850, y: 340, frame: 2 },
+  // Above Ledge 2 (high leap)
+  { x: 1080, y: 395, frame: 3 },
+  // Above Ledge 3 (running jump)
+  { x: 1320, y: 505, frame: 0 },
+  // Before low tunnel
+  { x: 1580, y: 535, frame: 1 },
+  // Inside low tunnel (requires crouching/crawling!)
+  { x: 1700, y: 535, frame: 2 },
+  // Inside low tunnel (crawl reward)
+  { x: 1890, y: 505, frame: 3 },
+  // Exiting low tunnel
+  { x: 2030, y: 400, frame: 0 },
+  // Above Ledge 4
+  { x: 2240, y: 505, frame: 1 }
+  // Near rest grove before victory
+];
+var currentTreats = {
+  total: TREAT_LOCATIONS.length,
+  collected: 0,
+  allCollected: false,
+  flagRaised: false,
+  items: []
+};
+var onCollectCallback;
+function spawnTreats(onCollect) {
+  onCollectCallback = onCollect;
+  currentTreats = {
+    total: TREAT_LOCATIONS.length,
+    collected: 0,
+    allCollected: false,
+    flagRaised: false,
+    items: []
+  };
+  const flag = game.spawn({
+    id: "victory-flag",
+    texture: "goal-flag",
+    x: 2280,
+    y: GROUND_Y,
+    layer: "world",
+    z: 8,
+    visible: false,
+    tags: ["flag"]
+  });
+  currentTreats.flagSprite = flag;
+  for (const [index, loc] of TREAT_LOCATIONS.entries()) {
+    const sprite = game.spawn({
+      id: `treat-${index + 1}`,
+      texture: "treat-atlas",
+      frame: loc.frame,
+      x: loc.x,
+      y: loc.y,
+      layer: "world",
+      z: 9,
+      scale: 1.1,
+      tags: ["treat"]
+    });
+    currentTreats.items.push({
+      id: `treat-${index + 1}`,
+      x: loc.x,
+      baseY: loc.y,
+      y: loc.y,
+      frame: loc.frame,
+      collected: false,
+      sprite,
+      offset: index * 0.75
+    });
+  }
+  let elapsed = 0;
+  game.step("treats-hover", (dt) => {
+    elapsed += dt;
+    for (const item of currentTreats.items) {
+      if (item.collected || !item.sprite.alive) continue;
+      item.y = item.baseY + deterministicMath.sin(elapsed * 3.2 + item.offset) * 6;
+      item.sprite.y = deterministicMath.round(item.y);
+      item.sprite.scale = 1.1 + deterministicMath.sin(elapsed * 2.2 + item.offset) * 0.06;
+    }
+    if (currentTreats.flagRaised && flag.alive) {
+      flag.scale = 1.15 + deterministicMath.sin(elapsed * 4) * 0.05;
+    }
+  });
+  game.step("treats-collect", () => {
+    if (!run.tokyo) return;
+    const tokyoX = run.tokyo.x;
+    const tokyoFeet = run.tokyo.feet;
+    const tokyoCenterY = tokyoFeet - 25;
+    for (const item of currentTreats.items) {
+      if (item.collected || !item.sprite.alive) continue;
+      const dx = deterministicMath.abs(tokyoX - item.x);
+      const dy = deterministicMath.abs(tokyoCenterY - item.y);
+      if (dx < 42 && dy < 44) {
+        collectTreat(item, onCollect);
+      }
+    }
+  });
+  return currentTreats;
+}
+function collectTreat(item, onCollect) {
+  item.collected = true;
+  currentTreats.collected++;
+  game.tween.to(item.sprite, { y: item.y - 36, scale: 1.7, alpha: 0 }, {
+    duration: 0.32,
+    ease: "easeOutQuad",
+    onComplete: () => item.sprite.destroy()
+  });
+  spawnSparkles(item.x, item.y);
+  onCollect?.(currentTreats.collected, currentTreats.total);
+  if (currentTreats.collected >= currentTreats.total && !currentTreats.allCollected) {
+    currentTreats.allCollected = true;
+    triggerAllTreatsCollected();
+  }
+}
+function spawnSparkles(x, y) {
+  for (let i = 0; i < 4; i++) {
+    const angle = i * deterministicMath.PI / 2 + game.rng.between(0, 0.5);
+    const dist = game.rng.between(18, 34);
+    const sx = x + deterministicMath.cos(angle) * dist;
+    const sy = y + deterministicMath.sin(angle) * dist;
+    const sp = game.spawn({
+      texture: "sparkle",
+      x,
+      y,
+      layer: "world",
+      z: 15,
+      scale: 0.8,
+      alpha: 1
+    });
+    game.tween.to(sp, { x: sx, y: sy, alpha: 0, scale: 0.3 }, {
+      duration: 0.45,
+      ease: "easeOutQuad",
+      onComplete: () => sp.destroy()
+    });
+  }
+}
+function triggerAllTreatsCollected() {
+  currentTreats.flagRaised = true;
+  const flag = currentTreats.flagSprite;
+  if (flag?.alive) {
+    flag.visible = true;
+    flag.y = GROUND_Y;
+    game.tween.to(flag, { y: GROUND_Y - 48 }, {
+      duration: 0.8,
+      ease: "easeOutBack"
+    });
+    for (let i = 0; i < 8; i++) {
+      spawnSparkles(2280 + game.rng.between(-25, 25), GROUND_Y - 30 + game.rng.between(-20, 20));
+    }
+  }
+  showAllTreatsNotification();
+}
+function showAllTreatsNotification() {
+  const banner = game.ui.panel({
+    anchor: "top",
+    y: -140,
+    w: 520,
+    h: 96,
+    layer: "hud",
+    style: "dark",
+    layout: { direction: "column", padding: 12, gap: 6, align: "center", justify: "center" }
+  });
+  game.ui.label({
+    parent: banner,
+    text: "\u{1F6A9} ALL TREATS COLLECTED! \u{1F9B4}",
+    style: { textColor: "#ffd256", font: "bold 20px mono" }
+  });
+  game.ui.label({
+    parent: banner,
+    text: "Tokyo found all 10 treats in the meadow! Good girl! \u2728",
+    style: { textColor: "#f4e8b8", font: "15px mono" }
+  });
+  currentTreats.notification = banner;
+  game.tween.to(banner.ui, { y: 24 }, { duration: 0.5, ease: "easeOutBack" });
+}
+function cheatCollectAllTreats() {
+  for (const item of currentTreats.items) {
+    if (!item.collected && item.sprite.alive) {
+      item.collected = true;
+      item.sprite.destroy();
+    }
+  }
+  currentTreats.collected = currentTreats.total;
+  onCollectCallback?.(currentTreats.collected, currentTreats.total);
+  if (!currentTreats.allCollected) {
+    currentTreats.allCollected = true;
+    triggerAllTreatsCollected();
+  }
+  return `Collected all ${currentTreats.total} treats! Flag raised.`;
+}
+
+// game/debug.ts
+function addDebugControls() {
+  game.inspect.state(() => ({
+    ...run,
+    mobileView: isMobileView(),
+    touchVisible: game.touch?.visible ?? false,
+    fullscreen: game.commands.isFullscreen,
+    horizontalMode: isForcedHorizontal(),
+    settings: getSettings(),
+    treats: {
+      collected: currentTreats.collected,
+      total: currentTreats.total,
+      allCollected: currentTreats.allCollected,
+      flagRaised: currentTreats.flagRaised
+    }
+  }));
+  game.cheats.add({
+    name: "screen",
+    does: "Open title, play, pause, or settings",
+    args: "name",
+    run: (name) => {
+      const target = name === "settings" ? "settings" : name === "play" ? "play" : name === "pause" ? "pause" : "title";
+      game.scenes.go(target);
+      return `Switched to screen: ${target}`;
+    }
+  });
+  game.cheats.add({
+    name: "place",
+    does: "Start beside a practice area: start, jumps, tunnel, rest, flag",
+    args: "area",
+    run: (area) => {
+      const places = {
+        start: 220,
+        jumps: 460,
+        tunnel: 1400,
+        rest: 2160,
+        flag: 2240
+      };
+      run.spawnX = places[area ?? "start"] ?? 220;
+      game.scenes.go("play");
+      return `Tokyo placed at ${area ?? "start"} (x: ${run.spawnX})`;
+    }
+  });
+  game.cheats.add({
+    name: "touch",
+    does: "Toggle touch controls: on, off, auto",
+    args: "mode",
+    run: (mode) => {
+      if (mode === "on") setTouchOverride(true);
+      else if (mode === "off") setTouchOverride(false);
+      else setTouchOverride(null);
+      return `Touch controls: ${game.touch.visible ? "VISIBLE" : "HIDDEN"} (override: ${mode ?? "auto"})`;
+    }
+  });
+  game.cheats.add({
+    name: "fullscreen",
+    does: "Toggle fullscreen: on, off",
+    args: "mode",
+    run: (mode) => {
+      const want = mode === "on" ? true : mode === "off" ? false : !game.commands.isFullscreen;
+      void game.commands.fullscreen(want);
+      return `Fullscreen command sent (target: ${want ? "ON" : "OFF"})`;
+    }
+  });
+  game.cheats.add({
+    name: "treats",
+    does: "Treat controls: all (collect all), status",
+    args: "action",
+    run: (action) => {
+      if (action === "all") {
+        return cheatCollectAllTreats();
+      }
+      return `Treats: ${currentTreats.collected}/${currentTreats.total} (allCollected: ${currentTreats.allCollected}, flagRaised: ${currentTreats.flagRaised})`;
+    }
+  });
+  game.cheats.add({
+    name: "controls",
+    does: "Set control toggle mode: run toggle|hold, crouch toggle|hold",
+    args: "action mode",
+    run: (action, mode) => {
+      const m = mode === "toggle" ? "toggle" : "hold";
+      if (action === "run") {
+        updateSettings({ runBehavior: m });
+        return `Run behavior set to: ${m}`;
+      }
+      if (action === "crouch") {
+        updateSettings({ crouchBehavior: m });
+        return `Crouch behavior set to: ${m}`;
+      }
+      return `Current controls: run=${getSettings().runBehavior}, crouch=${getSettings().crouchBehavior}`;
+    }
+  });
+  game.cheats.add({
+    name: "rotate",
+    does: "Rotate screen to horizontal mode: on, off, toggle",
+    args: "mode",
+    run: (mode) => {
+      const want = mode === "on" ? true : mode === "off" ? false : void 0;
+      void rotateToHorizontal(want);
+      return `Rotate command sent (forced horizontal: ${isForcedHorizontal()})`;
+    }
+  });
+}
+
+// game/scenes/Title.ts
+var Title = {
+  name: "title",
+  enter() {
+    game.touch.visible = false;
+    spawnScenery(true);
+    const fsBtn = addFullscreenButton({ anchor: "top-right", x: -16, y: 16 });
+    game.ui.button({
+      id: "settings-btn",
+      anchor: "top-right",
+      x: -80,
+      y: 16,
+      w: 56,
+      h: 56,
+      style: "icon",
+      icon: "settings",
+      accessibleLabel: "Settings",
+      onClick: () => game.scenes.push("settings")
+    });
+    if (isMobileView()) {
+      addRotateButton({ anchor: "top-right", x: -144, y: 16 });
+    }
+    game.text("A LITTLE DOG. A WIDE WORLD.", 640, 165, { size: 18, font: "mono-bold", color: "#566952" });
+    game.text("TOKYO'S JOURNEY", 640, 225, {
+      size: 62,
+      font: "mono-bold",
+      color: "#33483d",
+      shadow: { color: "#eff0cb", x: 4, y: 4 }
+    });
+    game.text(
+      "A 16-bit platformer starring Tokyo, our golden girl.",
+      640,
+      285,
+      { size: 19, font: "mono", color: "#566952" }
+    );
+    const tokyo = game.spawn({ id: "title-tokyo", texture: "tokyo", x: 640, y: 388, scale: 2.5, layer: "world" });
+    let elapsed = 0;
+    game.ui.button({
+      anchor: "center",
+      y: 145,
+      h: 62,
+      text: "Explore the meadow",
+      style: "good",
+      icon: "play",
+      onClick: () => {
+        run.spawnX = 220;
+        game.scenes.go("play");
+      }
+    });
+    const startHint = isMobileView() ? "TAP PLAY TO START" : "ENTER / SPACE TO START";
+    game.text(startHint, 640, 594, {
+      size: 16,
+      font: "mono-bold",
+      color: "#f7efcf",
+      shadow: { color: "#493c36", x: 2, y: 2 }
+    });
+    game.text(
+      "Walk, run, leap, crouch - or take a moment to sit.",
+      640,
+      668,
+      { size: 17, font: "mono", color: "#e7dfb8" }
+    );
+    game.step("title", (dt) => {
+      elapsed += dt;
+      tokyo.setFrame(deterministicMath.floor(elapsed * 5) % 8);
+      if (fsBtn?.alive) {
+        fsBtn.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+      }
+      if (game.input.keyPressed("Space") || game.input.keyPressed("Enter")) {
+        run.spawnX = 220;
+        game.scenes.go("play");
+      }
+    });
+  }
+};
+
 // game/scenes/Play.ts
 var STATES2 = ["idle", "walking", "running", "jumping", "crouching", "sitting"];
 var Play = {
@@ -41682,6 +42110,11 @@ var Play = {
     game.touch.visible = getTouchOverride() ?? isMobileView();
     spawnMeadow();
     game.physics.gravity(0, 1500);
+    const treats = spawnTreats((collected, total) => {
+      const all = collected >= total;
+      treatCounter.text = all ? `\u2605 ALL ${total} TREATS COLLECTED! \u{1F6A9}` : `TREATS: ${collected} / ${total}`;
+      treatCounter.color = all ? "#ffeaa7" : "#ffd56b";
+    });
     const tokyo = spawnTokyo(run.spawnX, GROUND_Y);
     game.rig.follow(tokyo);
     game.rig.bounds({ x: 0, y: 0, w: MEADOW_WIDTH, h: 720 });
@@ -41701,9 +42134,31 @@ var Play = {
     game.text("TOKYO'S JOURNEY", 40, 40, { size: 30, font: "mono-bold", color: "#34483e", align: "left" });
     game.text("01 / THE MOVEMENT MEADOW", 42, 76, { size: 16, font: "mono", color: "#5c705b", align: "left" });
     game.text("A golden girl. A little adventure.", 42, 104, { size: 16, font: "mono", color: "#657760", align: "left" });
+    game.spawn({ id: "treat-hud-icon", texture: "treat-icon", layer: "hud", x: 54, y: 142, z: 12 });
+    const treatCounter = game.text(`TREATS: ${treats.collected} / ${treats.total}`, 74, 134, {
+      size: 18,
+      font: "mono-bold",
+      color: "#ffd56b",
+      align: "left",
+      layer: "hud",
+      shadow: { color: "#253c36", x: 2, y: 2 }
+    });
     game.ui.pauseButton();
     game.ui.muteButton();
     const fsBtn = addFullscreenButton({ anchor: "top-right", x: -152, y: 16 });
+    game.ui.button({
+      id: "settings-btn",
+      anchor: "top-right",
+      x: -216,
+      y: 16,
+      w: 56,
+      h: 56,
+      style: "icon",
+      icon: "settings",
+      accessibleLabel: "Settings",
+      onClick: () => game.scenes.push("settings")
+    });
+    addRotateButton({ anchor: "top-right", x: -280, y: 16 });
     const footer = game.graphics({ layer: "hud" });
     footer.draw((ctx) => {
       ctx.fillStyle = "#253c36";
@@ -41717,7 +42172,7 @@ var Play = {
       647,
       { size: 17, font: "mono-bold", color: "#81958b", align: "center" }
     ));
-    const hintsLabel = game.text("", 640, 690, { size: 16, font: "mono", color: "#c3d1b2", align: "center" });
+    const hintsLabel = game.text("", 640, 690, { size: 15, font: "mono", color: "#c3d1b2", align: "center" });
     const telemetry = game.text("", 1228, 648, { size: 16, font: "mono-bold", color: "#e4ca7c", align: "right" });
     game.step("meadow-hud", () => {
       if (game.controls.justPressed("pause")) {
@@ -41739,7 +42194,8 @@ var Play = {
       labels.forEach((label, index) => {
         label.color = STATES2[index] === tokyo.data.state ? "#f4d888" : "#81958b";
       });
-      hintsLabel.text = game.touch.visible ? "STICK MOVE / CROUCH   \u2022   JUMP   \u2022   RUN   \u2022   SIT" : "A/D WALK   SHIFT RUN   SPACE JUMP   DOWN/C CROUCH   E SIT / STAND   R RESET";
+      const settings = getSettings();
+      hintsLabel.text = game.touch.visible ? `STICK MOVE/CROUCH   \u2022   JUMP   \u2022   RUN [${settings.runBehavior.toUpperCase()}]   \u2022   CROUCH [${settings.crouchBehavior.toUpperCase()}]   \u2022   SIT` : `A/D WALK   SHIFT RUN [${settings.runBehavior.toUpperCase()}]   SPACE JUMP   DOWN/C CROUCH [${settings.crouchBehavior.toUpperCase()}]   E SIT   R RESET`;
       telemetry.text = `${deterministicMath.round(deterministicMath.abs(tokyo.data.vx))} px/s`;
       shadow.x = tokyo.x;
       shadow.y = GROUND_Y - 2;
@@ -41760,6 +42216,7 @@ var Pause = {
     game.ui.panel({ anchor: "center", w: W, h: H, safeArea: false, style: "dark" });
     const menu = game.ui.window({ anchor: "center", w: deterministicMath.min(W - 96, 460), h: "auto", title: "Paused", titleHeight: 56, layout: { padding: 24, gap: 14, align: "stretch" } });
     game.ui.button({ parent: menu, h: 80, text: "Resume", style: "good", icon: "play", onClick: () => game.scenes.pop() });
+    game.ui.button({ parent: menu, h: 72, text: "Settings", icon: "settings", onClick: () => game.scenes.push("settings") });
     const fsMenuItem = game.ui.button({
       parent: menu,
       h: 72,
@@ -41793,6 +42250,106 @@ var Pause = {
   }
 };
 
+// game/scenes/Settings.ts
+var Settings = {
+  name: "settings",
+  enter() {
+    game.touch.visible = false;
+    const W = game.screen.width, H = game.screen.height;
+    game.ui.panel({ anchor: "center", w: W, h: H, safeArea: false, style: "dark" });
+    const menu = game.ui.window({
+      anchor: "center",
+      w: deterministicMath.min(W - 96, 540),
+      h: "auto",
+      title: "Settings",
+      titleHeight: 56,
+      layout: { padding: 24, gap: 12, align: "stretch" }
+    });
+    game.ui.label({ parent: menu, text: "CONTROLS CONFIGURATION", style: "heading" });
+    const settings = getSettings();
+    const runBtn = game.ui.button({
+      parent: menu,
+      h: 60,
+      icon: "gamepad",
+      text: `Run Mode: ${settings.runBehavior.toUpperCase()}`,
+      onClick: () => {
+        const next = toggleRunBehavior();
+        runBtn.ui.text = `Run Mode: ${next.toUpperCase()}`;
+        runDesc.ui.text = next === "toggle" ? "\u2022 RUN: Tap once to sprint, tap again to walk" : "\u2022 RUN: Hold button/key while moving to sprint";
+      }
+    });
+    const runDesc = game.ui.label({
+      parent: menu,
+      text: settings.runBehavior === "toggle" ? "\u2022 RUN: Tap once to sprint, tap again to walk" : "\u2022 RUN: Hold button/key while moving to sprint",
+      style: { textColor: "#c3d1b2", font: "14px mono" }
+    });
+    const crouchBtn = game.ui.button({
+      parent: menu,
+      h: 60,
+      icon: "gamepad",
+      text: `Crouch Mode: ${settings.crouchBehavior.toUpperCase()}`,
+      onClick: () => {
+        const next = toggleCrouchBehavior();
+        crouchBtn.ui.text = `Crouch Mode: ${next.toUpperCase()}`;
+        crouchDesc.ui.text = next === "toggle" ? "\u2022 CROUCH: Tap once to crouch/crawl, tap again to stand" : "\u2022 CROUCH: Hold button/key while crawling";
+      }
+    });
+    const crouchDesc = game.ui.label({
+      parent: menu,
+      text: settings.crouchBehavior === "toggle" ? "\u2022 CROUCH: Tap once to crouch/crawl, tap again to stand" : "\u2022 CROUCH: Hold button/key while crawling",
+      style: { textColor: "#c3d1b2", font: "14px mono" }
+    });
+    game.ui.label({ parent: menu, text: "DISPLAY & ROTATION", style: "heading" });
+    game.ui.button({
+      parent: menu,
+      h: 56,
+      icon: "redo",
+      text: "Rotate to Horizontal Mode",
+      onClick: () => {
+        void rotateToHorizontal();
+      }
+    });
+    const fsMenuItem = game.ui.button({
+      parent: menu,
+      h: 56,
+      icon: game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen",
+      text: game.commands.isFullscreen ? "Exit Fullscreen" : "Fullscreen Mode",
+      onClick: async (b) => {
+        await game.commands.fullscreen();
+        if (b && "ui" in b) {
+          b.ui.text = game.commands.isFullscreen ? "Exit Fullscreen" : "Fullscreen Mode";
+          b.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+        }
+      }
+    });
+    game.ui.button({
+      parent: menu,
+      h: 64,
+      style: "good",
+      icon: "check",
+      text: "Back to Game",
+      onClick: () => game.scenes.pop()
+    });
+    game.ui.muteButton();
+    menu.ui.y = -H;
+    game.tween.to(menu.ui, { y: 0 }, { duration: 0.35, ease: "easeOutBack" });
+    game.step("settings", () => {
+      if (fsMenuItem?.alive) {
+        fsMenuItem.ui.text = game.commands.isFullscreen ? "Exit Fullscreen" : "Fullscreen Mode";
+        fsMenuItem.ui.icon = game.commands.isFullscreen ? "fullscreen-exit" : "fullscreen";
+      }
+      if (game.input.keyPressed("Escape") || game.input.keyPressed("KeyP")) {
+        game.scenes.pop();
+      }
+    });
+  },
+  exit() {
+    if (isMobileView()) {
+      game.touch.visible = true;
+    }
+  }
+};
+
 // game/main.ts
 paintArt();
 game.ui.theme = "block";
@@ -41811,12 +42368,14 @@ await game.assets.load([
   { kind: "image", key: "trees", url: "assets/trees.png", w: 128, h: 128, cols: 2, rows: 2 },
   { kind: "image", key: "hills", url: "assets/hills.png" },
   { kind: "image", key: "mountains", url: "assets/mountains.png" },
-  { kind: "image", key: "flowers", url: "assets/flowers.png", w: 32, h: 32, cols: 4, rows: 2 }
+  { kind: "image", key: "flowers", url: "assets/flowers.png", w: 32, h: 32, cols: 4, rows: 2 },
+  { kind: "image", key: "treat-atlas", url: "assets/treat-atlas.png", w: 48, h: 48, cols: 4, rows: 1 }
 ]);
 await game.assets.load(assets_default, { pack: "title" });
 game.scenes.register(Title);
 game.scenes.register(Play);
 game.scenes.register(Pause);
+game.scenes.register(Settings);
 addDebugControls();
 await game.start();
 game.scenes.go("title");

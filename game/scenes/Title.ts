@@ -1,7 +1,7 @@
 import { game } from '../engine.js';
 import { run } from '../entities/Tokyo.js';
 import { spawnScenery } from '../scenery.js';
-import { addFullscreenButton, isMobileView } from '../mobile.js';
+import { addFullscreenButton, addRotateButton, isMobileView } from '../mobile.js';
 
 export const Title = {
     name: 'title',
@@ -9,6 +9,21 @@ export const Title = {
         game.touch.visible = false;
         spawnScenery(true);
         const fsBtn = addFullscreenButton({ anchor: 'top-right', x: -16, y: 16 });
+        game.ui.button({
+            id: 'settings-btn',
+            anchor: 'top-right',
+            x: -80,
+            y: 16,
+            w: 56,
+            h: 56,
+            style: 'icon',
+            icon: 'settings',
+            accessibleLabel: 'Settings',
+            onClick: () => game.scenes.push('settings'),
+        });
+        if (isMobileView()) {
+            addRotateButton({ anchor: 'top-right', x: -144, y: 16 });
+        }
         game.text('A LITTLE DOG. A WIDE WORLD.', 640, 165, { size: 18, font: 'mono-bold', color: '#566952' });
         game.text("TOKYO'S JOURNEY", 640, 225, { size: 62, font: 'mono-bold', color: '#33483d',
             shadow: { color: '#eff0cb', x: 4, y: 4 } });
