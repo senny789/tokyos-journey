@@ -1,0 +1,51 @@
+{
+  "name": "Tokyo's Journey",
+  "assets": [
+    "assets/tokyo.png",
+    "assets/tokyo-crouch.png",
+    "assets/grassland.png",
+    "assets/trees.png",
+    "assets/hills.png",
+    "assets/mountains.png",
+    "assets/flowers.png"
+  ],
+  "screen": {
+    "width": 1280,
+    "height": 720,
+    "fit": "letterbox",
+    "background": "#253c36",
+    "pixelArt": true
+  },
+  "seed": 67079,
+  "backgroundPolicy": "pause",
+  "packs": [
+    {
+      "id": "core-2d"
+    },
+    {
+      "id": "typography"
+    },
+    {
+      "id": "ui"
+    },
+    {
+      "id": "ui-skins"
+    },
+    {
+      "id": "save",
+      "options": {
+        "namespace": "tokyos-journey"
+      }
+    },
+    {
+      "id": "collision"
+    },
+    {
+      "id": "physics-2d"
+    },
+    {
+      "id": "ui-skin-block",
+      "options": { "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 }
+    }
+  ]
+}
