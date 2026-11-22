@@ -31,7 +31,8 @@ export function isPortrait(): boolean {
  */
 export function setTouchOverride(value: boolean | null): void {
     touchOverride = value;
-    if (game.scenes.current === 'play' || game.scenes.current === 'meadow') {
+    if (game.scenes.current === 'play' || game.scenes.current === 'meadow' || game.scenes.current === 'home'
+        || game.scenes.current === 'dream-start' || game.scenes.current === 'journey' || game.scenes.current === 'ending') {
         game.touch.visible = value ?? isMobileView();
     }
 }

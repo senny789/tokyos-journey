@@ -5,7 +5,7 @@ import { addFullscreenButton, addRotateButton, getTouchOverride, isMobileView } 
 import { spawnTreats, currentTreats } from '../entities/Treats.js';
 import { getSettings } from '../settings.js';
 
-const STATES: TokyoState[] = ['idle', 'walking', 'running', 'jumping', 'crouching', 'sitting'];
+const STATES: TokyoState[] = ['idle', 'walking', 'running', 'jumping', 'crouching', 'sitting', 'pooping'];
 
 export const Play = {
     name: 'meadow',
@@ -84,7 +84,7 @@ export const Play = {
             ctx.fillRect(0, 618, 1280, 3);
         });
 
-        const labels = STATES.map((state, index) => game.text(state.toUpperCase(), 290 + index * 140, 647,
+        const labels = STATES.map((state, index) => game.text(state.toUpperCase(), 250 + index * 130, 647,
             { size: 17, font: 'mono-bold', color: '#81958b', align: 'center' }));
         const hintsLabel = game.text('', 640, 690, { size: 15, font: 'mono', color: '#c3d1b2', align: 'center' });
         const telemetry = game.text('', 1228, 648, { size: 16, font: 'mono-bold', color: '#e4ca7c', align: 'right' });
@@ -108,8 +108,8 @@ export const Play = {
 
             const settings = getSettings();
             hintsLabel.text = game.touch.visible
-                ? `STICK MOVE/CROUCH   •   JUMP   •   RUN [${settings.runBehavior.toUpperCase()}]   •   CROUCH [${settings.crouchBehavior.toUpperCase()}]   •   SIT`
-                : `A/D WALK   SHIFT RUN [${settings.runBehavior.toUpperCase()}]   SPACE JUMP   DOWN/C CROUCH [${settings.crouchBehavior.toUpperCase()}]   E SIT   R RESET`;
+                ? `STICK MOVE/CROUCH   •   JUMP   •   RUN [${settings.runBehavior.toUpperCase()}]   •   CROUCH [${settings.crouchBehavior.toUpperCase()}]   •   SIT   •   POOP`
+                : `A/D WALK   SHIFT RUN [${settings.runBehavior.toUpperCase()}]   SPACE JUMP   DOWN/C CROUCH [${settings.crouchBehavior.toUpperCase()}]   E SIT   G POOP   R RESET`;
 
             telemetry.text = `${Math.round(Math.abs(tokyo.data.vx))} px/s`;
             shadow.x = tokyo.x;

@@ -1,8 +1,13 @@
 {
   "name": "Tokyo's Journey",
   "assets": [
-    "assets/tokyo.png",
-    "assets/tokyo-crouch.png",
+    "assets/title-home-dusk.png",
+    "assets/story-living-room.png",
+    "assets/tokyo-family.png",
+    "assets/tokyo-family-crouch.png",
+    "assets/tokyo-carry-plushie.png",
+    "assets/tokyo-carry-ball.png",
+    "assets/tokyo-poop.png",
     "assets/grassland.png",
     "assets/trees.png",
     "assets/hills.png",
@@ -25,23 +30,77 @@
     "assets/clouds.png",
     "assets/moon.png",
     "assets/stars.png",
-    "assets/park-beds.png",
-    "assets/park-boxes.png",
+    "assets/park-beds-pixel.png",
+    "assets/park-boxes-pixel.png",
     "assets/park-bushes.png",
-    "assets/park-food.png",
-    "assets/park-houses.png",
+    "assets/park-food-pixel.png",
+    "assets/park-houses-pixel.png",
     "assets/park-insects.png",
-    "assets/park-people.png",
-    "assets/park-portal.png",
-    "assets/park-rocks.png",
+    "assets/park-people-pixel.png",
+    "assets/park-portal-pixel.png",
+    "assets/park-rocks-pixel.png",
     "assets/park-sticks.png",
     "assets/park-treats.png",
-    "assets/park-villain-dogs.png",
+    "assets/park-villain-dogs-pixel.png",
     "assets/park-clouds.png",
     "assets/sky-cloud.png",
     "assets/sky-star.png",
     "assets/sky-sun.png",
-    "assets/sky-moon.png"
+    "assets/sky-moon.png",
+    "assets/dream/dark.png",
+    "assets/dream/kennel.png",
+    "assets/dream/night-house.png",
+    "assets/dream/forest.png",
+    "assets/dream/grassland.png",
+    "assets/dream/city.png",
+    "assets/dream/toys.png",
+    "assets/dream/spring.png",
+    "assets/dream/owl-sprites.png",
+    "assets/dream/cats-sprites.png",
+    "assets/dream/shadow-sprites.png",
+    "assets/family/senny.png",
+    "assets/family/reshika.png",
+    "assets/family/mom.png",
+    "assets/family/dad.png",
+    "assets/family/sandesh.png",
+    "assets/family/sushil.png",
+    "assets/family/senny-home-motion.png",
+    "assets/family/reshika-home-motion.png",
+    "assets/family/mom-home-motion.png",
+    "assets/family/dad-home-motion.png",
+    "assets/family/sandesh-home-motion.png",
+    "assets/family/sushil-home-motion.png",
+    "assets/family/sandesh-room.png",
+    "assets/family/sushil-room.png",
+    "assets/family/mom-room.png",
+    "assets/family/dad-room.png",
+    "assets/family/reshika-room.png",
+    "assets/family/senny-room.png",
+    "assets/home/room.png",
+    "assets/home/pixel-plushie.png",
+    "assets/home/pixel-ball.png",
+    "assets/home/pixel-bowl-full.png",
+    "assets/home/pixel-bowl-empty.png",
+    "assets/home/pixel-light-switch.png",
+    "assets/home/pixel-sofa.png",
+    "assets/home/pixel-armchair.png",
+    "assets/home/pixel-coffee-table.png",
+    "assets/home/pixel-lamp-off.png",
+    "assets/home/pixel-lamp-on.png",
+    "assets/home/pixel-sideboard.png",
+    "assets/home/pixel-bed.png",
+    "assets/home/pixel-laptop-desk.png",
+    "assets/home/pixel-pc-desk.png",
+    "assets/home/pixel-sushil-pc-desk.png",
+    "assets/home/pixel-music-keyboard.png",
+    "assets/home/pixel-vanity.png",
+    "assets/home/pixel-wardrobe.png",
+    "assets/home/pixel-bed-sandesh.png",
+    "assets/home/pixel-bed-sushil.png",
+    "assets/home/pixel-bed-parents.png",
+    "assets/home/pixel-bed-shared.png",
+    "assets/home/pixel-rug.png",
+    "assets/home/pixel-basket.png"
   ],
   "screen": {
     "width": 1280,
@@ -54,10 +113,22 @@
   "backgroundPolicy": "pause",
   "packs": [
     {
-      "id": "core-2d"
+      "id": "typography"
     },
     {
-      "id": "typography"
+      "id": "backdrops"
+    },
+    {
+      "id": "backdrop-sky"
+    },
+    {
+      "id": "backdrop-stars"
+    },
+    {
+      "id": "render-texture"
+    },
+    {
+      "id": "core-2d"
     },
     {
       "id": "ui"

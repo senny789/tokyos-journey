@@ -6,6 +6,16 @@ The generated source images are archived in `design/art/sources/`, and their ext
 
 ---
 
+## In-game sprite pass
+
+The [main-menu background](../../game/assets/title-home-dusk.png) was generated from the existing title screen as a pixel-art reference. The prompt placed a warmly lit home at dusk on the right and kept the left side in the shade for the menu. The 640 × 360 plate leaves the path clear for Tokyo’s existing seated animation.
+
+The [Story Mode background](../../game/assets/story-living-room.png) uses the dusk exterior and the in-game living room as references. The prompt asked for an olive sofa, terracotta curtains, and a floor lamp on the right, with a quiet shaded wall for the menu on the left. The 640 × 360 plate leaves the rug clear for Tokyo’s existing plushie-carry animation.
+
+The [Sprite Cast PixelKit packer](../../scripts/prepare-pixel-sprites.py) prepares the new home props and the `park-*-pixel.png` runtime strips for the portal, dogs, people, houses, beds, boxes, rocks, and food. It retains the source strips and preserves each frame's bounds and ground anchor.
+
+The [dream creature source](dream-creatures-source.png) was made with built-in ImageGen using Tokyo's game sprite for pixel size and shape language and the forest and city scenes for palette. The prompt asked for a transparent four-column, two-row sheet with a folded and flapping owl, alert and blinking poses for ginger Mikan and blue-gray Sora, and two stalking poses for the plum-colored shadow. The same packer exports the creature sheets with transparent backgrounds and shared baselines. The kennel gate, latch, light patches, and puzzle tokens are drawn on small pixel grids in [dreamArt.ts](../../game/dreamArt.ts).
+
 ## 1. Hovering Treats
 - **Source:** `design/art/sources/treats-source.jpg`
 - **Runtime Asset:** `game/assets/treats.png`

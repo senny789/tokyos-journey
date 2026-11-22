@@ -7,11 +7,30 @@ export function paintArt(): void {
         ctx.fillStyle = '#e7e7cf'; ctx.fillRect(0, 272, 2400, 448);
     }, { res: 1 });
     game.paint('tunnel', 260, 100, ctx => {
-        ctx.fillStyle = '#343d36'; ctx.fillRect(0, 0, 260, 100);
-        ctx.fillStyle = '#6d775d'; ctx.fillRect(4, 4, 252, 88);
-        ctx.fillStyle = '#8b946a';
-        for (let y = 12; y < 88; y += 24) for (let x = (y % 48 === 12 ? 8 : 32); x < 250; x += 60) ctx.fillRect(x, y, 48, 12);
-        ctx.fillStyle = '#a8bd78'; ctx.fillRect(0, 0, 260, 8);
+        const stoneColors = ['#6e7860', '#76806a', '#676f5d', '#81876b'];
+        ctx.fillStyle = '#3d483f';
+        ctx.fillRect(0, 4, 260, 96);
+        for (let row = 0; row < 4; row++) {
+            const y = 8 + row * 20;
+            for (let col = 0; col < 6; col++) {
+                const x = col * 48 - (row % 2 ? 24 : 0);
+                ctx.fillStyle = stoneColors[(row * 3 + col) % stoneColors.length]!;
+                ctx.fillRect(x + 4, y, 44, 16);
+                ctx.fillStyle = '#8d9475';
+                ctx.fillRect(x + 8, y, 32, 4);
+                ctx.fillStyle = '#596454';
+                ctx.fillRect(x + 32, y + 12, 16, 4);
+                ctx.fillRect(x + 12 + ((col + row) % 3) * 8, y + 8, 4, 4);
+            }
+        }
+        ctx.fillStyle = '#718352';
+        ctx.fillRect(0, 4, 260, 8);
+        ctx.fillStyle = '#a1ad6d';
+        for (let x = 4; x < 260; x += 20) ctx.fillRect(x, x % 3 ? 4 : 0, 16, 4);
+        ctx.fillStyle = '#303b37';
+        ctx.fillRect(0, 88, 260, 12);
+        ctx.fillStyle = '#50564a';
+        for (let x = 8; x < 260; x += 40) ctx.fillRect(x, 92, 24, 4);
     }, { res: 1 });
     game.paint('signpost', 220, 50, ctx => {
         ctx.fillStyle = '#4f4b3b'; ctx.fillRect(104, 0, 12, 50);

@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "game",
-      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeExecutable": "C:\\nvm4w\\nodejs\\node.exe",
       "runtimeArgs": [
         "phaser/cli/bin/phaser-ae.mjs",
         "serve",

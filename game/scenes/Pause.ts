@@ -28,6 +28,7 @@ export const Pause = {
         });
         game.ui.button({ parent: menu, h: 72, text: 'Restart', icon: 'restart', onClick: () => {
             if (run.scene === 'play') startPlayground();
+            else if (run.scene === 'home') game.scenes.go('home');
             else { run.spawnX = 220; game.scenes.go('meadow'); }
         } });
         game.ui.button({ parent: menu, h: 72, text: 'Title', icon: 'home', onClick: () => game.scenes.go('title') });

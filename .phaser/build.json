@@ -1,0 +1,18 @@
+{
+  "site": "https://phaser.io",
+  "run": "tokyo-s-journey-mwpzfaaz",
+  "game": "r5DhFSc9H5B",
+  "design": "cNFDVE7fasN",
+  "slug": "tokyo-s-journey",
+  "title": "Tokyo's Journey",
+  "kind": "design",
+  "prototype": false,
+  "watch": "https://phaser.io/agent/watch/h5fsa2temkcd",
+  "desk": "https://phaser.io/agent/tokyo-s-journey",
+  "crewRoom": "https://phaser.io/agent/bots/crew?design=tokyo-s-journey",
+  "cli": "0.8.1",
+  "made": "2026-11-21T05:43:19.694Z",
+  "core": "2d",
+  "screen": "720x1280",
+  "engine": "v3-82bf126"
+}

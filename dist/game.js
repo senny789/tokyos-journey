@@ -1384,100 +1384,7 @@ function wrapPos(v, size) {
 }
 
 // phaser/engine/kernel/src/maths3d.ts
-function mat4Mul(a, b) {
-  const m = new Float32Array(16);
-  for (let c = 0; c < 4; c++) {
-    for (let r = 0; r < 4; r++) {
-      m[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
-    }
-  }
-  return m;
-}
-function mat4Inverse(m) {
-  const inv = new Float32Array(16);
-  inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
-  inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
-  inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
-  inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
-  inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
-  inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
-  inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
-  inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
-  inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
-  inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
-  inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
-  inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
-  inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
-  inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
-  inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
-  inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
-  const det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
-  if (!det || !Number.isFinite(det)) {
-    const id2 = new Float32Array(16);
-    id2[0] = id2[5] = id2[10] = id2[15] = 1;
-    return id2;
-  }
-  const k = 1 / det;
-  for (let i = 0; i < 16; i++) inv[i] *= k;
-  return inv;
-}
-function viewBasis(view) {
-  return {
-    right: { x: view[0], y: view[4], z: view[8] },
-    up: { x: view[1], y: view[5], z: view[9] }
-  };
-}
-function frustumPlanes(m) {
-  const out = new Float32Array(24);
-  const set = (p, a, b, c, d) => {
-    const l = deterministicMath.hypot(a, b, c) || 1;
-    out[p] = a / l;
-    out[p + 1] = b / l;
-    out[p + 2] = c / l;
-    out[p + 3] = d / l;
-  };
-  const r = (i) => [m[i], m[4 + i], m[8 + i], m[12 + i]];
-  const [x0, y0, z0, w0] = r(0);
-  const [x1, y1, z1, w1] = r(1);
-  const [x2, y2, z2, w2] = r(2);
-  const [x3, y3, z3, w3] = r(3);
-  set(0, x3 + x0, y3 + y0, z3 + z0, w3 + w0);
-  set(4, x3 - x0, y3 - y0, z3 - z0, w3 - w0);
-  set(8, x3 + x1, y3 + y1, z3 + z1, w3 + w1);
-  set(12, x3 - x1, y3 - y1, z3 - z1, w3 - w1);
-  set(16, x2, y2, z2, w2);
-  set(20, x3 - x2, y3 - y2, z3 - z2, w3 - w2);
-  return out;
-}
 var UNIT_MESH_RADIUS = deterministicMath.sqrt(3) / 2;
-function eulerToQuat(yaw, pitch, roll) {
-  const cy = deterministicMath.cos(yaw / 2), sy = -deterministicMath.sin(yaw / 2);
-  const cp = deterministicMath.cos(pitch / 2), sp = deterministicMath.sin(pitch / 2);
-  const cr = deterministicMath.cos(roll / 2), sr = deterministicMath.sin(roll / 2);
-  return [
-    sp * cy * cr + cp * sy * sr,
-    sy * cp * cr - cy * sp * sr,
-    cy * cp * sr - sy * sp * cr,
-    cy * cp * cr + sy * sp * sr
-  ];
-}
-function quatRotate(q, x, y, z) {
-  const [qx, qy, qz, qw] = q;
-  const tx2 = 2 * (qy * z - qz * y);
-  const ty = 2 * (qz * x - qx * z);
-  const tz = 2 * (qx * y - qy * x);
-  return [
-    x + qw * tx2 + qy * tz - qz * ty,
-    y + qw * ty + qz * tx2 - qx * tz,
-    z + qw * tz + qx * ty - qy * tx2
-  ];
-}
-
-// phaser/engine/kernel/src/curves.ts
-function catmullRom1(a, b, c, d, t) {
-  const t2 = t * t, t3 = t2 * t;
-  return 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3);
-}
 
 // phaser/engine/kernel/src/roster.ts
 var BLEND_MODES = ["normal", "add", "multiply", "screen", "subtract"];
@@ -1772,12 +1679,6 @@ function unpackColor(packed) {
   const r = packed >>> 24 & 255, g = packed >>> 16 & 255, b = packed >>> 8 & 255, a = packed & 255;
   const hex4 = (n) => n.toString(16).padStart(2, "0");
   return a === 255 ? `#${hex4(r)}${hex4(g)}${hex4(b)}` : `#${hex4(r)}${hex4(g)}${hex4(b)}${hex4(a)}`;
-}
-function colorToFloats(packed, out, o) {
-  out[o] = (packed >>> 24 & 255) / 255;
-  out[o + 1] = (packed >>> 16 & 255) / 255;
-  out[o + 2] = (packed >>> 8 & 255) / 255;
-  out[o + 3] = (packed & 255) / 255;
 }
 
 // phaser/engine/kernel/src/roster.impl.ts
@@ -2235,8 +2136,8 @@ var KernelRoster = class {
     const c = this.cell;
     const seen = /* @__PURE__ */ new Set();
     for (const [qx, qy] of this.images(x + w / 2, y + h / 2, w / 2, h / 2)) {
-      const rx = qx - w / 2, ry2 = qy - h / 2;
-      const x0 = deterministicMath.floor(rx / c), x1 = deterministicMath.floor((rx + w) / c), y0 = deterministicMath.floor(ry2 / c), y1 = deterministicMath.floor((ry2 + h) / c);
+      const rx = qx - w / 2, ry3 = qy - h / 2;
+      const x0 = deterministicMath.floor(rx / c), x1 = deterministicMath.floor((rx + w) / c), y0 = deterministicMath.floor(ry3 / c), y1 = deterministicMath.floor((ry3 + h) / c);
       for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) {
         const bucket = this.hash.get(cellKey(cx, cy));
         if (!bucket) continue;
@@ -2245,7 +2146,7 @@ var KernelRoster = class {
           const s = hh.slotOrNeg1();
           if (s < 0 || this.flags[s] & F_FROZEN) continue;
           const hw = this.width[s] * deterministicMath.abs(this.sx[s]) * 0.5, hh2 = this.height[s] * deterministicMath.abs(this.sy[s]) * 0.5;
-          if (this.x[s] + hw >= rx && this.x[s] - hw <= rx + w && this.y[s] + hh2 >= ry2 && this.y[s] - hh2 <= ry2 + h) {
+          if (this.x[s] + hw >= rx && this.x[s] - hw <= rx + w && this.y[s] + hh2 >= ry3 && this.y[s] - hh2 <= ry3 + h) {
             seen.add(hh);
             yield hh;
           }
@@ -3355,15 +3256,15 @@ var KernelInput = class {
     }
     if (p.down && e.type === "move") {
       p.downTime = now - p.downAt;
-      const tx2 = e.x - p.startX, ty = e.y - p.startY;
+      const tx3 = e.x - p.startX, ty = e.y - p.startY;
       for (const s of this.gestureSubs) {
-        if (!p.panning && deterministicMath.hypot(tx2, ty) >= s.o.panThreshold && !p.longFired) {
+        if (!p.panning && deterministicMath.hypot(tx3, ty) >= s.o.panThreshold && !p.longFired) {
           p.panning = true;
-          this.fire("onPan", this.pan(p, "start", tx2, ty, eventDx, eventDy));
+          this.fire("onPan", this.pan(p, "start", tx3, ty, eventDx, eventDy));
           break;
         }
       }
-      if (p.panning) this.fire("onPan", this.pan(p, "move", tx2, ty, eventDx, eventDy));
+      if (p.panning) this.fire("onPan", this.pan(p, "move", tx3, ty, eventDx, eventDy));
     }
     if (e.type === "up" || e.type === "cancel") {
       const wasDown = p.down;
@@ -3371,14 +3272,14 @@ var KernelInput = class {
       if (wasDown) p.pendRelease = true;
       const held = now - p.downAt;
       p.downTime = 0;
-      const tx2 = e.x - p.startX, ty = e.y - p.startY, dist = deterministicMath.hypot(tx2, ty), speed = deterministicMath.hypot(p.vx, p.vy);
+      const tx3 = e.x - p.startX, ty = e.y - p.startY, dist = deterministicMath.hypot(tx3, ty), speed = deterministicMath.hypot(p.vx, p.vy);
       if (wasDown && e.type === "up" && this.gestureSubs.length) {
         const o = this.gestureSubs[0].o;
         if (p.panning) {
-          this.fire("onPan", this.pan(p, "end", tx2, ty, eventDx, eventDy));
+          this.fire("onPan", this.pan(p, "end", tx3, ty, eventDx, eventDy));
           if (dist >= o.swipeMinDistance && speed >= o.swipeMinVelocity) {
-            const ang = deterministicMath.atan2(ty, tx2);
-            const dir = deterministicMath.abs(tx2) > deterministicMath.abs(ty) ? tx2 > 0 ? "right" : "left" : ty > 0 ? "down" : "up";
+            const ang = deterministicMath.atan2(ty, tx3);
+            const dir = deterministicMath.abs(tx3) > deterministicMath.abs(ty) ? tx3 > 0 ? "right" : "left" : ty > 0 ? "down" : "up";
             this.fire("onSwipe", { x: e.x, y: e.y, id: p.id, kind: p.kind, direction: dir, distance: dist, velocity: speed, angle: ang });
           }
         } else if (!p.longFired && held <= o.tapMaxDuration && dist <= o.tapTolerance) {
@@ -3400,8 +3301,8 @@ var KernelInput = class {
     this.route("pointer", ev);
     if (e.type === "wheel" && !ev.claimed && !this.captures.size && !this.worldSuspended) this.playerWheelBuf += e.deltaY ?? 0;
   }
-  pan(p, phase, tx2, ty, dx, dy) {
-    return { x: p.x, y: p.y, id: p.id, kind: p.kind, startX: p.startX, startY: p.startY, dx, dy, totalX: tx2, totalY: ty, phase };
+  pan(p, phase, tx3, ty, dx, dy) {
+    return { x: p.x, y: p.y, id: p.id, kind: p.kind, startX: p.startX, startY: p.startY, dx, dy, totalX: tx3, totalY: ty, phase };
   }
   gesture() {
     if (!this.firstGestureFired) {
@@ -3866,9 +3767,9 @@ var KernelCheats = class {
     return [...this.controls.values()].map((c) => ({ name: c.name, does: c.does, ...c.args ? { args: c.args } : {}, ...c.on ? { on: c.on() } : {} }));
   }
   /** Kernel use, when the game starts in a page: listen for the panel's key, and show its button when the address has `?cheats`. */
-  attach(host3) {
+  attach(host4) {
     if (typeof window === "undefined" || this.onKey) return;
-    this.host = host3;
+    this.host = host4;
     this.onKey = (e) => {
       if (e.code !== "Backquote" || !this.controls.size) return;
       e.preventDefault();
@@ -5206,21 +5107,9 @@ function bindVerbs(after, play2) {
   afterFn = after;
   playFn = play2;
 }
-function each(t, fn) {
-  if (t.id !== void 0 && !(Symbol.iterator in t)) {
-    if (t.alive) fn(t);
-    return;
-  }
-  for (const h of t) if (h.alive) fn(h);
-}
 var killFn = null;
 function bindKill(k) {
   killFn = k;
-}
-function kill(t) {
-  each(t, (h) => {
-    if (h.alive) killFn?.(h);
-  });
 }
 
 // phaser/engine/kernel/src/inspect.impl.ts
@@ -5853,11 +5742,11 @@ var Game = class {
         const s = this.assets.strip(a.strip);
         frames = Array.from({ length: s.count }, (_, i) => s.first + i);
       }
-      const home = this.dev && frames.length ? this.assets.stripOf(frames[0]) : null;
-      if (home) {
+      const home2 = this.dev && frames.length ? this.assets.stripOf(frames[0]) : null;
+      if (home2) {
         for (const f of frames) {
           const s = this.assets.stripOf(f);
-          if (!s || s.key !== home.key) throw new Error(`spawn ${id2}: anim "${name}" frame ${f} is ${s ? `in strip "${s.key}"` : "not in any strip"} but the anim starts in "${home?.key ?? "?"}" (${home?.count ?? 0} frame${home?.count === 1 ? "" : "s"}). Did addStrip get the frame count? Or use { strip: "${home?.key ?? "name"}", fps }.`);
+          if (!s || s.key !== home2.key) throw new Error(`spawn ${id2}: anim "${name}" frame ${f} is ${s ? `in strip "${s.key}"` : "not in any strip"} but the anim starts in "${home2?.key ?? "?"}" (${home2?.count ?? 0} frame${home2?.count === 1 ? "" : "s"}). Did addStrip get the frame count? Or use { strip: "${home2?.key ?? "name"}", fps }.`);
         }
       }
       out[name] = { ...a, frames };
@@ -6141,11 +6030,11 @@ var Game = class {
       window.visualViewport?.addEventListener("scroll", resize);
       document.addEventListener("fullscreenchange", resize);
       window.addEventListener("orientationchange", resize);
-      const host3 = this.canvas?.parentElement ?? document.body;
+      const host4 = this.canvas?.parentElement ?? document.body;
       let ro = null;
       if (typeof ResizeObserver !== "undefined") {
         ro = new ResizeObserver(resize);
-        ro.observe(host3);
+        ro.observe(host4);
       }
       let dprMql = null;
       let onDpr = null;
@@ -6289,8 +6178,8 @@ var Game = class {
     if (!c || !s) return;
     const o = this.opts;
     const old = { width: s.width, height: s.height, dpr: s.dpr, cssScale: o.cssScale };
-    const host3 = c.parentElement ?? document.body;
-    const hw = host3.clientWidth || o.width, hh = host3.clientHeight || o.height;
+    const host4 = c.parentElement ?? document.body;
+    const hw = host4.clientWidth || o.width, hh = host4.clientHeight || o.height;
     const dpr = deterministicMath.min(window.devicePixelRatio || 1, o.dprCap ?? 2);
     let cssW = o.width, cssH = o.height;
     if (o.fit === "letterbox") {
@@ -6355,8 +6244,8 @@ var Builder = class {
 };
 function sizeToHost(o) {
   if (typeof document === "undefined" || o.fit !== "height" && o.fit !== "fill") return;
-  const host3 = o.mount ?? document.getElementById("game") ?? document.body;
-  const hw = host3.clientWidth, hh = host3.clientHeight;
+  const host4 = o.mount ?? document.getElementById("game") ?? document.body;
+  const hw = host4.clientWidth, hh = host4.clientHeight;
   if (!hw || !hh) return;
   if (o.fit === "fill") {
     o.width = deterministicMath.round(hw);
@@ -6413,73 +6302,6 @@ function createGame(opts) {
   return built;
 }
 
-// phaser/engine/kernel/src/webgl.ts
-var NUDGE = "ae_EdgeNudge";
-var MAIN = /\bvoid\s+main\s*\(\s*(?:void)?\s*\)/;
-var nudges = /* @__PURE__ */ new WeakMap();
-var nudgeOf = (height) => 1 / (128 * deterministicMath.max(1, height));
-var setNudge = (gl, programs, value) => {
-  const current = gl.getParameter(gl.CURRENT_PROGRAM);
-  for (const [program, at] of programs) {
-    if (!gl.isProgram(program)) {
-      programs.delete(program);
-      continue;
-    }
-    gl.useProgram(program);
-    gl.uniform1f(at, value);
-  }
-  gl.useProgram(current);
-};
-function glPixelHeight(gl, height) {
-  const state = nudges.get(gl);
-  if (!state) {
-    nudges.set(gl, { height, programs: /* @__PURE__ */ new Map() });
-    return;
-  }
-  if (state.height === height) return;
-  state.height = height;
-  setNudge(gl, state.programs, nudgeOf(height));
-}
-function compileGlProgram(gl, vertex, fragment, label) {
-  const shaders = [];
-  const program = gl.createProgram();
-  if (!program) throw new Error(`${label}: could not create WebGL program`);
-  const nudged = MAIN.test(vertex) && vertex.includes("gl_Position");
-  if (nudged) vertex = `${vertex.replace(MAIN, "void ae_main()")}
-uniform float ${NUDGE};
-void main() { ae_main(); gl_Position.y += ${NUDGE} * gl_Position.w; }
-`;
-  try {
-    for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]]) {
-      const shader2 = gl.createShader(type);
-      if (!shader2) throw new Error(`${label}: could not create WebGL shader`);
-      shaders.push(shader2);
-      gl.shaderSource(shader2, source);
-      gl.compileShader(shader2);
-      if (!gl.getShaderParameter(shader2, gl.COMPILE_STATUS)) throw new Error(`${label}: ${type === gl.VERTEX_SHADER ? "vertex" : "fragment"} shader: ${gl.getShaderInfoLog(shader2)}`);
-      gl.attachShader(program, shader2);
-    }
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(`${label}: program link: ${gl.getProgramInfoLog(program)}`);
-    const at = nudged ? gl.getUniformLocation(program, NUDGE) : null;
-    if (at) {
-      let state = nudges.get(gl);
-      if (!state) {
-        state = { height: typeof gl.drawingBufferHeight === "number" ? gl.drawingBufferHeight : 1, programs: /* @__PURE__ */ new Map() };
-        nudges.set(gl, state);
-      }
-      state.programs.set(program, at);
-      setNudge(gl, /* @__PURE__ */ new Map([[program, at]]), nudgeOf(state.height));
-    }
-    return program;
-  } catch (error) {
-    gl.deleteProgram(program);
-    throw error;
-  } finally {
-    for (const shader2 of shaders) gl.deleteShader(shader2);
-  }
-}
-
 // game/node_modules/@phaser-ae/preloader/dist/index.js
 function hex(colour) {
   const m = /^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.exec(colour.trim());
@@ -6503,13 +6325,13 @@ function colourAt(stops, t) {
   return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
 }
 var SPARKS_MAX = 220;
-function createLoadingView(host3, actions) {
+function createLoadingView(host4, actions) {
   const root = document.createElement("div");
   root.dataset.gamePreloader = "";
-  const body = host3 === document.body || host3 === document.documentElement;
-  const previousPosition = host3.style.position;
-  const positioned = !body && getComputedStyle(host3).position === "static";
-  if (positioned) host3.style.position = "relative";
+  const body = host4 === document.body || host4 === document.documentElement;
+  const previousPosition = host4.style.position;
+  const positioned = !body && getComputedStyle(host4).position === "static";
+  if (positioned) host4.style.position = "relative";
   root.style.cssText = `position:${body ? "fixed" : "absolute"};inset:0;z-index:2147483600;display:grid;place-items:center;overflow:hidden;opacity:1;container-type:size;`;
   const shadow = root.attachShadow({ mode: "open" });
   shadow.innerHTML = `<style>
@@ -6564,7 +6386,7 @@ function createLoadingView(host3, actions) {
   find(".skip").addEventListener("click", actions.dismiss);
   let loadingLabel = "Loading", stops = DARK_STOPS, spark = WHITE, light = false;
   let state = "loading";
-  host3.append(root);
+  host4.append(root);
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const ctx = typeof canvas.getContext === "function" ? canvas.getContext("2d") : null;
   const sparks = [];
@@ -6698,7 +6520,7 @@ function createLoadingView(host3, actions) {
     remove() {
       if (frame && typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame);
       root.remove();
-      if (positioned && host3.style.position === "relative") host3.style.position = previousPosition;
+      if (positioned && host4.style.position === "relative") host4.style.position = previousPosition;
     }
   };
 }
@@ -6756,12 +6578,12 @@ function installPreloader(k, defaults = {}) {
       return;
     }
     if (!view) {
-      const host3 = k.mount;
-      if (!host3) {
+      const host4 = k.mount;
+      if (!host4) {
         timer = setTimeout(step, 30);
         return;
       }
-      view = createLoadingView(host3, { dismiss, retry });
+      view = createLoadingView(host4, { dismiss, retry });
       view.configure(options);
       release ??= k.holdReady?.("the loading screen is up") ?? null;
       started = previous = Date.now();
@@ -6956,11 +6778,11 @@ function worldSplit(tables, splits) {
 }
 function spriteParts(tables, splits, floors) {
   const split = worldSplit(tables, splits);
-  let floor2 = -1;
+  let floor3 = -1;
   if (floors.length) tables.forEach((t, i) => {
-    if (t.space === "world" && (t.pass ?? t.space) === "world" && floors.some((f) => f.through === t.layer)) floor2 = i;
+    if (t.space === "world" && (t.pass ?? t.space) === "world" && floors.some((f) => f.through === t.layer)) floor3 = i;
   });
-  return tables.map((t, i) => (t.pass ?? t.space) === "screen" ? "screen" : split >= 0 && i > split ? "over" : i <= floor2 ? "floor" : "world");
+  return tables.map((t, i) => (t.pass ?? t.space) === "screen" ? "screen" : split >= 0 && i > split ? "over" : i <= floor3 ? "floor" : "world");
 }
 function runsOf(blend2, deformKind, flags, count, base, tex) {
   const out = [];
@@ -8205,6 +8027,1623 @@ function wgslSnippetToGLSL(code, scope, helpers) {
   return new Translator(scope, helpers).translate(code);
 }
 
+// phaser/node_modules/@phaser-ae/kernel/src/wrap.ts
+function wrapDelta3(d, size) {
+  if (size <= 0) return d;
+  d %= size;
+  if (d > size / 2) d -= size;
+  else if (d < -size / 2) d += size;
+  return d;
+}
+
+// phaser/node_modules/@phaser-ae/kernel/src/maths3d.ts
+function mat4Mul(a, b) {
+  const m = new Float32Array(16);
+  for (let c = 0; c < 4; c++) {
+    for (let r = 0; r < 4; r++) {
+      m[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+    }
+  }
+  return m;
+}
+function mat4Inverse(m) {
+  const inv = new Float32Array(16);
+  inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
+  inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
+  inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
+  inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
+  inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
+  inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
+  inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
+  inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
+  inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
+  inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
+  inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
+  inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
+  inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
+  inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
+  inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
+  inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
+  const det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+  if (!det || !Number.isFinite(det)) {
+    const id2 = new Float32Array(16);
+    id2[0] = id2[5] = id2[10] = id2[15] = 1;
+    return id2;
+  }
+  const k = 1 / det;
+  for (let i = 0; i < 16; i++) inv[i] *= k;
+  return inv;
+}
+function viewBasis(view) {
+  return {
+    right: { x: view[0], y: view[4], z: view[8] },
+    up: { x: view[1], y: view[5], z: view[9] }
+  };
+}
+function frustumPlanes(m) {
+  const out = new Float32Array(24);
+  const set = (p, a, b, c, d) => {
+    const l = deterministicMath.hypot(a, b, c) || 1;
+    out[p] = a / l;
+    out[p + 1] = b / l;
+    out[p + 2] = c / l;
+    out[p + 3] = d / l;
+  };
+  const r = (i) => [m[i], m[4 + i], m[8 + i], m[12 + i]];
+  const [x0, y0, z0, w0] = r(0);
+  const [x1, y1, z1, w1] = r(1);
+  const [x2, y2, z2, w2] = r(2);
+  const [x3, y3, z3, w3] = r(3);
+  set(0, x3 + x0, y3 + y0, z3 + z0, w3 + w0);
+  set(4, x3 - x0, y3 - y0, z3 - z0, w3 - w0);
+  set(8, x3 + x1, y3 + y1, z3 + z1, w3 + w1);
+  set(12, x3 - x1, y3 - y1, z3 - z1, w3 - w1);
+  set(16, x2, y2, z2, w2);
+  set(20, x3 - x2, y3 - y2, z3 - z2, w3 - w2);
+  return out;
+}
+var UNIT_MESH_RADIUS2 = deterministicMath.sqrt(3) / 2;
+function eulerToQuat(yaw, pitch, roll) {
+  const cy = deterministicMath.cos(yaw / 2), sy = -deterministicMath.sin(yaw / 2);
+  const cp = deterministicMath.cos(pitch / 2), sp = deterministicMath.sin(pitch / 2);
+  const cr = deterministicMath.cos(roll / 2), sr = deterministicMath.sin(roll / 2);
+  return [
+    sp * cy * cr + cp * sy * sr,
+    sy * cp * cr - cy * sp * sr,
+    cy * cp * sr - sy * sp * cr,
+    cy * cp * cr + sy * sp * sr
+  ];
+}
+function quatRotate(q, x, y, z) {
+  const [qx, qy, qz, qw] = q;
+  const tx3 = 2 * (qy * z - qz * y);
+  const ty = 2 * (qz * x - qx * z);
+  const tz = 2 * (qx * y - qy * x);
+  return [
+    x + qw * tx3 + qy * tz - qz * ty,
+    y + qw * ty + qz * tx3 - qx * tz,
+    z + qw * tz + qx * ty - qy * tx3
+  ];
+}
+
+// phaser/node_modules/@phaser-ae/kernel/src/curves.ts
+function catmullRom1(a, b, c, d, t) {
+  const t2 = t * t, t3 = t2 * t;
+  return 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3);
+}
+
+// phaser/node_modules/@phaser-ae/kernel/src/color.ts
+var NAMED2 = { white: 4294967295, black: 255, red: 4278190335, green: 16711935, blue: 65535, yellow: 4294902015, cyan: 16777215, magenta: 4278255615, orange: 4289003775, transparent: 0 };
+function packColor2(css) {
+  const s = css.trim().toLowerCase();
+  if (s in NAMED2) return NAMED2[s];
+  if (/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/.test(s)) {
+    const h = s.slice(1);
+    if (h.length === 3 || h.length === 4) {
+      const r = parseInt(h[0] + h[0], 16), g = parseInt(h[1] + h[1], 16), b = parseInt(h[2] + h[2], 16), a = h.length === 4 ? parseInt(h[3] + h[3], 16) : 255;
+      return (r << 24 | g << 16 | b << 8 | a) >>> 0;
+    }
+    const v = parseInt(h, 16);
+    return h.length === 8 ? v >>> 0 : (v << 8 | 255) >>> 0;
+  }
+  const m = /^rgba?\(([^)]+)\)$/.exec(s);
+  if (m) {
+    const parts = m[1].split(/[\s,\/]+/).filter(Boolean);
+    if (parts.length !== 3 && parts.length !== 4) throw new Error(`color: cannot parse "${css}"`);
+    const num2 = (p) => {
+      const v = p === "" ? NaN : Number(p);
+      if (!Number.isFinite(v)) throw new Error(`color: cannot parse "${css}"`);
+      return v;
+    };
+    const ch = (p) => deterministicMath.min(255, deterministicMath.max(0, num2(p))) | 0;
+    const aRaw = parts[3];
+    const a = aRaw === void 0 ? 1 : aRaw.endsWith("%") ? num2(aRaw.slice(0, -1)) / 100 : num2(aRaw);
+    return (ch(parts[0]) << 24 | ch(parts[1]) << 16 | ch(parts[2]) << 8 | deterministicMath.round(deterministicMath.min(1, deterministicMath.max(0, a)) * 255)) >>> 0;
+  }
+  const hs = /^hsla?\(([^)]+)\)$/.exec(s);
+  if (hs) {
+    const parts = hs[1].split(/[\s,\/]+/).filter(Boolean);
+    const hueRaw = parseFloat(parts[0] ?? "");
+    if (!Number.isFinite(hueRaw)) throw new Error(`color: cannot parse "${css}"`);
+    const h = (hueRaw % 360 + 360) % 360 / 360;
+    const satRaw = parseFloat(parts[1] ?? ""), lRaw = parseFloat(parts[2] ?? "");
+    if (!Number.isFinite(satRaw) || !Number.isFinite(lRaw)) throw new Error(`color: cannot parse "${css}"`);
+    const sat = deterministicMath.min(1, deterministicMath.max(0, satRaw / 100));
+    const l = deterministicMath.min(1, deterministicMath.max(0, lRaw / 100));
+    const aRaw = parts[3];
+    const a = aRaw === void 0 ? 1 : deterministicMath.min(1, deterministicMath.max(0, aRaw.endsWith("%") ? parseFloat(aRaw) / 100 : parseFloat(aRaw)));
+    const c = (1 - deterministicMath.abs(2 * l - 1)) * sat, x = c * (1 - deterministicMath.abs(h * 6 % 2 - 1)), m2 = l - c / 2;
+    const seg = deterministicMath.floor(h * 6) % 6;
+    const rgbSeg = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]];
+    const [r1, g1, b1] = rgbSeg[seg];
+    const q = (v) => deterministicMath.round(deterministicMath.min(1, deterministicMath.max(0, v + m2)) * 255);
+    return (q(r1) << 24 | q(g1) << 16 | q(b1) << 8 | deterministicMath.round(a * 255)) >>> 0;
+  }
+  throw new Error(`color: cannot parse "${css}"`);
+}
+function colorToFloats2(packed, out, o) {
+  out[o] = (packed >>> 24 & 255) / 255;
+  out[o + 1] = (packed >>> 16 & 255) / 255;
+  out[o + 2] = (packed >>> 8 & 255) / 255;
+  out[o + 3] = (packed & 255) / 255;
+}
+
+// phaser/node_modules/@phaser-ae/kernel/src/registry.impl.ts
+var MAX_DEFORMS2 = 256 - 16;
+
+// phaser/node_modules/@phaser-ae/kernel/src/verbs.impl.ts
+function each(t, fn) {
+  if (t.id !== void 0 && !(Symbol.iterator in t)) {
+    if (t.alive) fn(t);
+    return;
+  }
+  for (const h of t) if (h.alive) fn(h);
+}
+var killFn2 = null;
+function kill(t) {
+  each(t, (h) => {
+    if (h.alive) killFn2?.(h);
+  });
+}
+
+// phaser/node_modules/@phaser-ae/kernel/src/math.ts
+var host2 = globalThis.Math;
+var abs2 = host2.abs;
+var sqrt2 = host2.sqrt;
+var floor2 = host2.floor;
+var f642 = new Float64Array(1);
+var u322 = new Uint32Array(f642.buffer);
+var HI2 = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1 ? 1 : 0;
+var LO2 = 1 - HI2;
+var hiWord2 = (x) => {
+  f642[0] = x;
+  return u322[HI2] | 0;
+};
+var loWord2 = (x) => {
+  f642[0] = x;
+  return u322[LO2];
+};
+var fromWords2 = (hi, lo) => {
+  u322[HI2] = hi;
+  u322[LO2] = lo;
+  return f642[0];
+};
+var withHi2 = (x, hi) => {
+  f642[0] = x;
+  u322[HI2] = hi;
+  return f642[0];
+};
+var withLo2 = (x, lo) => {
+  f642[0] = x;
+  u322[LO2] = lo;
+  return f642[0];
+};
+var copysign2 = (x, y) => hiWord2(y) < 0 ? -abs2(x) : abs2(x);
+var HUGE2 = 1e300;
+var TINY2 = 1e-300;
+var TWO242 = 16777216;
+var TWON242 = 5960464477539063e-23;
+var TWO542 = 18014398509481984;
+var TWOM542 = 5551115123125783e-32;
+function scalbn2(x, n) {
+  let hx = hiWord2(x);
+  const lx = loWord2(x);
+  let k = (hx & 2146435072) >> 20;
+  if (k === 0) {
+    if ((lx | hx & 2147483647) === 0) return x;
+    x *= TWO542;
+    hx = hiWord2(x);
+    k = ((hx & 2146435072) >> 20) - 54;
+    if (n < -5e4) return TINY2 * x;
+  }
+  if (k === 2047) return x + x;
+  k += n;
+  if (k > 2046) return HUGE2 * copysign2(HUGE2, x);
+  if (k > 0) return withHi2(x, hx & 2148532223 | k << 20);
+  if (k <= -54) return n > 5e4 ? HUGE2 * copysign2(HUGE2, x) : TINY2 * copysign2(TINY2, x);
+  return withHi2(x, hx & 2148532223 | k + 54 << 20) * TWOM542;
+}
+var TWO_OVER_PI2 = [
+  10680707,
+  7228996,
+  1387004,
+  2578385,
+  16069853,
+  12639074,
+  9804092,
+  4427841,
+  16666979,
+  11263675,
+  12935607,
+  2387514,
+  4345298,
+  14681673,
+  3074569,
+  13734428,
+  16653803,
+  1880361,
+  10960616,
+  8533493,
+  3062596,
+  8710556,
+  7349940,
+  6258241,
+  3772886,
+  3769171,
+  3798172,
+  8675211,
+  12450088,
+  3874808,
+  9961438,
+  366607,
+  15675153,
+  9132554,
+  7151469,
+  3571407,
+  2607881,
+  12013382,
+  4155038,
+  6285869,
+  7677882,
+  13102053,
+  15825725,
+  473591,
+  9065106,
+  15363067,
+  6271263,
+  9264392,
+  5636912,
+  4652155,
+  7056368,
+  13614112,
+  10155062,
+  1944035,
+  9527646,
+  15080200,
+  6658437,
+  6231200,
+  6832269,
+  16767104,
+  5075751,
+  3212806,
+  1398474,
+  7579849,
+  6349435,
+  12618859
+];
+var PIO22 = [
+  1.570796251296997,
+  /* 0x3FF921FB, 0x40000000 */
+  7549789415861596e-23,
+  /* 0x3E74442D, 0x00000000 */
+  5390302529957765e-30,
+  /* 0x3CF84698, 0x80000000 */
+  3282003415807913e-37,
+  /* 0x3B78CC51, 0x60000000 */
+  1270655753080676e-44,
+  /* 0x39F01B83, 0x80000000 */
+  12293330898111133e-52,
+  /* 0x387A2520, 0x40000000 */
+  27337005381646456e-60,
+  /* 0x36E38222, 0x80000000 */
+  21674168387780482e-67
+  /* 0x3569F31D, 0x00000000 */
+];
+var iq2 = new Int32Array(20);
+var fr2 = new Float64Array(20);
+var fq2 = new Float64Array(20);
+var qr2 = new Float64Array(20);
+var tx2 = new Float64Array(3);
+var ry2 = new Float64Array(2);
+function kernelRemPio22(e0, nx) {
+  const jk = 4, jp = jk, jx = nx - 1;
+  let jv = (e0 - 3) / 24 | 0;
+  if (jv < 0) jv = 0;
+  let q0 = e0 - 24 * (jv + 1);
+  for (let i = 0, j = jv - jx; i <= jx + jk; i++, j++) fr2[i] = j < 0 ? 0 : TWO_OVER_PI2[j];
+  for (let i = 0; i <= jk; i++) {
+    let fw2 = 0;
+    for (let j = 0; j <= jx; j++) fw2 += tx2[j] * fr2[jx + i - j];
+    qr2[i] = fw2;
+  }
+  let jz = jk, z = 0, n = 0, ih = 0, fw = 0;
+  for (; ; ) {
+    z = qr2[jz];
+    for (let i = 0, j = jz; j > 0; i++, j--) {
+      fw = TWON242 * z | 0;
+      iq2[i] = z - TWO242 * fw | 0;
+      z = qr2[j - 1] + fw;
+    }
+    z = scalbn2(z, q0);
+    z -= 8 * floor2(z * 0.125);
+    n = z | 0;
+    z -= n;
+    ih = 0;
+    if (q0 > 0) {
+      const i = iq2[jz - 1] >> 24 - q0;
+      n += i;
+      iq2[jz - 1] -= i << 24 - q0;
+      ih = iq2[jz - 1] >> 23 - q0;
+    } else if (q0 === 0) ih = iq2[jz - 1] >> 23;
+    else if (z >= 0.5) ih = 2;
+    if (ih > 0) {
+      n += 1;
+      let carry = 0;
+      for (let i = 0; i < jz; i++) {
+        const j = iq2[i];
+        if (carry === 0) {
+          if (j !== 0) {
+            carry = 1;
+            iq2[i] = 16777216 - j;
+          }
+        } else iq2[i] = 16777215 - j;
+      }
+      if (q0 === 1) iq2[jz - 1] &= 8388607;
+      else if (q0 === 2) iq2[jz - 1] &= 4194303;
+      if (ih === 2) {
+        z = 1 - z;
+        if (carry !== 0) z -= scalbn2(1, q0);
+      }
+    }
+    if (z === 0) {
+      let j = 0;
+      for (let i = jz - 1; i >= jk; i--) j |= iq2[i];
+      if (j === 0) {
+        let k = 1;
+        while (iq2[jk - k] === 0) k++;
+        for (let i = jz + 1; i <= jz + k; i++) {
+          fr2[jx + i] = TWO_OVER_PI2[jv + i];
+          let f = 0;
+          for (let jj = 0; jj <= jx; jj++) f += tx2[jj] * fr2[jx + i - jj];
+          qr2[i] = f;
+        }
+        jz += k;
+        continue;
+      }
+    }
+    break;
+  }
+  if (z === 0) {
+    jz -= 1;
+    q0 -= 24;
+    while (iq2[jz] === 0) {
+      jz--;
+      q0 -= 24;
+    }
+  } else {
+    z = scalbn2(z, -q0);
+    if (z >= TWO242) {
+      fw = TWON242 * z | 0;
+      iq2[jz] = z - TWO242 * fw | 0;
+      jz += 1;
+      q0 += 24;
+      iq2[jz] = fw;
+    } else iq2[jz] = z | 0;
+  }
+  fw = scalbn2(1, q0);
+  for (let i = jz; i >= 0; i--) {
+    qr2[i] = fw * iq2[i];
+    fw *= TWON242;
+  }
+  for (let i = jz; i >= 0; i--) {
+    fw = 0;
+    for (let k = 0; k <= jp && k <= jz - i; k++) fw += PIO22[k] * qr2[i + k];
+    fq2[jz - i] = fw;
+  }
+  fw = 0;
+  for (let i = jz; i >= 0; i--) fw += fq2[i];
+  ry2[0] = ih === 0 ? fw : -fw;
+  fw = fq2[0] - fw;
+  for (let i = 1; i <= jz; i++) fw += fq2[i];
+  ry2[1] = ih === 0 ? fw : -fw;
+  return n & 7;
+}
+var INVPIO22 = 0.6366197723675814;
+var PIO2_12 = 1.5707963267341256;
+var PIO2_1T2 = 6077100506506192e-26;
+var PIO2_22 = 6077100506303966e-26;
+var PIO2_2T2 = 20222662487959506e-37;
+var PIO2_32 = 20222662487111665e-37;
+var PIO2_3T2 = 84784276603689e-45;
+var NPIO2_HW2 = [
+  1073291771,
+  1074340347,
+  1074977148,
+  1075388923,
+  1075800698,
+  1076025724,
+  1076231611,
+  1076437499,
+  1076643386,
+  1076849274,
+  1076971356,
+  1077074300,
+  1077177244,
+  1077280187,
+  1077383131,
+  1077486075,
+  1077589019,
+  1077691962,
+  1077794906,
+  1077897850,
+  1077968460,
+  1078019932,
+  1078071404,
+  1078122876,
+  1078174348,
+  1078225820,
+  1078277292,
+  1078328763,
+  1078380235,
+  1078431707,
+  1078483179,
+  1078534651
+];
+var PIO4_MAX2 = fromWords2(1072243195, 4294967295);
+var THREE_PIO42 = fromWords2(1073928572, 0);
+var PIO2_WORD_LO2 = fromWords2(1073291771, 0);
+var PIO2_WORD_HI2 = fromWords2(1073291772, 0);
+var MEDIUM_MAX2 = fromWords2(1094263291, 4294967295);
+var TWOM272 = fromWords2(1044381696, 0);
+var TWOM282 = fromWords2(1043333120, 0);
+function remPio22(x) {
+  const ax = abs2(x);
+  if (ax <= PIO4_MAX2) {
+    ry2[0] = x;
+    ry2[1] = 0;
+    return 0;
+  }
+  if (ax < THREE_PIO42) {
+    const nearPio2 = ax >= PIO2_WORD_LO2 && ax < PIO2_WORD_HI2;
+    if (x > 0) {
+      let z3 = x - PIO2_12;
+      if (!nearPio2) {
+        ry2[0] = z3 - PIO2_1T2;
+        ry2[1] = z3 - ry2[0] - PIO2_1T2;
+      } else {
+        z3 -= PIO2_22;
+        ry2[0] = z3 - PIO2_2T2;
+        ry2[1] = z3 - ry2[0] - PIO2_2T2;
+      }
+      return 1;
+    }
+    let z2 = x + PIO2_12;
+    if (!nearPio2) {
+      ry2[0] = z2 + PIO2_1T2;
+      ry2[1] = z2 - ry2[0] + PIO2_1T2;
+    } else {
+      z2 += PIO2_22;
+      ry2[0] = z2 + PIO2_2T2;
+      ry2[1] = z2 - ry2[0] + PIO2_2T2;
+    }
+    return -1;
+  }
+  const hx = hiWord2(x), ix = hx & 2147483647;
+  if (ax <= MEDIUM_MAX2) {
+    let t = ax;
+    const n2 = t * INVPIO22 + 0.5 | 0, fn = n2;
+    let r = t - fn * PIO2_12, w = fn * PIO2_1T2;
+    if (n2 < 32 && ix !== NPIO2_HW2[n2 - 1]) ry2[0] = r - w;
+    else {
+      const j = ix >> 20;
+      ry2[0] = r - w;
+      let i = j - (hiWord2(ry2[0]) >> 20 & 2047);
+      if (i > 16) {
+        t = r;
+        w = fn * PIO2_22;
+        r = t - w;
+        w = fn * PIO2_2T2 - (t - r - w);
+        ry2[0] = r - w;
+        i = j - (hiWord2(ry2[0]) >> 20 & 2047);
+        if (i > 49) {
+          t = r;
+          w = fn * PIO2_32;
+          r = t - w;
+          w = fn * PIO2_3T2 - (t - r - w);
+          ry2[0] = r - w;
+        }
+      }
+    }
+    ry2[1] = r - ry2[0] - w;
+    if (hx < 0) {
+      ry2[0] = -ry2[0];
+      ry2[1] = -ry2[1];
+      return -n2;
+    }
+    return n2;
+  }
+  if (ix >= 2146435072) {
+    ry2[0] = NaN;
+    ry2[1] = NaN;
+    return 0;
+  }
+  const e0 = (ix >> 20) - 1046;
+  let z = fromWords2(ix - (e0 << 20), loWord2(x));
+  for (let i = 0; i < 2; i++) {
+    tx2[i] = z | 0;
+    z = (z - tx2[i]) * TWO242;
+  }
+  tx2[2] = z;
+  let nx = 3;
+  while (tx2[nx - 1] === 0) nx--;
+  const n = kernelRemPio22(e0, nx);
+  if (hx < 0) {
+    ry2[0] = -ry2[0];
+    ry2[1] = -ry2[1];
+    return -n;
+  }
+  return n;
+}
+var S12 = -0.16666666666666632;
+var S22 = 0.00833333333332249;
+var S32 = -1984126982985795e-19;
+var S42 = 27557313707070068e-22;
+var S52 = -25050760253406863e-24;
+var S62 = 158969099521155e-24;
+function kSin2(x, y, iy) {
+  if (abs2(x) < TWOM272) return x;
+  const z = x * x, v = z * x, r = S22 + z * (S32 + z * (S42 + z * (S52 + z * S62)));
+  return iy === 0 ? x + v * (S12 + z * r) : x - (z * (0.5 * y - v * r) - y - v * S12);
+}
+var C12 = 0.0416666666666666;
+var C22 = -0.001388888888887411;
+var C32 = 2480158728947673e-20;
+var C42 = -27557314351390663e-23;
+var C52 = 2087572321298175e-24;
+var C62 = -11359647557788195e-27;
+var COS_SMALL2 = fromWords2(1070805811, 0);
+var COS_BIG2 = fromWords2(1072234497, 0);
+function kCos2(x, y) {
+  const ax = abs2(x);
+  if (ax < TWOM272) return 1;
+  const z = x * x, r = z * (C12 + z * (C22 + z * (C32 + z * (C42 + z * (C52 + z * C62)))));
+  if (ax < COS_SMALL2) return 1 - (0.5 * z - (z * r - x * y));
+  const qx = ax >= COS_BIG2 ? 0.28125 : fromWords2((hiWord2(x) & 2147483647) - 2097152, 0);
+  const hz = 0.5 * z - qx, a = 1 - qx;
+  return a - (hz - (z * r - x * y));
+}
+var T2 = [
+  0.3333333333333341,
+  /* 0x3FD55555, 0x55555563 */
+  0.13333333333320124,
+  /* 0x3FC11111, 0x1110FE7A */
+  0.05396825397622605,
+  /* 0x3FABA1BA, 0x1BB341FE */
+  0.021869488294859542,
+  /* 0x3F9664F4, 0x8406D637 */
+  0.0088632398235993,
+  /* 0x3F8226E3, 0xE96E8493 */
+  0.0035920791075913124,
+  /* 0x3F6D6D22, 0xC9560328 */
+  0.0014562094543252903,
+  /* 0x3F57DBC8, 0xFEE08315 */
+  5880412408202641e-19,
+  /* 0x3F4344D8, 0xF2F26501 */
+  2464631348184699e-19,
+  /* 0x3F3026F7, 0x1A8D1068 */
+  7817944429395571e-20,
+  /* 0x3F147E88, 0xA03792A6 */
+  7140724913826082e-20,
+  /* 0x3F12B80F, 0x32F0A7E9 */
+  -18558637485527546e-21,
+  /* 0xBEF375CB, 0xDB605373 */
+  2590730518636337e-20
+  /* 0x3EFB2A70, 0x74BF7AD4 */
+];
+var PIO42 = 0.7853981633974483;
+var PIO4LO2 = 3061616997868383e-32;
+var TAN_BIG2 = fromWords2(1072010280, 0);
+function kTan2(x, y, iy) {
+  const ax = abs2(x), neg = x < 0, big = ax >= TAN_BIG2;
+  if (ax < TWOM282) {
+    if (x === 0 && iy === -1) return 1 / ax;
+    if (iy === 1) return x;
+    const w2 = x + y, z2 = withLo2(w2, 0), v2 = y - (z2 - x), a2 = -1 / w2, t2 = withLo2(a2, 0), s2 = 1 + t2 * z2;
+    return t2 + a2 * (s2 + t2 * v2);
+  }
+  if (big) {
+    if (neg) {
+      x = -x;
+      y = -y;
+    }
+    const z2 = PIO42 - x, w2 = PIO4LO2 - y;
+    x = z2 + w2;
+    y = 0;
+  }
+  const z = x * x, w = z * z;
+  let r = T2[1] + w * (T2[3] + w * (T2[5] + w * (T2[7] + w * (T2[9] + w * T2[11]))));
+  let v = z * (T2[2] + w * (T2[4] + w * (T2[6] + w * (T2[8] + w * (T2[10] + w * T2[12])))));
+  const s = z * x;
+  r = y + z * (s * (r + v) + y);
+  r += T2[0] * s;
+  const sum2 = x + r;
+  if (big) {
+    v = iy;
+    return (neg ? -1 : 1) * (v - 2 * (x - (sum2 * sum2 / (sum2 + v) - r)));
+  }
+  if (iy === 1) return sum2;
+  const zz = withLo2(sum2, 0), vv = r - (zz - x), a = -1 / sum2, t = withLo2(a, 0), ss = 1 + t * zz;
+  return t + a * (ss + t * vv);
+}
+function sin2(x) {
+  x = +x;
+  const ax = abs2(x);
+  if (ax <= PIO4_MAX2) return kSin2(x, 0, 0);
+  if (!(ax < Infinity)) return NaN;
+  switch (remPio22(x) & 3) {
+    case 0:
+      return kSin2(ry2[0], ry2[1], 1);
+    case 1:
+      return kCos2(ry2[0], ry2[1]);
+    case 2:
+      return -kSin2(ry2[0], ry2[1], 1);
+    default:
+      return -kCos2(ry2[0], ry2[1]);
+  }
+}
+function cos2(x) {
+  x = +x;
+  const ax = abs2(x);
+  if (ax <= PIO4_MAX2) return kCos2(x, 0);
+  if (!(ax < Infinity)) return NaN;
+  switch (remPio22(x) & 3) {
+    case 0:
+      return kCos2(ry2[0], ry2[1]);
+    case 1:
+      return -kSin2(ry2[0], ry2[1], 1);
+    case 2:
+      return -kCos2(ry2[0], ry2[1]);
+    default:
+      return kSin2(ry2[0], ry2[1], 1);
+  }
+}
+function tan2(x) {
+  x = +x;
+  const ax = abs2(x);
+  if (ax <= PIO4_MAX2) return kTan2(x, 0, 1);
+  if (!(ax < Infinity)) return NaN;
+  const n = remPio22(x);
+  return kTan2(ry2[0], ry2[1], 1 - ((n & 1) << 1));
+}
+var ATANHI2 = [
+  0.4636476090008061,
+  /* atan(0.5)hi 0x3FDDAC67, 0x0561BB4F */
+  0.7853981633974483,
+  /* atan(1.0)hi 0x3FE921FB, 0x54442D18 */
+  0.982793723247329,
+  /* atan(1.5)hi 0x3FEF730B, 0xD281F69B */
+  1.5707963267948966
+  /* atan(inf)hi 0x3FF921FB, 0x54442D18 */
+];
+var ATANLO2 = [
+  22698777452961687e-33,
+  /* atan(0.5)lo 0x3C7A2B7F, 0x222F65E2 */
+  3061616997868383e-32,
+  /* atan(1.0)lo 0x3C81A626, 0x33145C07 */
+  13903311031230998e-33,
+  /* atan(1.5)lo 0x3C700788, 0x7AF0CBBD */
+  6123233995736766e-32
+  /* atan(inf)lo 0x3C91A626, 0x33145C07 */
+];
+var AT2 = [
+  0.3333333333333293,
+  /* 0x3FD55555, 0x5555550D */
+  -0.19999999999876483,
+  /* 0xBFC99999, 0x9998EBC4 */
+  0.14285714272503466,
+  /* 0x3FC24924, 0x920083FF */
+  -0.11111110405462356,
+  /* 0xBFBC71C6, 0xFE231671 */
+  0.09090887133436507,
+  /* 0x3FB745CD, 0xC54C206E */
+  -0.0769187620504483,
+  /* 0xBFB3B0F2, 0xAF749A6D */
+  0.06661073137387531,
+  /* 0x3FB10D66, 0xA0D03D51 */
+  -0.058335701337905735,
+  /* 0xBFADDE2D, 0x52DEFD9A */
+  0.049768779946159324,
+  /* 0x3FA97B4B, 0x24760DEB */
+  -0.036531572744216916,
+  /* 0xBFA2B444, 0x2C6A6C2F */
+  0.016285820115365782
+  /* 0x3F90AD3A, 0xE322DA11 */
+];
+function atan3(x) {
+  x = +x;
+  const hx = hiWord2(x), ix = hx & 2147483647;
+  let id2;
+  if (ix >= 1141899264) {
+    if (x !== x) return NaN;
+    return hx > 0 ? ATANHI2[3] + ATANLO2[3] : -ATANHI2[3] - ATANLO2[3];
+  }
+  if (ix < 1071382528) {
+    if (ix < 1042284544) return x;
+    id2 = -1;
+  } else {
+    x = abs2(x);
+    if (ix < 1072889856) {
+      if (ix < 1072037888) {
+        id2 = 0;
+        x = (2 * x - 1) / (2 + x);
+      } else {
+        id2 = 1;
+        x = (x - 1) / (x + 1);
+      }
+    } else if (ix < 1073971200) {
+      id2 = 2;
+      x = (x - 1.5) / (1 + 1.5 * x);
+    } else {
+      id2 = 3;
+      x = -1 / x;
+    }
+  }
+  const z = x * x, w = z * z;
+  const s1 = z * (AT2[0] + w * (AT2[2] + w * (AT2[4] + w * (AT2[6] + w * (AT2[8] + w * AT2[10])))));
+  const s2 = w * (AT2[1] + w * (AT2[3] + w * (AT2[5] + w * (AT2[7] + w * AT2[9]))));
+  if (id2 < 0) return x - x * (s1 + s2);
+  const r = ATANHI2[id2] - (x * (s1 + s2) - ATANLO2[id2] - x);
+  return hx < 0 ? -r : r;
+}
+var PI2 = 3.141592653589793;
+var PI_O_22 = 1.5707963267948966;
+var PI_O_42 = 0.7853981633974483;
+var PI_LO2 = 12246467991473532e-32;
+function atan22(y, x) {
+  y = +y;
+  x = +x;
+  if (x !== x || y !== y) return NaN;
+  const hx = hiWord2(x), ix = hx & 2147483647, lx = loWord2(x);
+  const hy = hiWord2(y), iy = hy & 2147483647, ly = loWord2(y);
+  if ((hx - 1072693248 | lx) === 0) return atan3(y);
+  const m = hy >> 31 & 1 | hx >> 30 & 2;
+  if ((iy | ly) === 0) {
+    switch (m) {
+      case 0:
+      case 1:
+        return y;
+      case 2:
+        return PI2 + TINY2;
+      default:
+        return -PI2 - TINY2;
+    }
+  }
+  if ((ix | lx) === 0) return hy < 0 ? -PI_O_22 - TINY2 : PI_O_22 + TINY2;
+  if (ix === 2146435072) {
+    if (iy === 2146435072) {
+      switch (m) {
+        case 0:
+          return PI_O_42 + TINY2;
+        case 1:
+          return -PI_O_42 - TINY2;
+        case 2:
+          return 3 * PI_O_42 + TINY2;
+        default:
+          return -3 * PI_O_42 - TINY2;
+      }
+    }
+    switch (m) {
+      case 0:
+        return 0;
+      case 1:
+        return -0;
+      case 2:
+        return PI2 + TINY2;
+      default:
+        return -PI2 - TINY2;
+    }
+  }
+  if (iy === 2146435072) return hy < 0 ? -PI_O_22 - TINY2 : PI_O_22 + TINY2;
+  const k = iy - ix >> 20;
+  let z;
+  if (k > 60) z = PI_O_22 + 0.5 * PI_LO2;
+  else if (hx < 0 && k < -60) z = 0;
+  else z = atan3(abs2(y / x));
+  switch (m) {
+    case 0:
+      return z;
+    case 1:
+      return -z;
+    case 2:
+      return PI2 - (z - PI_LO2);
+    default:
+      return z - PI_LO2 - PI2;
+  }
+}
+var PIO2_HI2 = 1.5707963267948966;
+var PIO2_LO2 = 6123233995736766e-32;
+var PIO4_HI2 = 0.7853981633974483;
+var PS02 = 0.16666666666666666;
+var PS12 = -0.3255658186224009;
+var PS22 = 0.20121253213486293;
+var PS32 = -0.04005553450067941;
+var PS42 = 7915349942898145e-19;
+var PS52 = 3479331075960212e-20;
+var QS12 = -2.403394911734414;
+var QS22 = 2.0209457602335057;
+var QS32 = -0.6882839716054533;
+var QS42 = 0.07703815055590194;
+var asinP2 = (t) => t * (PS02 + t * (PS12 + t * (PS22 + t * (PS32 + t * (PS42 + t * PS52)))));
+var asinQ2 = (t) => 1 + t * (QS12 + t * (QS22 + t * (QS32 + t * QS42)));
+function asin2(x) {
+  x = +x;
+  const hx = hiWord2(x), ix = hx & 2147483647;
+  if (ix >= 1072693248) {
+    if ((ix - 1072693248 | loWord2(x)) === 0) return x * PIO2_HI2 + x * PIO2_LO2;
+    return NaN;
+  }
+  if (ix < 1071644672) {
+    if (ix < 1044381696) return x;
+    const t2 = x * x;
+    return x + x * (asinP2(t2) / asinQ2(t2));
+  }
+  const w = 1 - abs2(x), t = w * 0.5, p = asinP2(t), q = asinQ2(t), s = sqrt2(t);
+  let r;
+  if (ix >= 1072640819) r = PIO2_HI2 - (2 * (s + s * (p / q)) - PIO2_LO2);
+  else {
+    const ws = withLo2(s, 0), c = (t - ws * ws) / (s + ws);
+    r = PIO4_HI2 - (2 * s * (p / q) - (PIO2_LO2 - 2 * c) - (PIO4_HI2 - 2 * ws));
+  }
+  return hx > 0 ? r : -r;
+}
+function acos2(x) {
+  x = +x;
+  const hx = hiWord2(x), ix = hx & 2147483647;
+  if (ix >= 1072693248) {
+    if ((ix - 1072693248 | loWord2(x)) === 0) return hx > 0 ? 0 : PI2 + 2 * PIO2_LO2;
+    return NaN;
+  }
+  if (ix < 1071644672) {
+    if (ix <= 1012924416) return PIO2_HI2 + PIO2_LO2;
+    const z2 = x * x;
+    return PIO2_HI2 - (x - (PIO2_LO2 - x * (asinP2(z2) / asinQ2(z2))));
+  }
+  if (hx < 0) {
+    const z2 = (1 + x) * 0.5, s2 = sqrt2(z2), w = asinP2(z2) / asinQ2(z2) * s2 - PIO2_LO2;
+    return PI2 - 2 * (s2 + w);
+  }
+  const z = (1 - x) * 0.5, s = sqrt2(z), df = withLo2(s, 0), c = (z - df * df) / (s + df);
+  return 2 * (df + (asinP2(z) / asinQ2(z) * s + c));
+}
+var O_THRESHOLD2 = 709.782712893384;
+var U_THRESHOLD2 = -745.1332191019411;
+var TWOM10002 = 9332636185032189e-317;
+var LN2_HI2 = 0.6931471803691238;
+var LN2_LO2 = 19082149292705877e-26;
+var INVLN22 = 1.4426950408889634;
+var P12 = 0.16666666666666602;
+var P22 = -0.0027777777777015593;
+var P32 = 6613756321437934e-20;
+var P42 = -16533902205465252e-22;
+var P52 = 41381367970572385e-24;
+function exp2(x) {
+  x = +x;
+  let hx = hiWord2(x);
+  const xsb = hx >>> 31 & 1;
+  hx &= 2147483647;
+  if (hx >= 1082535490) {
+    if (hx >= 2146435072) {
+      if ((hx & 1048575 | loWord2(x)) !== 0) return NaN;
+      return xsb === 0 ? x : 0;
+    }
+    if (x > O_THRESHOLD2) return Infinity;
+    if (x < U_THRESHOLD2) return 0;
+  }
+  let hi = 0, lo = 0, k = 0;
+  if (hx > 1071001154) {
+    if (hx < 1072734898) {
+      hi = xsb === 0 ? x - LN2_HI2 : x + LN2_HI2;
+      lo = xsb === 0 ? LN2_LO2 : -LN2_LO2;
+      k = 1 - xsb - xsb;
+    } else {
+      k = INVLN22 * x + (xsb === 0 ? 0.5 : -0.5) | 0;
+      hi = x - k * LN2_HI2;
+      lo = k * LN2_LO2;
+    }
+    x = hi - lo;
+  } else if (hx < 1043333120) return 1 + x;
+  const t = x * x, c = x - t * (P12 + t * (P22 + t * (P32 + t * (P42 + t * P52))));
+  if (k === 0) return 1 - (x * c / (c - 2) - x);
+  const y = 1 - (lo - x * c / (2 - c) - hi);
+  if (k >= -1021) return withHi2(y, hiWord2(y) + (k << 20));
+  return withHi2(y, hiWord2(y) + (k + 1e3 << 20)) * TWOM10002;
+}
+var Q12 = -0.03333333333333313;
+var Q22 = 0.0015873015872548146;
+var Q32 = -793650757867488e-19;
+var Q42 = 4008217827329362e-21;
+var Q52 = -20109921818362437e-23;
+function expm12(x) {
+  x = +x;
+  let hx = hiWord2(x);
+  const xsb = hx & 2147483648;
+  hx &= 2147483647;
+  if (hx >= 1078159482) {
+    if (hx >= 1082535490) {
+      if (hx >= 2146435072) {
+        if ((hx & 1048575 | loWord2(x)) !== 0) return NaN;
+        return xsb === 0 ? x : -1;
+      }
+      if (x > O_THRESHOLD2) return Infinity;
+    }
+    if (xsb !== 0) return -1;
+  }
+  let hi, lo, k, c = 0;
+  if (hx > 1071001154) {
+    if (hx < 1072734898) {
+      if (xsb === 0) {
+        hi = x - LN2_HI2;
+        lo = LN2_LO2;
+        k = 1;
+      } else {
+        hi = x + LN2_HI2;
+        lo = -LN2_LO2;
+        k = -1;
+      }
+    } else {
+      k = INVLN22 * x + (xsb === 0 ? 0.5 : -0.5) | 0;
+      hi = x - k * LN2_HI2;
+      lo = k * LN2_LO2;
+    }
+    x = hi - lo;
+    c = hi - x - lo;
+  } else if (hx < 1016070144) return x;
+  else k = 0;
+  const hfx = 0.5 * x, hxs = x * hfx;
+  const r1 = 1 + hxs * (Q12 + hxs * (Q22 + hxs * (Q32 + hxs * (Q42 + hxs * Q52))));
+  let t = 3 - r1 * hfx;
+  let e = hxs * ((r1 - t) / (6 - x * t));
+  if (k === 0) return x - (x * e - hxs);
+  e = x * (e - c) - c;
+  e -= hxs;
+  if (k === -1) return 0.5 * (x - e) - 0.5;
+  if (k === 1) return x < -0.25 ? -2 * (e - (x + 0.5)) : 1 + 2 * (x - e);
+  let y;
+  if (k <= -2 || k > 56) {
+    y = 1 - (e - x);
+    return withHi2(y, hiWord2(y) + (k << 20)) - 1;
+  }
+  if (k < 20) {
+    t = fromWords2(1072693248 - (2097152 >> k), 0);
+    y = t - (e - x);
+  } else {
+    t = fromWords2(1023 - k << 20, 0);
+    y = x - (e + t);
+    y += 1;
+  }
+  return withHi2(y, hiWord2(y) + (k << 20));
+}
+var LG12 = 0.6666666666666735;
+var LG22 = 0.3999999999940942;
+var LG32 = 0.2857142874366239;
+var LG42 = 0.22222198432149784;
+var LG52 = 0.1818357216161805;
+var LG62 = 0.15313837699209373;
+var LG72 = 0.14798198605116586;
+function log3(x) {
+  x = +x;
+  let hx = hiWord2(x);
+  const lx = loWord2(x);
+  let k = 0;
+  if (hx < 1048576) {
+    if ((hx & 2147483647 | lx) === 0) return -Infinity;
+    if (hx < 0) return NaN;
+    k -= 54;
+    x *= TWO542;
+    hx = hiWord2(x);
+  }
+  if (hx >= 2146435072) return x + x;
+  k += (hx >> 20) - 1023;
+  hx &= 1048575;
+  let i = hx + 614244 & 1048576;
+  x = withHi2(x, hx | i ^ 1072693248);
+  k += i >> 20;
+  const f = x - 1;
+  if ((1048575 & 2 + hx) < 3) {
+    if (f === 0) return k === 0 ? 0 : k * LN2_HI2 + k * LN2_LO2;
+    const r2 = f * f * (0.5 - 0.3333333333333333 * f);
+    return k === 0 ? f - r2 : k * LN2_HI2 - (r2 - k * LN2_LO2 - f);
+  }
+  const s = f / (2 + f), dk = k, z = s * s;
+  i = hx - 398458;
+  const w = z * z, j = 440401 - hx;
+  const t1 = w * (LG22 + w * (LG42 + w * LG62)), t2 = z * (LG12 + w * (LG32 + w * (LG52 + w * LG72)));
+  i |= j;
+  const r = t2 + t1;
+  if (i > 0) {
+    const hfsq = 0.5 * f * f;
+    return k === 0 ? f - (hfsq - s * (hfsq + r)) : dk * LN2_HI2 - (hfsq - (s * (hfsq + r) + dk * LN2_LO2) - f);
+  }
+  return k === 0 ? f - s * (f - r) : dk * LN2_HI2 - (s * (f - r) - dk * LN2_LO2 - f);
+}
+function log1p2(x) {
+  x = +x;
+  const hx = hiWord2(x), ax = hx & 2147483647;
+  let k = 1, f = 0, hu = 0, c = 0;
+  if (hx < 1071284858) {
+    if (ax >= 1072693248) return x === -1 ? -Infinity : NaN;
+    if (ax < 1042284544) {
+      if (ax < 1016070144) return x;
+      return x - x * x * 0.5;
+    }
+    if (hx > 0 || hx <= (3218259651 | 0)) {
+      k = 0;
+      f = x;
+      hu = 1;
+    }
+  }
+  if (hx >= 2146435072) return x + x;
+  if (k !== 0) {
+    let u;
+    if (hx < 1128267776) {
+      u = 1 + x;
+      hu = hiWord2(u);
+      k = (hu >> 20) - 1023;
+      c = k > 0 ? 1 - (u - x) : x - (u - 1);
+      c /= u;
+    } else {
+      u = x;
+      hu = hiWord2(u);
+      k = (hu >> 20) - 1023;
+      c = 0;
+    }
+    hu &= 1048575;
+    if (hu < 434334) u = withHi2(u, hu | 1072693248);
+    else {
+      k += 1;
+      u = withHi2(u, hu | 1071644672);
+      hu = 1048576 - hu >> 2;
+    }
+    f = u - 1;
+  }
+  const hfsq = 0.5 * f * f;
+  if (hu === 0) {
+    if (f === 0) return k === 0 ? 0 : k * LN2_HI2 + (c + k * LN2_LO2);
+    const r2 = hfsq * (1 - 0.6666666666666666 * f);
+    return k === 0 ? f - r2 : k * LN2_HI2 - (r2 - (k * LN2_LO2 + c) - f);
+  }
+  const s = f / (2 + f), z = s * s;
+  const r = z * (LG12 + z * (LG22 + z * (LG32 + z * (LG42 + z * (LG52 + z * (LG62 + z * LG72))))));
+  return k === 0 ? f - (hfsq - s * (hfsq + r)) : k * LN2_HI2 - (hfsq - (s * (hfsq + r) + (k * LN2_LO2 + c)) - f);
+}
+var IVLN102 = 0.4342944819032518;
+var LOG10_2HI2 = 0.30102999566361177;
+var LOG10_2LO2 = 3694239077158931e-28;
+function log102(x) {
+  x = +x;
+  let hx = hiWord2(x);
+  const lx = loWord2(x);
+  let k = 0;
+  if (hx < 1048576) {
+    if ((hx & 2147483647 | lx) === 0) return -Infinity;
+    if (hx < 0) return NaN;
+    k -= 54;
+    x *= TWO542;
+    hx = hiWord2(x);
+  }
+  if (hx >= 2146435072) return x + x;
+  k += (hx >> 20) - 1023;
+  const i = k >>> 31 & 1;
+  x = withHi2(x, hx & 1048575 | 1023 - i << 20);
+  const y = k + i;
+  return y * LOG10_2LO2 + IVLN102 * log3(x) + y * LOG10_2HI2;
+}
+function log22(x) {
+  x = +x;
+  let hx = hiWord2(x);
+  const lx = loWord2(x);
+  let k = 0;
+  if (hx < 1048576) {
+    if ((hx & 2147483647 | lx) === 0) return -Infinity;
+    if (hx < 0) return NaN;
+    k -= 54;
+    x *= TWO542;
+    hx = hiWord2(x);
+  }
+  if (hx >= 2146435072) return x + x;
+  k += (hx >> 20) - 1023;
+  hx &= 1048575;
+  const i = hx + 614244 & 1048576;
+  x = withHi2(x, hx | i ^ 1072693248);
+  k += i >> 20;
+  return x === 1 ? k : k + log3(x) * INVLN22;
+}
+var BP2 = [1, 1.5];
+var DP_H2 = [0, 0.5849624872207642];
+var DP_L2 = [0, 1350039202129749e-23];
+var TWO532 = 9007199254740992;
+var L12 = 0.5999999999999946;
+var L22 = 0.4285714285785502;
+var L32 = 0.33333332981837743;
+var L42 = 0.272728123808534;
+var L52 = 0.23066074577556175;
+var L62 = 0.20697501780033842;
+var LG2C2 = 0.6931471805599453;
+var LG2_H2 = 0.6931471824645996;
+var LG2_L2 = -1904654299957768e-24;
+var OVT2 = 8008566259537294e-32;
+var CP2 = 0.9617966939259756;
+var CP_H2 = 0.9617967009544373;
+var CP_L2 = -7028461650952758e-24;
+var IVLN2_H2 = 1.4426950216293335;
+var IVLN2_L2 = 19259629911266175e-24;
+function powBig2(x, y) {
+  if (typeof x !== "bigint" || typeof y !== "bigint") throw new TypeError("Cannot mix BigInt and other types, use explicit conversions");
+  if (y < 0n) throw new RangeError("Exponent must be non-negative");
+  let r = 1n, b = x, e = y;
+  while (e > 0n) {
+    if (e & 1n) r *= b;
+    e >>= 1n;
+    if (e > 0n) b *= b;
+  }
+  return r;
+}
+function pow2(x, y) {
+  if (typeof x === "bigint" || typeof y === "bigint") return powBig2(x, y);
+  x = +x;
+  y = +y;
+  if (y === 2) return x * x;
+  if (y === 1) return x;
+  const hx = hiWord2(x), lx = loWord2(x), hy = hiWord2(y), ly = loWord2(y);
+  let ix = hx & 2147483647;
+  const iy = hy & 2147483647;
+  if ((iy | ly) === 0) return 1;
+  if (x !== x || y !== y) return NaN;
+  let yisint = 0;
+  if (hx < 0) {
+    if (iy >= 1128267776) yisint = 2;
+    else if (iy >= 1072693248) {
+      const k2 = (iy >> 20) - 1023;
+      if (k2 > 20) {
+        const j2 = ly >>> 52 - k2;
+        if (j2 << 52 - k2 >>> 0 === ly) yisint = 2 - (j2 & 1);
+      } else if (ly === 0) {
+        const j2 = iy >> 20 - k2;
+        if (j2 << 20 - k2 === iy) yisint = 2 - (j2 & 1);
+      }
+    }
+  }
+  if (ly === 0) {
+    if (iy === 2146435072) {
+      if ((ix - 1072693248 | lx) === 0) return NaN;
+      if (ix >= 1072693248) return hy >= 0 ? y : 0;
+      return hy < 0 ? -y : 0;
+    }
+    if (iy === 1072693248) return hy < 0 ? 1 / x : x;
+    if (hy === 1073741824) return x * x;
+    if (hy === 1071644672 && hx >= 0) return sqrt2(x);
+  }
+  let ax = abs2(x);
+  if (lx === 0 && (ix === 2146435072 || ix === 0 || ix === 1072693248)) {
+    let z2 = hy < 0 ? 1 / ax : ax;
+    if (hx < 0) {
+      if ((ix - 1072693248 | yisint) === 0) z2 = NaN;
+      else if (yisint === 1) z2 = -z2;
+    }
+    return z2;
+  }
+  let n = (hx >> 31) + 1;
+  if ((n | yisint) === 0) return NaN;
+  const s = (n | yisint - 1) === 0 ? -1 : 1;
+  let t1, t2;
+  if (iy > 1105199104) {
+    if (iy > 1139802112) {
+      if (ix <= 1072693247) return hy < 0 ? Infinity : 0;
+      if (ix >= 1072693248) return hy > 0 ? Infinity : 0;
+    }
+    if (ix < 1072693247) return hy < 0 ? s * Infinity : s * 0;
+    if (ix > 1072693248) return hy > 0 ? s * Infinity : s * 0;
+    const t3 = ax - 1;
+    const w2 = t3 * t3 * (0.5 - t3 * (0.3333333333333333 - t3 * 0.25));
+    const u2 = IVLN2_H2 * t3, v2 = t3 * IVLN2_L2 - w2 * INVLN22;
+    t1 = withLo2(u2 + v2, 0);
+    t2 = v2 - (t1 - u2);
+  } else {
+    n = 0;
+    if (ix < 1048576) {
+      ax *= TWO532;
+      n -= 53;
+      ix = hiWord2(ax);
+    }
+    n += (ix >> 20) - 1023;
+    const j2 = ix & 1048575;
+    let k2;
+    ix = j2 | 1072693248;
+    if (j2 <= 235662) k2 = 0;
+    else if (j2 < 767610) k2 = 1;
+    else {
+      k2 = 0;
+      n += 1;
+      ix -= 1048576;
+    }
+    ax = withHi2(ax, ix);
+    let u2 = ax - BP2[k2], v2 = 1 / (ax + BP2[k2]);
+    const ss = u2 * v2, sh = withLo2(ss, 0);
+    let th = fromWords2((ix >> 1 | 536870912) + 524288 + (k2 << 18), 0);
+    let tl = ax - (th - BP2[k2]);
+    const sl = v2 * (u2 - sh * th - sh * tl);
+    let s2 = ss * ss;
+    let r2 = s2 * s2 * (L12 + s2 * (L22 + s2 * (L32 + s2 * (L42 + s2 * (L52 + s2 * L62)))));
+    r2 += sl * (sh + ss);
+    s2 = sh * sh;
+    th = withLo2(3 + s2 + r2, 0);
+    tl = r2 - (th - 3 - s2);
+    u2 = sh * th;
+    v2 = sl * th + tl * ss;
+    const ph2 = withLo2(u2 + v2, 0), pl2 = v2 - (ph2 - u2);
+    const zh = CP_H2 * ph2, zl = CP_L2 * ph2 + pl2 * CP2 + DP_L2[k2];
+    const t3 = n;
+    t1 = withLo2(zh + zl + DP_H2[k2] + t3, 0);
+    t2 = zl - (t1 - t3 - DP_H2[k2] - zh);
+  }
+  const y1 = withLo2(y, 0);
+  const pl = (y - y1) * t1 + y * t2;
+  let ph = y1 * t1;
+  let z = pl + ph;
+  let j = hiWord2(z);
+  const i = loWord2(z);
+  if (j >= 1083179008) {
+    if ((j - 1083179008 | i) !== 0) return s * Infinity;
+    if (pl + OVT2 > z - ph) return s * Infinity;
+  } else if ((j & 2147483647) >= 1083231232) {
+    if ((j - 3230714880 | i) !== 0) return s * 0;
+    if (pl <= z - ph) return s * 0;
+  }
+  const ii = j & 2147483647;
+  let k = (ii >> 20) - 1023;
+  n = 0;
+  if (ii > 1071644672) {
+    n = j + (1048576 >> k + 1);
+    k = ((n & 2147483647) >> 20) - 1023;
+    const t3 = fromWords2(n & ~(1048575 >> k), 0);
+    n = (n & 1048575 | 1048576) >> 20 - k;
+    if (j < 0) n = -n;
+    ph -= t3;
+  }
+  const t = withLo2(pl + ph, 0);
+  const u = t * LG2_H2, v = (pl - (t - ph)) * LG2C2 + t * LG2_L2;
+  z = u + v;
+  const w = v - (z - u), tt = z * z;
+  const tp = z - tt * (P12 + tt * (P22 + tt * (P32 + tt * (P42 + tt * P52))));
+  const r = z * tp / (tp - 2) - (w + z * w);
+  z = 1 - (r - z);
+  j = hiWord2(z) + (n << 20);
+  if (j >> 20 <= 0) z = scalbn2(z, n);
+  else z = withHi2(z, j);
+  return s * z;
+}
+function sinh2(x) {
+  x = +x;
+  const jx = hiWord2(x), ix = jx & 2147483647;
+  if (ix >= 2146435072) return x + x;
+  const h = jx < 0 ? -0.5 : 0.5;
+  if (ix < 1077280768) {
+    if (ix < 1043333120) return x;
+    const t = expm12(abs2(x));
+    if (ix < 1072693248) return h * (2 * t - t * t / (t + 1));
+    return h * (t + t / (t + 1));
+  }
+  if (ix < 1082535490) return h * exp2(abs2(x));
+  if (ix < 1082536910 || ix === 1082536910 && loWord2(x) <= 2411329661) {
+    const w = exp2(0.5 * abs2(x));
+    return h * w * w;
+  }
+  return x * Infinity;
+}
+function cosh2(x) {
+  x = +x;
+  const ix = hiWord2(x) & 2147483647;
+  if (ix >= 2146435072) return x * x;
+  if (ix < 1071001155) {
+    const t = expm12(abs2(x)), w = 1 + t;
+    if (ix < 1015021568) return w;
+    return 1 + t * t / (w + w);
+  }
+  if (ix < 1077280768) {
+    const t = exp2(abs2(x));
+    return 0.5 * t + 0.5 / t;
+  }
+  if (ix < 1082535490) return 0.5 * exp2(abs2(x));
+  if (ix < 1082536910 || ix === 1082536910 && loWord2(x) <= 2411329661) {
+    const w = exp2(0.5 * abs2(x));
+    return 0.5 * w * w;
+  }
+  return Infinity;
+}
+function tanh2(x) {
+  x = +x;
+  const jx = hiWord2(x), ix = jx & 2147483647;
+  if (ix >= 2146435072) {
+    if (x !== x) return NaN;
+    return jx >= 0 ? 1 : -1;
+  }
+  let z;
+  if (ix < 1077280768) {
+    if (ix < 1015021568) return x * (1 + x);
+    if (ix >= 1072693248) {
+      const t = expm12(2 * abs2(x));
+      z = 1 - 2 / (t + 2);
+    } else {
+      const t = expm12(-2 * abs2(x));
+      z = -t / (t + 2);
+    }
+  } else z = 1 - TINY2;
+  return jx >= 0 ? z : -z;
+}
+var LN22 = 0.6931471805599453;
+function asinh2(x) {
+  x = +x;
+  const hx = hiWord2(x), ix = hx & 2147483647;
+  if (ix >= 2146435072) return x + x;
+  if (ix < 1043333120) return x;
+  let w;
+  if (ix > 1102053376) w = log3(abs2(x)) + LN22;
+  else if (ix > 1073741824) {
+    const t = abs2(x);
+    w = log3(2 * t + 1 / (sqrt2(x * x + 1) + t));
+  } else {
+    const t = x * x;
+    w = log1p2(abs2(x) + t / (1 + sqrt2(1 + t)));
+  }
+  return hx > 0 ? w : -w;
+}
+function acosh2(x) {
+  x = +x;
+  const hx = hiWord2(x);
+  if (hx < 1072693248) return NaN;
+  if (hx >= 1102053376) return hx >= 2146435072 ? x + x : log3(x) + LN22;
+  if ((hx - 1072693248 | loWord2(x)) === 0) return 0;
+  if (hx > 1073741824) return log3(2 * x - 1 / (x + sqrt2(x * x - 1)));
+  const t = x - 1;
+  return log1p2(t + sqrt2(2 * t + t * t));
+}
+function atanh2(x) {
+  x = +x;
+  const hx = hiWord2(x), ix = hx & 2147483647;
+  if (x !== x || ix > 1072693248 || ix === 1072693248 && loWord2(x) !== 0) return NaN;
+  if (ix === 1072693248) return x > 0 ? Infinity : -Infinity;
+  if (ix < 1043333120) return x;
+  const ax = abs2(x);
+  const t = ix < 1071644672 ? 0.5 * log1p2(ax + ax + (ax + ax) * ax / (1 - ax)) : 0.5 * log1p2((ax + ax) / (1 - ax));
+  return hx >= 0 ? t : -t;
+}
+var B12 = 715094163;
+var B22 = 696219795;
+var CB_C2 = 0.5428571428571428;
+var CB_D2 = -0.7053061224489796;
+var CB_E2 = 1.4142857142857144;
+var CB_F2 = 1.6071428571428572;
+var CB_G2 = 0.35714285714285715;
+function cbrt2(x) {
+  x = +x;
+  let hx = hiWord2(x);
+  const sign2 = hx & 2147483648;
+  hx ^= sign2;
+  if (hx >= 2146435072) return x + x;
+  if ((hx | loWord2(x)) === 0) return x;
+  x = withHi2(x, hx);
+  let t;
+  if (hx < 1048576) {
+    t = fromWords2(1129316352, 0) * x;
+    t = withHi2(t, (hiWord2(t) / 3 | 0) + B22);
+  } else t = fromWords2((hx / 3 | 0) + B12, 0);
+  let r = t * t / x;
+  let s = CB_C2 + r * t;
+  t *= CB_G2 + CB_F2 / (s + CB_E2 + CB_D2 / s);
+  t = fromWords2(hiWord2(t) + 1, 0);
+  s = t * t;
+  r = x / s;
+  const w = t + t;
+  r = (r - t) / (w + r);
+  t = t + t * r;
+  return sign2 !== 0 ? -t : t;
+}
+var TWO5002 = fromWords2(1596981248, 0);
+var TWOM5002 = fromWords2(548405248, 0);
+var TWO6002 = fromWords2(1701838848, 0);
+var TWOM6002 = fromWords2(443547648, 0);
+function hypot22(x, y) {
+  let ha = hiWord2(x) & 2147483647, hb = hiWord2(y) & 2147483647;
+  let a, b;
+  if (hb > ha) {
+    a = y;
+    b = x;
+    const j = ha;
+    ha = hb;
+    hb = j;
+  } else {
+    a = x;
+    b = y;
+  }
+  a = withHi2(a, ha);
+  b = withHi2(b, hb);
+  if (ha - hb > 62914560) return a + b;
+  let k = 0;
+  if (ha > 1596981248) {
+    if (ha >= 2146435072) {
+      if ((ha & 1048575 | loWord2(a)) === 0) return a;
+      if ((hb ^ 2146435072 | loWord2(b)) === 0) return b;
+      return NaN;
+    }
+    ha -= 629145600;
+    hb -= 629145600;
+    k += 600;
+    a = withHi2(a, ha);
+    b = withHi2(b, hb);
+  }
+  if (hb < 548405248) {
+    if (hb <= 1048575) {
+      if ((hb | loWord2(b)) === 0) return a;
+      const t1 = fromWords2(2144337920, 0);
+      b *= t1;
+      a *= t1;
+      k -= 1022;
+    } else {
+      ha += 629145600;
+      hb += 629145600;
+      k -= 600;
+      a = withHi2(a, ha);
+      b = withHi2(b, hb);
+    }
+  }
+  let w = a - b;
+  if (w > b) {
+    const t1 = fromWords2(ha, 0), t2 = a - t1;
+    w = sqrt2(t1 * t1 - (b * -b - t2 * (a + t1)));
+  } else {
+    a = a + a;
+    const y1 = fromWords2(hb, 0), y2 = b - y1, t1 = fromWords2(ha + 1048576, 0), t2 = a - t1;
+    w = sqrt2(t1 * y1 - (w * -w - (t1 * y2 + t2 * b)));
+  }
+  return k !== 0 ? fromWords2(1072693248 + (k << 20), 0) * w : w;
+}
+function hypot3(x, y) {
+  const n = arguments.length;
+  if (n === 2) return hypot22(+x, +y);
+  if (n === 0) return 0;
+  const values = [];
+  for (let i = 0; i < n; i++) values.push(+arguments[i]);
+  if (n === 1) return abs2(values[0]);
+  let max = 0, nan = false;
+  for (const v of values) {
+    const a = abs2(v);
+    if (a === Infinity) return Infinity;
+    if (a !== a) nan = true;
+    else if (a > max) max = a;
+  }
+  if (nan) return NaN;
+  if (max === 0) return 0;
+  const scale2 = max > TWO5002 ? TWOM6002 : max < TWOM5002 ? TWO6002 : 1;
+  let sum2 = 0, carry = 0;
+  for (const v of values) {
+    const a = v * scale2, term = a * a - carry, next = sum2 + term;
+    carry = next - sum2 - term;
+    sum2 = next;
+  }
+  return sqrt2(sum2) / scale2;
+}
+var FUNCTIONS2 = {
+  acos: acos2,
+  acosh: acosh2,
+  asin: asin2,
+  asinh: asinh2,
+  atan: atan3,
+  atan2: atan22,
+  atanh: atanh2,
+  cbrt: cbrt2,
+  cos: cos2,
+  cosh: cosh2,
+  exp: exp2,
+  expm1: expm12,
+  hypot: hypot3,
+  log: log3,
+  log10: log102,
+  log1p: log1p2,
+  log2: log22,
+  pow: pow2,
+  sin: sin2,
+  sinh: sinh2,
+  tan: tan2,
+  tanh: tanh2
+};
+var DETERMINISTIC_MATH_FUNCTIONS2 = Object.freeze(Object.keys(FUNCTIONS2));
+var deterministicMath2 = (() => {
+  const m = Object.create(Object.getPrototypeOf(host2));
+  for (const key of Reflect.ownKeys(host2)) Object.defineProperty(m, key, Object.getOwnPropertyDescriptor(host2, key));
+  for (const [name, fn] of Object.entries(FUNCTIONS2)) {
+    Object.defineProperty(fn, "length", { value: name === "atan2" || name === "pow" || name === "hypot" ? 2 : 1 });
+    Object.defineProperty(m, name, { value: fn, writable: true, enumerable: false, configurable: true });
+  }
+  return m;
+})();
+
+// phaser/node_modules/@phaser-ae/kernel/src/webgl.ts
+var NUDGE = "ae_EdgeNudge";
+var MAIN = /\bvoid\s+main\s*\(\s*(?:void)?\s*\)/;
+var nudges = /* @__PURE__ */ new WeakMap();
+var nudgeOf = (height) => 1 / (128 * deterministicMath.max(1, height));
+var setNudge = (gl, programs, value) => {
+  const current = gl.getParameter(gl.CURRENT_PROGRAM);
+  for (const [program, at] of programs) {
+    if (!gl.isProgram(program)) {
+      programs.delete(program);
+      continue;
+    }
+    gl.useProgram(program);
+    gl.uniform1f(at, value);
+  }
+  gl.useProgram(current);
+};
+function glPixelHeight2(gl, height) {
+  const state = nudges.get(gl);
+  if (!state) {
+    nudges.set(gl, { height, programs: /* @__PURE__ */ new Map() });
+    return;
+  }
+  if (state.height === height) return;
+  state.height = height;
+  setNudge(gl, state.programs, nudgeOf(height));
+}
+function compileGlProgram2(gl, vertex, fragment, label) {
+  const shaders = [];
+  const program = gl.createProgram();
+  if (!program) throw new Error(`${label}: could not create WebGL program`);
+  const nudged = MAIN.test(vertex) && vertex.includes("gl_Position");
+  if (nudged) vertex = `${vertex.replace(MAIN, "void ae_main()")}
+uniform float ${NUDGE};
+void main() { ae_main(); gl_Position.y += ${NUDGE} * gl_Position.w; }
+`;
+  try {
+    for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]]) {
+      const shader2 = gl.createShader(type);
+      if (!shader2) throw new Error(`${label}: could not create WebGL shader`);
+      shaders.push(shader2);
+      gl.shaderSource(shader2, source);
+      gl.compileShader(shader2);
+      if (!gl.getShaderParameter(shader2, gl.COMPILE_STATUS)) throw new Error(`${label}: ${type === gl.VERTEX_SHADER ? "vertex" : "fragment"} shader: ${gl.getShaderInfoLog(shader2)}`);
+      gl.attachShader(program, shader2);
+    }
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(`${label}: program link: ${gl.getProgramInfoLog(program)}`);
+    const at = nudged ? gl.getUniformLocation(program, NUDGE) : null;
+    if (at) {
+      let state = nudges.get(gl);
+      if (!state) {
+        state = { height: typeof gl.drawingBufferHeight === "number" ? gl.drawingBufferHeight : 1, programs: /* @__PURE__ */ new Map() };
+        nudges.set(gl, state);
+      }
+      state.programs.set(program, at);
+      setNudge(gl, /* @__PURE__ */ new Map([[program, at]]), nudgeOf(state.height));
+    }
+    return program;
+  } catch (error) {
+    gl.deleteProgram(program);
+    throw error;
+  } finally {
+    for (const shader2 of shaders) gl.deleteShader(shader2);
+  }
+}
+
 // game/node_modules/@phaser-ae/render-webgl2/dist/index.js
 var VERT = (gridX, gridY = gridX, customs = []) => `#version 300 es
 precision highp float;
@@ -8348,7 +9787,7 @@ precision highp float;in vec2 uv;uniform sampler2D source;out vec4 color;void ma
 var GlScene = class {
   constructor(gl) {
     this.gl = gl;
-    this.program = compileGlProgram(gl, VS, FS, "render-webgl2:present");
+    this.program = compileGlProgram2(gl, VS, FS, "render-webgl2:present");
     this.vao = gl.createVertexArray();
   }
   framebuffer = null;
@@ -8446,8 +9885,8 @@ function installWebGl2(k, deferRegistration = false) {
     blends = blendTable(gl);
     const customs = k.registry.list("deform").map((def, i) => ({ id: 16 + i, def }));
     const fragment = fragmentGLSL(customs, k.screen.pixelArt === true);
-    progFlat = compileGlProgram(gl, VERT(1, 1, customs), fragment, "sprite");
-    progGrid = compileGlProgram(gl, VERT(GRID_X2, GRID_Y2, customs), fragment, "deformed sprite");
+    progFlat = compileGlProgram2(gl, VERT(1, 1, customs), fragment, "sprite");
+    progGrid = compileGlProgram2(gl, VERT(GRID_X2, GRID_Y2, customs), fragment, "deformed sprite");
     for (const p of [progFlat, progGrid]) uni.set(p, { cam: gl.getUniformLocation(p, "uCam"), screen: gl.getUniformLocation(p, "uScreen"), texLoc: gl.getUniformLocation(p, "uTex") });
     vao = gl.createVertexArray();
     vbo = gl.createBuffer();
@@ -8644,7 +10083,7 @@ function installWebGl2(k, deferRegistration = false) {
     const c = k.surface.canvas;
     if (gl && c) {
       gl.viewport(0, 0, c.width, c.height);
-      glPixelHeight(gl, c.height);
+      glPixelHeight2(gl, c.height);
     }
   };
   k.hooks.on("app.resize", fitViewport);
@@ -9010,7 +10449,7 @@ function renderer(options = {}) {
   } };
 }
 
-// phaser/engine/kernel/src/world2d.ts
+// phaser/node_modules/@phaser-ae/kernel/src/world2d.ts
 var Table2d = class {
   constructor(layer) {
     this.layer = layer;
@@ -9320,8 +10759,8 @@ var Gather2d = class {
           iy = r.py[s] * b + r.y[s] * a;
         }
         if (W && cam) {
-          ix = cam.x + wrapDelta(ix - cam.x, W.w);
-          iy = cam.y + wrapDelta(iy - cam.y, W.h);
+          ix = cam.x + wrapDelta3(ix - cam.x, W.w);
+          iy = cam.y + wrapDelta3(iy - cam.y, W.h);
         }
         t.x[i] = ix;
         t.y[i] = iy;
@@ -9354,7 +10793,7 @@ var Gather2d = class {
 function installCamera2d(cam, screen3) {
   const r = cam.render;
   const c = cam;
-  const rel = (wx, wy, cx, cy) => c.wrap ? { x: wrapDelta(wx - cx, c.wrap.w), y: wrapDelta(wy - cy, c.wrap.h) } : { x: wx - cx, y: wy - cy };
+  const rel = (wx, wy, cx, cy) => c.wrap ? { x: wrapDelta3(wx - cx, c.wrap.w), y: wrapDelta3(wy - cy, c.wrap.h) } : { x: wx - cx, y: wy - cy };
   const toWorld = (sx, sy) => ({ x: (sx - screen3.width / 2) / cam.zoom + cam.x, y: (sy - screen3.height / 2) / cam.zoom + cam.y });
   const toScreen = (wx, wy) => {
     const d = rel(wx, wy, cam.x, cam.y);
@@ -9373,7 +10812,7 @@ function installCamera2d(cam, screen3) {
   return { toWorld, toScreen, view };
 }
 
-// phaser/engine/kernel/src/world3d.ts
+// phaser/node_modules/@phaser-ae/kernel/src/world3d.ts
 var ORI = new Float64Array(3);
 
 // game/node_modules/@phaser-ae/world-side/dist/index.js
@@ -9508,7 +10947,7 @@ function follow(opts = {}) {
         const live = targets.filter((t) => t.alive);
         if (!live.length) return;
         const W = cam.wrap;
-        const dX = (a2, b) => W ? wrapDelta(a2 - b, W.w) : a2 - b, dY = (a2, b) => W ? wrapDelta(a2 - b, W.h) : a2 - b;
+        const dX = (a2, b) => W ? wrapDelta3(a2 - b, W.w) : a2 - b, dY = (a2, b) => W ? wrapDelta3(a2 - b, W.h) : a2 - b;
         const a = live[0];
         let minX = 0, maxX = 0, minY = 0, maxY = 0;
         for (const t of live) {
@@ -9551,539 +10990,6 @@ function follow(opts = {}) {
       return { rig };
     }
   };
-}
-
-// game/node_modules/@phaser-ae/controls-2d/dist/index.js
-var DEFAULT_BINDINGS = {
-  move: { up: ["KeyW", "ArrowUp"], down: ["KeyS", "ArrowDown"], left: ["KeyA", "ArrowLeft"], right: ["KeyD", "ArrowRight"] },
-  intents: {
-    fire: { keys: ["Space", "KeyJ"], pad: ["a"] },
-    action: { keys: ["KeyE", "KeyK"], pad: ["b"] },
-    pause: { keys: ["Escape"], pad: ["start"] }
-  },
-  pad: "any",
-  stick: "left"
-};
-var copyBinding = (b) => ({ ...b.keys ? { keys: [...b.keys] } : {}, ...b.pad ? { pad: [...b.pad] } : {} });
-var copyPlayer = (p) => ({
-  ...p.move ? { move: { up: [...p.move.up], down: [...p.move.down], left: [...p.move.left], right: [...p.move.right] } } : {},
-  intents: Object.fromEntries(Object.entries(p.intents).map(([k, v]) => [k, copyBinding(v)])),
-  pad: p.pad ?? "any",
-  stick: p.stick ?? "left"
-});
-function resolveBindings(opts = {}) {
-  if (opts.players) {
-    if (opts.players.length < 1 || opts.players.length > 4) throw new Error(`controls-2d: players is 1 to 4, not ${opts.players.length}`);
-    return opts.players.map((p, i) => copyPlayer({ ...p, pad: p.pad ?? i }));
-  }
-  const o = opts.bindings ?? {}, d = copyPlayer(DEFAULT_BINDINGS);
-  const intents = { ...d.intents };
-  for (const [k, v] of Object.entries(o.intents ?? {})) {
-    if (v) intents[k] = copyBinding(v);
-    else delete intents[k];
-  }
-  return [{ move: { ...d.move, ...o.move }, intents, pad: o.pad ?? "any", stick: o.stick ?? "left" }];
-}
-function controls2d(opts = {}) {
-  const players = resolveBindings(opts);
-  const aimDeadzone = opts.aimDeadzone ?? 12;
-  return {
-    id: "controls-2d",
-    requires: ["world:2d"],
-    attach(k) {
-      const input = k.input.gameplay, cam = k.camera;
-      const anyKey = (codes) => !!codes?.some((c) => input.keyDown(c));
-      const makePlayer = (index) => {
-        const b = players[index];
-        let origin = null;
-        const now = /* @__PURE__ */ new Map(), down = /* @__PURE__ */ new Map(), up = /* @__PURE__ */ new Map(), padWas = /* @__PURE__ */ new Map();
-        const pad = () => b.pad === "none" ? void 0 : b.pad === "any" ? input.gamepads.find((g) => g.connected) : input.gamepads.find((g) => g.index === b.pad && g.connected);
-        const known = (i) => {
-          if (!b.intents[i]) throw new Error(`controls-2d: player ${index} has no intent "${i}"; bound: ${Object.keys(b.intents).join(", ") || "none"}`);
-        };
-        k.hooks.on("frame.simulate", () => {
-          const g = pad();
-          for (const [i, bind] of Object.entries(b.intents)) {
-            const padDown = !!g && !!bind.pad?.some((n) => g.button(n));
-            const was = now.get(i) ?? false, wasPad = padWas.get(i) ?? false;
-            const tapped = !!bind.keys?.some((c) => input.keyPressed(c)) || padDown && !wasPad;
-            const held = anyKey(bind.keys) || padDown || tapped;
-            down.set(i, tapped);
-            up.set(i, was && !held);
-            now.set(i, held);
-            padWas.set(i, padDown);
-          }
-        }, { as: `controls-2d.intents.${index}` });
-        const stick = (g, which) => g ? { x: g.axis(which === "left" ? "lx" : "rx"), y: g.axis(which === "left" ? "ly" : "ry") } : { x: 0, y: 0 };
-        return {
-          index,
-          axis(name) {
-            const g = pad();
-            if (name === "aim") {
-              const s = stick(g, b.stick === "right" ? "left" : "right"), sl = deterministicMath.hypot(s.x, s.y);
-              if (sl > 0) return sl > 1 ? { x: s.x / sl, y: s.y / sl } : s;
-              const p = input.pointer;
-              if (!p) return { x: 0, y: 0 };
-              const w = cam.toWorld(p.x, p.y), o = origin ?? cam, W = cam.wrap;
-              const dx = W ? wrapDelta(w.x - o.x, W.w) : w.x - o.x, dy = W ? wrapDelta(w.y - o.y, W.h) : w.y - o.y, l2 = deterministicMath.hypot(dx, dy);
-              return l2 < aimDeadzone ? { x: 0, y: 0 } : { x: dx / l2, y: dy / l2 };
-            }
-            const m = b.move;
-            let x = m ? (anyKey(m.right) ? 1 : 0) - (anyKey(m.left) ? 1 : 0) : 0;
-            let y = m ? (anyKey(m.down) ? 1 : 0) - (anyKey(m.up) ? 1 : 0) : 0;
-            if (x === 0 && y === 0) ({ x, y } = stick(g, b.stick ?? "left"));
-            const l = deterministicMath.hypot(x, y);
-            return l > 1 ? { x: x / l, y: y / l } : { x, y };
-          },
-          pressed: (i) => {
-            known(i);
-            return now.get(i) ?? false;
-          },
-          justPressed: (i) => {
-            known(i);
-            return down.get(i) ?? false;
-          },
-          justReleased: (i) => {
-            known(i);
-            return up.get(i) ?? false;
-          },
-          aimFrom(o) {
-            origin = o;
-            k.own(() => {
-              if (origin === o) origin = null;
-            });
-          },
-          bind(i, binding) {
-            if (binding) b.intents[i] = copyBinding(binding);
-            else {
-              delete b.intents[i];
-              now.delete(i);
-              down.delete(i);
-              up.delete(i);
-              padWas.delete(i);
-            }
-          },
-          bindMove(keys) {
-            if (keys) b.move = { up: [...keys.up], down: [...keys.down], left: [...keys.left], right: [...keys.right] };
-            else delete b.move;
-          },
-          usePad(p) {
-            b.pad = p;
-          },
-          bindings: () => copyPlayer(b)
-        };
-      };
-      const all = players.map((_, i) => makePlayer(i));
-      const first = all[0];
-      const controls = {
-        index: 0,
-        axis: (n) => first.axis(n),
-        pressed: (i) => first.pressed(i),
-        justPressed: (i) => first.justPressed(i),
-        justReleased: (i) => first.justReleased(i),
-        aimFrom: (o) => first.aimFrom(o),
-        bind: (i, b) => first.bind(i, b),
-        bindMove: (m) => first.bindMove(m),
-        usePad: (p) => first.usePad(p),
-        bindings: () => first.bindings(),
-        player(n) {
-          const p = all[n];
-          if (!p) throw new Error(`controls-2d: no player ${n}; ${all.length} configured`);
-          return p;
-        },
-        players: all.length,
-        get pointer() {
-          const p = input.pointer;
-          if (!p) return null;
-          const w = cam.toWorld(p.x, p.y);
-          return { x: w.x, y: w.y, down: p.down, pressed: p.pressed, released: p.released };
-        }
-      };
-      return { controls };
-    }
-  };
-}
-
-// game/node_modules/@phaser-ae/maths/dist/index.js
-var PI2 = deterministicMath.PI;
-var c1 = 1.70158;
-var c2 = c1 * 1.525;
-var c3 = c1 + 1;
-var c4 = 2 * PI2 / 3;
-var c5 = 2 * PI2 / 4.5;
-var bounceOut = (t) => {
-  const n = 7.5625, d = 2.75;
-  if (t < 1 / d) return n * t * t;
-  if (t < 2 / d) return n * (t -= 1.5 / d) * t + 0.75;
-  if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + 0.9375;
-  return n * (t -= 2.625 / d) * t + 0.984375;
-};
-var BASE = {
-  linear: (t) => t,
-  easeInQuad: (t) => t * t,
-  easeOutQuad: (t) => 1 - (1 - t) * (1 - t),
-  easeInOutQuad: (t) => t < 0.5 ? 2 * t * t : 1 - deterministicMath.pow(-2 * t + 2, 2) / 2,
-  easeInCubic: (t) => deterministicMath.pow(t, 3),
-  easeOutCubic: (t) => 1 - deterministicMath.pow(1 - t, 3),
-  easeInOutCubic: (t) => t < 0.5 ? 4 * deterministicMath.pow(t, 3) : 1 - deterministicMath.pow(-2 * t + 2, 3) / 2,
-  easeInQuart: (t) => deterministicMath.pow(t, 4),
-  easeOutQuart: (t) => 1 - deterministicMath.pow(1 - t, 4),
-  easeInOutQuart: (t) => t < 0.5 ? 8 * deterministicMath.pow(t, 4) : 1 - deterministicMath.pow(-2 * t + 2, 4) / 2,
-  easeInQuint: (t) => deterministicMath.pow(t, 5),
-  easeOutQuint: (t) => 1 - deterministicMath.pow(1 - t, 5),
-  easeInOutQuint: (t) => t < 0.5 ? 16 * deterministicMath.pow(t, 5) : 1 - deterministicMath.pow(-2 * t + 2, 5) / 2,
-  easeInSine: (t) => 1 - deterministicMath.cos(t * PI2 / 2),
-  easeOutSine: (t) => deterministicMath.sin(t * PI2 / 2),
-  easeInOutSine: (t) => -(deterministicMath.cos(PI2 * t) - 1) / 2,
-  easeInExpo: (t) => t === 0 ? 0 : deterministicMath.pow(2, 10 * t - 10),
-  easeOutExpo: (t) => t === 1 ? 1 : 1 - deterministicMath.pow(2, -10 * t),
-  easeInOutExpo: (t) => t === 0 ? 0 : t === 1 ? 1 : t < 0.5 ? deterministicMath.pow(2, 20 * t - 10) / 2 : (2 - deterministicMath.pow(2, -20 * t + 10)) / 2,
-  easeInCirc: (t) => 1 - deterministicMath.sqrt(1 - t * t),
-  easeOutCirc: (t) => deterministicMath.sqrt(1 - deterministicMath.pow(t - 1, 2)),
-  easeInOutCirc: (t) => t < 0.5 ? (1 - deterministicMath.sqrt(1 - deterministicMath.pow(2 * t, 2))) / 2 : (deterministicMath.sqrt(1 - deterministicMath.pow(-2 * t + 2, 2)) + 1) / 2,
-  easeInBack: (t) => c3 * deterministicMath.pow(t, 3) - c1 * t * t,
-  easeOutBack: (t) => 1 + c3 * deterministicMath.pow(t - 1, 3) + c1 * deterministicMath.pow(t - 1, 2),
-  easeInOutBack: (t) => t < 0.5 ? deterministicMath.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2) / 2 : (deterministicMath.pow(2 * t - 2, 2) * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2,
-  easeInElastic: (t) => t === 0 ? 0 : t === 1 ? 1 : -deterministicMath.pow(2, 10 * t - 10) * deterministicMath.sin((t * 10 - 10.75) * c4),
-  easeOutElastic: (t) => t === 0 ? 0 : t === 1 ? 1 : deterministicMath.pow(2, -10 * t) * deterministicMath.sin((t * 10 - 0.75) * c4) + 1,
-  easeInOutElastic: (t) => t === 0 ? 0 : t === 1 ? 1 : t < 0.5 ? -(deterministicMath.pow(2, 20 * t - 10) * deterministicMath.sin((20 * t - 11.125) * c5)) / 2 : deterministicMath.pow(2, -20 * t + 10) * deterministicMath.sin((20 * t - 11.125) * c5) / 2 + 1,
-  easeInBounce: (t) => 1 - bounceOut(1 - t),
-  easeOutBounce: bounceOut,
-  easeInOutBounce: (t) => t < 0.5 ? (1 - bounceOut(1 - 2 * t)) / 2 : (1 + bounceOut(2 * t - 1)) / 2,
-  swing: (t) => 0.5 - deterministicMath.cos(t * PI2) / 2
-};
-var EASE = {
-  ...BASE,
-  quad: BASE.easeInOutQuad,
-  cubic: BASE.easeInOutCubic,
-  quart: BASE.easeInOutQuart,
-  quint: BASE.easeInOutQuint,
-  sine: BASE.easeInOutSine,
-  expo: BASE.easeInOutExpo,
-  circ: BASE.easeInOutCirc,
-  back: BASE.easeOutBack,
-  bounce: BASE.easeOutBounce,
-  elastic: BASE.easeOutElastic
-};
-function bezier(x1, y1, x2, y2) {
-  const sx = (t) => 3 * x1 * deterministicMath.pow(1 - t, 2) * t + 3 * x2 * (1 - t) * t * t + deterministicMath.pow(t, 3), sy = (t) => 3 * y1 * deterministicMath.pow(1 - t, 2) * t + 3 * y2 * (1 - t) * t * t + deterministicMath.pow(t, 3);
-  return (x) => {
-    if (x <= 0) return 0;
-    if (x >= 1) return 1;
-    let lo = 0, hi = 1, t = x;
-    for (let i = 0; i < 24; i++) {
-      const cx = sx(t);
-      if (deterministicMath.abs(cx - x) < 1e-5) break;
-      if (cx < x) lo = t;
-      else hi = t;
-      t = (lo + hi) / 2;
-    }
-    return sy(t);
-  };
-}
-function ease(e) {
-  if (e === void 0) return EASE.easeInOutQuad;
-  if (typeof e === "function") return e;
-  if (Array.isArray(e)) return bezier(e[0], e[1], e[2], e[3]);
-  const f = EASE[e];
-  if (!f) throw new Error(`maths: no easing "${String(e)}" (have ${Object.keys(EASE).join(", ")})`);
-  return f;
-}
-var vec2 = {
-  /** add: a + b. sub: a − b. scale: a · s. */
-  add: (a, b) => ({ x: a.x + b.x, y: a.y + b.y }),
-  sub: (a, b) => ({ x: a.x - b.x, y: a.y - b.y }),
-  scale: (a, s) => ({ x: a.x * s, y: a.y * s }),
-  /** dot: the scalar product. cross: the 2D cross product (z of the 3D cross; positive when b is clockwise of a in y-down). */
-  dot: (a, b) => a.x * b.x + a.y * b.y,
-  cross: (a, b) => a.x * b.y - a.y * b.x,
-  /** len/len2: length and squared length. dist/dist2: distance and squared distance between two points. */
-  len: (a) => deterministicMath.hypot(a.x, a.y),
-  len2: (a) => a.x * a.x + a.y * a.y,
-  dist: (a, b) => deterministicMath.hypot(a.x - b.x, a.y - b.y),
-  dist2: (a, b) => deterministicMath.pow(a.x - b.x, 2) + deterministicMath.pow(a.y - b.y, 2),
-  /** Unit vector in the same direction; `{ 0, 0 }` when the input is (near) zero length. */
-  normalize: (a) => {
-    const l = deterministicMath.hypot(a.x, a.y);
-    return l > 1e-9 ? { x: a.x / l, y: a.y / l } : { x: 0, y: 0 };
-  },
-  /** The vector shortened to `max` if it is longer; otherwise a copy. */
-  clampLen: (a, max) => {
-    const l = deterministicMath.hypot(a.x, a.y);
-    return l > max && l > 0 ? { x: a.x / l * max, y: a.y / l * max } : { x: a.x, y: a.y };
-  },
-  /** fromAngle: a vector of length `mag` (default 1) at `rad`. angleOf: the angle of a vector, via atan2. */
-  fromAngle: (rad, mag = 1) => ({ x: deterministicMath.cos(rad) * mag, y: deterministicMath.sin(rad) * mag }),
-  angleOf: (a) => deterministicMath.atan2(a.y, a.x),
-  /** Rotate about the origin by `rad`. */
-  rotate: (a, rad) => {
-    const c = deterministicMath.cos(rad), s = deterministicMath.sin(rad);
-    return { x: a.x * c - a.y * s, y: a.x * s + a.y * c };
-  },
-  /** Component-wise lerp; `t` is not clamped. */
-  lerp: (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }),
-  /** Move `from` at most `maxStep` toward `to`, landing exactly on `to` when within reach. */
-  stepToward: (from, to, maxStep) => {
-    const d = deterministicMath.hypot(to.x - from.x, to.y - from.y);
-    if (d <= maxStep || d < 1e-9) return { x: to.x, y: to.y };
-    const k = maxStep / d;
-    return { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
-  },
-  /** perp: the left-hand perpendicular `{ -y, x }`. reflect: `v` reflected about the unit normal `n`. */
-  perp: (a) => ({ x: -a.y, y: a.x }),
-  reflect: (v, n) => {
-    const d = 2 * (v.x * n.x + v.y * n.y);
-    return { x: v.x - d * n.x, y: v.y - d * n.y };
-  }
-};
-var TAU2 = deterministicMath.PI * 2;
-var toRad = (deg) => deg * PI2 / 180;
-var toDeg = (rad) => rad * 180 / PI2;
-var wrapAngle = (rad) => {
-  let a = rad % TAU2;
-  if (a > PI2) a -= TAU2;
-  else if (a <= -PI2) a += TAU2;
-  return a;
-};
-var signedAngle = (from, to) => wrapAngle(to - from);
-var turnToward = (from, to, maxStep) => {
-  const d = signedAngle(from, to);
-  return deterministicMath.abs(d) <= maxStep ? to : from + deterministicMath.sign(d) * maxStep;
-};
-var lerp = (a, b, t) => a + (b - a) * t;
-var clamp = (v, min, max) => v < min ? min : v > max ? max : v;
-var mapRange = (v, inMin, inMax, outMin, outMax, clampOut = false) => {
-  const t = (v - inMin) / (inMax - inMin || 1);
-  const o = outMin + (outMax - outMin) * t;
-  return clampOut ? clamp(o, deterministicMath.min(outMin, outMax), deterministicMath.max(outMin, outMax)) : o;
-};
-var roundTo = (v, precision = 0) => {
-  const p = deterministicMath.pow(10, precision);
-  return deterministicMath.round(v * p) / p;
-};
-var smoothstep = (a, b, t) => {
-  const x = clamp((t - a) / (b - a || 1), 0, 1);
-  return x * x * (3 - 2 * x);
-};
-var approach = (v, target, rate, dt) => v + (target - v) * (1 - deterministicMath.exp(-rate * dt));
-var hashCode = (s) => {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = deterministicMath.imul(h, 16777619);
-  }
-  return h >>> 0;
-};
-var geom = {
-  /** distance: between two points. angleTo: the angle from A to B in radians. */
-  distance: (ax, ay, bx, by) => deterministicMath.hypot(bx - ax, by - ay),
-  angleTo: (ax, ay, bx, by) => deterministicMath.atan2(by - ay, bx - ax),
-  /** pointInRect: inclusive, `x, y` is the top-left. pointInCircle: inclusive. pointInPolygon: even-odd test over a ring; undefined on the boundary. */
-  pointInRect: (px, py, x, y, w, h) => px >= x && py >= y && px <= x + w && py <= y + h,
-  pointInCircle: (px, py, cx, cy, r) => deterministicMath.pow(px - cx, 2) + deterministicMath.pow(py - cy, 2) <= r * r,
-  pointInPolygon: (px, py, poly) => {
-    let inside = false;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const a = poly[i], b = poly[j];
-      if (a.y > py !== b.y > py && px < (b.x - a.x) * (py - a.y) / (b.y - a.y) + a.x) inside = !inside;
-    }
-    return inside;
-  },
-  /** Intersection point of segments AB and CD, or null. */
-  segmentIntersection: (a, b, c, d) => {
-    const r = { x: b.x - a.x, y: b.y - a.y }, s = { x: d.x - c.x, y: d.y - c.y };
-    const den = r.x * s.y - r.y * s.x;
-    if (deterministicMath.abs(den) < 1e-12) return null;
-    const t = ((c.x - a.x) * s.y - (c.y - a.y) * s.x) / den, u = ((c.x - a.x) * r.y - (c.y - a.y) * r.x) / den;
-    return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? { x: a.x + r.x * t, y: a.y + r.y * t } : null;
-  },
-  /** Does segment AB pass within `r` of point C? */
-  segmentHitsCircle: (a, b, c, r) => {
-    const abx = b.x - a.x, aby = b.y - a.y;
-    const l2 = abx * abx + aby * aby;
-    const t = l2 ? clamp(((c.x - a.x) * abx + (c.y - a.y) * aby) / l2, 0, 1) : 0;
-    const px = a.x + abx * t, py = a.y + aby * t;
-    return deterministicMath.pow(px - c.x, 2) + deterministicMath.pow(py - c.y, 2) <= r * r;
-  },
-  /** Is the segment AB clear of every circle in `blockers` (each a centre and radius `r`)? Line of sight past cover. */
-  lineOfSight: (a, b, blockers) => blockers.every((c) => !geom.segmentHitsCircle(a, b, c, c.r)),
-  /** Closest point on segment AB to P. */
-  closestOnSegment: (a, b, p) => {
-    const abx = b.x - a.x, aby = b.y - a.y;
-    const l2 = abx * abx + aby * aby;
-    const t = l2 ? clamp(((p.x - a.x) * abx + (p.y - a.y) * aby) / l2, 0, 1) : 0;
-    return { x: a.x + abx * t, y: a.y + aby * t };
-  },
-  /** polygonArea: signed shoelace area. polygonCentroid: area-weighted centroid, `{ 0, 0 }` for a degenerate ring. */
-  polygonArea: (poly) => {
-    let a = 0;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) a += poly[j].x * poly[i].y - poly[i].x * poly[j].y;
-    return a / 2;
-  },
-  polygonCentroid: (poly) => {
-    let x = 0, y = 0, a = 0;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const f = poly[j].x * poly[i].y - poly[i].x * poly[j].y;
-      x += (poly[j].x + poly[i].x) * f;
-      y += (poly[j].y + poly[i].y) * f;
-      a += f;
-    }
-    return a ? { x: x / (3 * a), y: y / (3 * a) } : { x: 0, y: 0 };
-  },
-  /** Andrew's monotone chain convex hull. */
-  convexHull: (pts) => {
-    const p = [...pts].sort((a, b) => a.x - b.x || a.y - b.y);
-    if (p.length < 3) return p;
-    const cross2 = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-    const lo = [];
-    for (const q of p) {
-      while (lo.length >= 2 && cross2(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop();
-      lo.push(q);
-    }
-    const hi = [];
-    for (let i = p.length - 1; i >= 0; i--) {
-      const q = p[i];
-      while (hi.length >= 2 && cross2(hi[hi.length - 2], hi[hi.length - 1], q) <= 0) hi.pop();
-      hi.push(q);
-    }
-    hi.pop();
-    lo.pop();
-    return lo.concat(hi);
-  },
-  /** Predict a ballistic arc: positions at `steps` even intervals over `time` seconds. */
-  predictPath: (x, y, vx, vy, gx, gy, time, steps = 32) => Array.from({ length: steps + 1 }, (_, i) => {
-    const t = time * i / steps;
-    return { x: x + vx * t + 0.5 * gx * t * t, y: y + vy * t + 0.5 * gy * t * t };
-  })
-};
-var mathsApi = { ease, EASE, bezier, vec: vec2, geom, TAU: TAU2, toRad, toDeg, wrapAngle, signedAngle, turnToward, lerp, clamp, mapRange, roundTo, smoothstep, approach, hashCode };
-function maths() {
-  return { id: "maths", attach() {
-    return { maths: mathsApi };
-  } };
-}
-
-// game/node_modules/@phaser-ae/color/dist/index.js
-var clamp01 = (n) => n < 0 ? 0 : n > 1 ? 1 : n;
-var wrap360 = (h) => (h % 360 + 360) % 360;
-var byte = (n) => deterministicMath.round(clamp01(n) * 255).toString(16).padStart(2, "0");
-function parse(hex4) {
-  let h = hex4.trim().replace("#", "");
-  if (h.length === 3 || h.length === 4) h = [...h].map((c) => c + c).join("");
-  if (!/^[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(h)) throw new Error(`color: "${hex4}" is not a hex colour`);
-  const n = parseInt(h.padEnd(8, "f"), 16);
-  return [(n >>> 24 & 255) / 255, (n >>> 16 & 255) / 255, (n >>> 8 & 255) / 255, (n & 255) / 255];
-}
-function rgb2(r, g, b, a) {
-  return `#${byte(r)}${byte(g)}${byte(b)}${a === void 0 ? "" : byte(a)}`;
-}
-function hsv(h, s = 1, v = 1) {
-  h = wrap360(h);
-  s = clamp01(s);
-  v = clamp01(v);
-  const c = v * s, x = c * (1 - deterministicMath.abs(h / 60 % 2 - 1)), m = v - c;
-  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
-  return rgb2(r + m, g + m, b + m);
-}
-function toHsv(hex4) {
-  const [r, g, b] = parse(hex4);
-  const max = deterministicMath.max(r, g, b), min = deterministicMath.min(r, g, b), d = max - min;
-  let h = 0;
-  if (d > 0) {
-    if (max === r) h = 60 * ((g - b) / d % 6);
-    else if (max === g) h = 60 * ((b - r) / d + 2);
-    else h = 60 * ((r - g) / d + 4);
-  }
-  return { h: wrap360(h), s: max ? d / max : 0, v: max };
-}
-function lerp2(a, b, t) {
-  const A = parse(a), B = parse(b);
-  t = clamp01(t);
-  return rgb2(A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t);
-}
-function shift(hex4, degrees) {
-  const { h, s, v } = toHsv(hex4);
-  return hsv(h + degrees, s, v);
-}
-function withAlpha(hex4, alpha) {
-  const [r, g, b] = parse(hex4);
-  return rgb2(r, g, b, alpha);
-}
-function brighten(hex4, amount) {
-  const { h, s, v } = toHsv(hex4);
-  return hsv(h, s, clamp01(v + amount));
-}
-function wheel(opts = {}) {
-  const s = opts.saturation ?? 1, v = opts.value ?? 1;
-  return { hue: (deg) => hsv(deg, s, v), at: (t) => hsv(t * 360, s, v), colors: (count, t0 = 0, t1 = 1) => Array.from({ length: count }, (_, i) => hsv((t0 + (t1 - t0) * i / deterministicMath.max(1, count - 1)) * 360, s, v)) };
-}
-function rainbow(count, opts = {}) {
-  const w = wheel(opts);
-  return Array.from({ length: count }, (_, i) => w.hue(360 * i / deterministicMath.max(1, count)));
-}
-function ramp(fromHue, toHue, count, opts = {}) {
-  const w = wheel(opts);
-  return Array.from({ length: count }, (_, i) => w.hue(fromHue + (toHue - fromHue) * i / deterministicMath.max(1, count - 1)));
-}
-function gradient(from, to, count) {
-  return Array.from({ length: count }, (_, i) => lerp2(from, to, count > 1 ? i / (count - 1) : 0));
-}
-function sample(stops, t) {
-  if (stops.length === 1) return stops[0];
-  const x = clamp01(t) * (stops.length - 1), i = deterministicMath.min(stops.length - 2, deterministicMath.floor(x));
-  return lerp2(stops[i], stops[i + 1], x - i);
-}
-var RAMPS = {
-  fire: ["#fff7e0", "#ffd23f", "#ff8c00", "#ff2d00", "#5c0a00"],
-  spark: ["#ffffff", "#fff0a8", "#ffae00", "#ff6a00"],
-  ember: ["#ffd166", "#ff7b00", "#c81e00", "#360a00"],
-  smoke: ["#d7dde0", "#9aa4aa", "#5a6066", "#2b2f33"],
-  ice: ["#ffffff", "#b3ecff", "#33a1ff", "#0a2a66"],
-  magic: ["#ffffff", "#ff9bf2", "#b14dff", "#3d0a66"],
-  toxic: ["#f0ffd0", "#b6f000", "#5aa800", "#143d00"],
-  rainbow: ["#ff2d55", "#ff9500", "#ffea00", "#34c759", "#00c7ff", "#af52de"]
-};
-function lifeRamp(ramp2) {
-  if (Array.isArray(ramp2)) return ramp2;
-  const stops = RAMPS[ramp2];
-  if (!stops) throw new Error(`color: no life ramp "${String(ramp2)}" (have: ${Object.keys(RAMPS).join(", ")})`);
-  return stops;
-}
-function luminance(hex4) {
-  const [r, g, b] = parse(hex4);
-  const lin = (c) => c <= 0.04045 ? c / 12.92 : deterministicMath.pow((c + 0.055) / 1.055, 2.4);
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-}
-function contrast(a, b) {
-  const x = luminance(a), y = luminance(b);
-  return (deterministicMath.max(x, y) + 0.05) / (deterministicMath.min(x, y) + 0.05);
-}
-function readableOn(background, candidates = ["#000000", "#ffffff"]) {
-  if (!candidates.length) throw new Error("color: readableOn needs at least one candidate ink");
-  let best = candidates[0], bestRatio = -1;
-  for (const ink of candidates) {
-    const r = contrast(background, ink);
-    if (r > bestRatio) {
-      bestRatio = r;
-      best = ink;
-    }
-  }
-  return best;
-}
-function pack(hex4) {
-  const [r, g, b, a] = parse(hex4);
-  return (deterministicMath.round(r * 255) << 24 | deterministicMath.round(g * 255) << 16 | deterministicMath.round(b * 255) << 8 | deterministicMath.round(a * 255)) >>> 0;
-}
-var colorApi = { parse, rgb: rgb2, hsv, toHsv, lerp: lerp2, shift, withAlpha, brighten, wheel, rainbow, ramp, gradient, RAMPS, lifeRamp, sample, pack, luminance, contrast, readableOn };
-function color() {
-  return { id: "color", attach() {
-    return { color: colorApi };
-  } };
-}
-var SAMPLES = 64;
-function rampAt(r, t, out, o) {
-  const f = deterministicMath.min(deterministicMath.max(t, 0), 1) * SAMPLES, i = deterministicMath.min(deterministicMath.floor(f), SAMPLES - 1), k = f - i;
-  for (let c = 0; c < 3; c++) out[o + c] = r[i * 3 + c] + (r[(i + 1) * 3 + c] - r[i * 3 + c]) * k;
 }
 
 // game/node_modules/@phaser-ae/typography/dist/index.js
@@ -11363,7 +12269,7 @@ var runtime_bake_exports = {};
 __export(runtime_bake_exports, {
   bakeFontInWorker: () => bakeFontInWorker
 });
-var host2;
+var host3;
 var bakeFontInWorker;
 var init_runtime_bake = __esm({
   "engine/vendor/typography/src/runtime-bake.ts"() {
@@ -11376,7 +12282,7 @@ var init_runtime_bake = __esm({
     init_runtime_bake_protocol();
     init_serial_worker_host();
     init_bake_progress_protocol();
-    host2 = new SerialWorkerHost({
+    host3 = new SerialWorkerHost({
       name: "gb-typography-font-baker",
       workerUrl: typographyAssetUrl("runtime-bake-worker.js"),
       prepare(request, id2) {
@@ -11413,7 +12319,7 @@ var init_runtime_bake = __esm({
         return bakeFontInNode(request);
       }
       request.onProgress?.({ stage: "font", phase: "queued", completed: 0, total: 1 });
-      return host2.run(request, request.signal);
+      return host3.run(request, request.signal);
     };
   }
 });
@@ -15054,7 +15960,7 @@ function checkGradient(g) {
   if (n < 2 || n > 4) throw new RangeError(`Typography gradient needs 2 to 4 colors, got ${n}`);
   for (const c of g.colors) {
     try {
-      packColor(c);
+      packColor2(c);
     } catch {
       throw new RangeError(`Typography gradient: cannot parse the color "${c}"`);
     }
@@ -15081,17 +15987,17 @@ function packFill(g, m, out = new Float32Array(FILL_FLOATS)) {
     step = m.lines.length > 1 ? m.lines[1].baseline - first.baseline : 0;
   }
   const x0 = ink.x, W = deterministicMath.max(ink.width, 1e-4), H = deterministicMath.max(h, 1e-4);
-  const rad = (g.angle ?? 90) * deterministicMath.PI / 180, cos2 = deterministicMath.cos(rad), sin2 = deterministicMath.sin(rad);
-  const smin = deterministicMath.min(0, W * cos2) + deterministicMath.min(0, H * sin2), span2 = deterministicMath.max(deterministicMath.abs(W * cos2) + deterministicMath.abs(H * sin2), 1e-4);
+  const rad = (g.angle ?? 90) * deterministicMath.PI / 180, cos3 = deterministicMath.cos(rad), sin3 = deterministicMath.sin(rad);
+  const smin = deterministicMath.min(0, W * cos3) + deterministicMath.min(0, H * sin3), span2 = deterministicMath.max(deterministicMath.abs(W * cos3) + deterministicMath.abs(H * sin3), 1e-4);
   out.fill(0);
-  out[0] = cos2 / span2;
-  out[1] = sin2 / span2;
-  out[2] = (-(x0 * cos2 + y0 * sin2) - smin) / span2;
+  out[0] = cos3 / span2;
+  out[1] = sin3 / span2;
+  out[2] = (-(x0 * cos3 + y0 * sin3) - smin) / span2;
   out[3] = n;
   for (let i = 0; i < 4; i++) out[4 + i] = i < n ? g.stops?.[i] ?? i / (n - 1) : 1;
   out[8] = y0;
   out[9] = step > 0 ? step : 0;
-  for (let i = 0; i < 4; i++) colorToFloats(packColor(g.colors[deterministicMath.min(i, n - 1)]), out, 12 + i * 4);
+  for (let i = 0; i < 4; i++) colorToFloats2(packColor2(g.colors[deterministicMath.min(i, n - 1)]), out, 12 + i * 4);
   return out;
 }
 var ROW_TEXELS = 14;
@@ -15275,7 +16181,7 @@ var TextGpuRenderer = class {
 var TextGlRenderer = class {
   constructor(gl) {
     this.gl = gl;
-    this.program = compileGlProgram(gl, GL_VERTEX, GL_FRAGMENT, "Typography");
+    this.program = compileGlProgram2(gl, GL_VERTEX, GL_FRAGMENT, "Typography");
     for (const name of [
       "matrix",
       "clip",
@@ -17948,15 +18854,15 @@ function compileCodec(descriptor2) {
     nonzeroU32(program.techniqueId, "codec technique id");
     nonzeroU32(program.programId, "codec program id");
     const programLabel = `codec program ${program.programId}`;
-    if (program.resourceKindMask !== void 0) u322(program.resourceKindMask, `${programLabel} resourceKindMask`);
-    if (program.semanticViewMask !== void 0) u322(program.semanticViewMask, `${programLabel} semanticViewMask`);
-    if (program.storageKeyMask !== void 0) u322(program.storageKeyMask, `${programLabel} storageKeyMask`);
-    if (program.drawKeyMask !== void 0) u322(program.drawKeyMask, `${programLabel} drawKeyMask`);
+    if (program.resourceKindMask !== void 0) u323(program.resourceKindMask, `${programLabel} resourceKindMask`);
+    if (program.semanticViewMask !== void 0) u323(program.semanticViewMask, `${programLabel} semanticViewMask`);
+    if (program.storageKeyMask !== void 0) u323(program.storageKeyMask, `${programLabel} storageKeyMask`);
+    if (program.drawKeyMask !== void 0) u323(program.drawKeyMask, `${programLabel} drawKeyMask`);
     if (program.paintCapabilities !== void 0) {
-      u322(program.paintCapabilities, `${programLabel} paintCapabilities`);
+      u323(program.paintCapabilities, `${programLabel} paintCapabilities`);
     }
     if (program.compositingCapabilities !== void 0) {
-      u322(program.compositingCapabilities, `${programLabel} compositingCapabilities`);
+      u323(program.compositingCapabilities, `${programLabel} compositingCapabilities`);
     }
     if (program.primitiveKind !== void 0) codecPrimitiveKind(program.primitiveKind, `${programLabel} primitiveKind`);
     const variant = u16(program.variant ?? 0, "codec program variant");
@@ -17973,7 +18879,7 @@ function compileCodec(descriptor2) {
       u8(buffer.vectorWidth, `${bufferLabel} vectorWidth`);
       if (buffer.alignment !== void 0) u16(buffer.alignment, `${bufferLabel} alignment`);
       if (buffer.stride !== void 0) u16(buffer.stride, `${bufferLabel} stride`);
-      if (buffer.usage !== void 0) u322(buffer.usage, `${bufferLabel} usage`);
+      if (buffer.usage !== void 0) u323(buffer.usage, `${bufferLabel} usage`);
       if (buffer.capacityClass !== void 0) u16(buffer.capacityClass, `${bufferLabel} capacityClass`);
     }
     u16(program.operations.length, `${programLabel} operation count`);
@@ -17983,9 +18889,9 @@ function compileCodec(descriptor2) {
       if (operation.target !== void 0) u8(operation.target, `${operationLabel} target`);
       if (operation.operand0 !== void 0) u8(operation.operand0, `${operationLabel} operand0`);
       if (operation.operand1 !== void 0) u8(operation.operand1, `${operationLabel} operand1`);
-      if (operation.immediate0 !== void 0) u322(operation.immediate0, `${operationLabel} immediate0`);
-      if (operation.immediate1 !== void 0) u322(operation.immediate1, `${operationLabel} immediate1`);
-      if (operation.immediate2 !== void 0) u322(operation.immediate2, `${operationLabel} immediate2`);
+      if (operation.immediate0 !== void 0) u323(operation.immediate0, `${operationLabel} immediate0`);
+      if (operation.immediate1 !== void 0) u323(operation.immediate1, `${operationLabel} immediate1`);
+      if (operation.immediate2 !== void 0) u323(operation.immediate2, `${operationLabel} immediate2`);
     }
     u16(program.inputs.length, `${programLabel} input count`);
     for (const [index, input] of program.inputs.entries()) {
@@ -18211,10 +19117,10 @@ function normalizeCodecCapabilitySet(value, label = "codec capability set") {
   return snapshot;
 }
 function preflightCapabilitySet(set, label) {
-  u322(set.maxBufferBytes, `${label} maxBufferBytes`);
-  u322(set.updateAlignment, `${label} updateAlignment`);
-  u322(set.coalesceGapBytes, `${label} coalesceGapBytes`);
-  u322(set.rangeCallPenaltyBytes, `${label} rangeCallPenaltyBytes`);
+  u323(set.maxBufferBytes, `${label} maxBufferBytes`);
+  u323(set.updateAlignment, `${label} updateAlignment`);
+  u323(set.coalesceGapBytes, `${label} coalesceGapBytes`);
+  u323(set.rangeCallPenaltyBytes, `${label} rangeCallPenaltyBytes`);
   u16(set.maxBuffersPerDraw, `${label} maxBuffersPerDraw`);
   u16(set.maxResourcesPerDraw, `${label} maxResourcesPerDraw`);
   u16(set.maxIndirectDraws, `${label} maxIndirectDraws`);
@@ -18456,7 +19362,7 @@ function requireRegister(registers, source, type, label) {
 function isPowerOfTwo(value) {
   return Number.isSafeInteger(value) && value > 0 && (value & value - 1) === 0;
 }
-function u322(value, label) {
+function u323(value, label) {
   if (!Number.isSafeInteger(value) || value < 0 || value > MAX_U322) throw new RangeError(`${label} needs a u32`);
   return value;
 }
@@ -20586,7 +21492,7 @@ function writeHeader(view, frame, byteLength, offsets) {
     ["codecParametersOffset", 0],
     ["codecParametersLength", 0]
   ]) {
-    view.setUint32(layout[field], u323(value, field), true);
+    view.setUint32(layout[field], u3232(value, field), true);
   }
 }
 function writeParagraphMutations(view, tableOffset, mutations) {
@@ -20595,9 +21501,9 @@ function writeParagraphMutations(view, tableOffset, mutations) {
   for (const [index, mutation] of mutations.entries()) {
     const offset = tableOffset + index * layout.size;
     view.setUint8(offset + layout.opcode, enumValue(opcodes, mutation.opcode, "paragraph mutation opcode"));
-    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.paragraphId, u3232(mutation.paragraphId, "paragraph ID"), true);
     if (mutation.opcode === "upsert") {
-      view.setUint32(offset + layout.order, u323(mutation.order, "paragraph order"), true);
+      view.setUint32(offset + layout.order, u3232(mutation.order, "paragraph order"), true);
     }
   }
 }
@@ -20605,8 +21511,8 @@ function writeParagraphOrderMutations(view, tableOffset, mutations) {
   const layout = textShaperAbi.layouts.engineParagraphOrderMutation;
   for (const [index, mutation] of mutations.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
-    view.setUint32(offset + layout.orderScope, u323(mutation.orderScope, "paragraph order scope"), true);
+    view.setUint32(offset + layout.paragraphId, u3232(mutation.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.orderScope, u3232(mutation.orderScope, "paragraph order scope"), true);
     if (!Number.isFinite(mutation.orderRank)) throw new RangeError("paragraph order rank must be finite");
     view.setFloat64(offset + layout.orderRank, mutation.orderRank, true);
   }
@@ -20618,11 +21524,11 @@ function writeTextMutations(view, tableOffset, mutations, payloadOffsets) {
     const payloadOffset = payloadOffsets[index];
     view.setUint8(offset + layout.opcode, textShaperAbi.engine.textMutationOpcodes.replaceUtf16);
     view.setUint8(offset + layout.encoding, textShaperAbi.engine.textEncodings.utf16Le);
-    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
-    view.setUint32(offset + layout.textStart, u323(mutation.start, "text mutation start"), true);
-    view.setUint32(offset + layout.deleteCount, u323(mutation.deleteCount, "text mutation delete count"), true);
+    view.setUint32(offset + layout.paragraphId, u3232(mutation.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.textStart, u3232(mutation.start, "text mutation start"), true);
+    view.setUint32(offset + layout.deleteCount, u3232(mutation.deleteCount, "text mutation delete count"), true);
     view.setUint32(offset + layout.insertOffset, payloadOffset, true);
-    view.setUint32(offset + layout.insertCount, u323(mutation.insert.length, "text mutation insert count"), true);
+    view.setUint32(offset + layout.insertCount, u3232(mutation.insert.length, "text mutation insert count"), true);
     for (let unit = 0; unit < mutation.insert.length; unit += 1) {
       view.setUint16(payloadOffset + unit * 2, mutation.insert.charCodeAt(unit), true);
     }
@@ -20705,7 +21611,7 @@ function writeConstraints(view, tableOffset, constraints, dropCapVertexOffsets) 
   const engine = textShaperAbi.engine;
   for (const [index, value] of constraints.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u323(value.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.paragraphId, u3232(value.paragraphId, "paragraph ID"), true);
     for (const [field, number] of [
       ["flowThreadId", value.flowThreadId],
       ["geometryRevision", value.geometryRevision],
@@ -20713,7 +21619,7 @@ function writeConstraints(view, tableOffset, constraints, dropCapVertexOffsets) 
       ["regionStart", value.regionStart],
       ["resumeCluster", value.resumeCluster]
     ]) {
-      view.setUint32(offset + layout[field], u323(number, field), true);
+      view.setUint32(offset + layout[field], u3232(number, field), true);
     }
     view.setUint16(offset + layout.regionCount, u162(value.regionCount, "constraint region count"), true);
     view.setUint16(offset + layout.resumeRegion, u162(value.resumeRegion, "constraint resume region"), true);
@@ -20779,9 +21685,9 @@ function writeRegions(view, tableOffset, regions, vertexOffsets) {
   const layout = textShaperAbi.layouts.engineRegion;
   for (const [index, value] of regions.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.id, u323(value.id, "region ID"), true);
-    view.setUint32(offset + layout.geometryRevision, u323(value.geometryRevision, "region geometry revision"), true);
-    view.setUint32(offset + layout.transformIndex, u323(value.transformIndex, "region transform index"), true);
+    view.setUint32(offset + layout.id, u3232(value.id, "region ID"), true);
+    view.setUint32(offset + layout.geometryRevision, u3232(value.geometryRevision, "region geometry revision"), true);
+    view.setUint32(offset + layout.transformIndex, u3232(value.transformIndex, "region transform index"), true);
     view.setUint32(offset + layout.verticesOffset, vertexOffsets[index], true);
     view.setUint16(offset + layout.vertexCount, u162(value.vertices?.length ?? 0, "region vertex count"), true);
     view.setUint16(offset + layout.exclusionStart, u162(value.exclusionStart, "region exclusion start"), true);
@@ -20797,9 +21703,9 @@ function writeExclusions(view, tableOffset, exclusions, vertexOffsets) {
   const layout = textShaperAbi.layouts.engineExclusion;
   for (const [index, value] of exclusions.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.id, u323(value.id, "exclusion ID"), true);
-    view.setUint32(offset + layout.regionId, u323(value.regionId, "exclusion region ID"), true);
-    view.setUint32(offset + layout.geometryRevision, u323(value.geometryRevision, "exclusion geometry revision"), true);
+    view.setUint32(offset + layout.id, u3232(value.id, "exclusion ID"), true);
+    view.setUint32(offset + layout.regionId, u3232(value.regionId, "exclusion region ID"), true);
+    view.setUint32(offset + layout.geometryRevision, u3232(value.geometryRevision, "exclusion geometry revision"), true);
     view.setUint32(offset + layout.verticesOffset, vertexOffsets[index], true);
     view.setUint16(offset + layout.vertexCount, u162(value.vertices?.length ?? 0, "exclusion vertex count"), true);
     view.setUint8(
@@ -20836,7 +21742,7 @@ function writeInlineObjects(view, tableOffset, objects) {
   const layout = textShaperAbi.layouts.engineInlineObject;
   for (const [index, value] of objects.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u323(value.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.paragraphId, u3232(value.paragraphId, "paragraph ID"), true);
     for (const [field, number] of [
       ["id", value.id],
       ["contentRevision", value.contentRevision],
@@ -20845,7 +21751,7 @@ function writeInlineObjects(view, tableOffset, objects) {
       ["resourceId", value.resourceId],
       ["resourceGeneration", value.resourceGeneration]
     ]) {
-      view.setUint32(offset + layout[field], u323(number, `inline object ${field}`), true);
+      view.setUint32(offset + layout[field], u3232(number, `inline object ${field}`), true);
     }
     for (const [field, number] of [
       ["inlineExtent", value.inlineExtent],
@@ -20934,7 +21840,7 @@ function u162(value, label) {
   if (!Number.isSafeInteger(value) || value < 0 || value > 65535) throw new RangeError(`${label} must be a u16`);
   return value;
 }
-function u323(value, label) {
+function u3232(value, label) {
   if (!Number.isSafeInteger(value) || value < 0 || value > MAX_U324) throw new RangeError(`${label} must be a u32`);
   return value;
 }
@@ -28715,7 +29621,7 @@ var RetainedText = class {
       nth.set(span2.transform, n + 1);
       const i = earlier.get(span2.transform)?.[n];
       if (i !== void 0 && reusable(span2, this.spans[i], this.draws[i])) return this.draws[i];
-      return pack2(span2, buffers, placements?.[1], revision);
+      return pack(span2, buffers, placements?.[1], revision);
     });
     let settled2 = false;
     return {
@@ -28759,7 +29665,7 @@ function equal(a, from, b, to, length2) {
   for (let k = 0; k < length2 >> 2; k++) if (x[i + k] !== y[j + k]) return false;
   return true;
 }
-function pack2(span2, buffers, placements, revision) {
+function pack(span2, buffers, placements, revision) {
   const fields = /* @__PURE__ */ new Map();
   for (const b of span2.buffers) {
     const d = b.input.declaration;
@@ -29613,6 +30519,1364 @@ function typography2(options = {}) {
       return { typography: api };
     }
   };
+}
+
+// game/node_modules/@phaser-ae/maths/dist/index.js
+var PI3 = deterministicMath.PI;
+var c1 = 1.70158;
+var c2 = c1 * 1.525;
+var c3 = c1 + 1;
+var c4 = 2 * PI3 / 3;
+var c5 = 2 * PI3 / 4.5;
+var bounceOut = (t) => {
+  const n = 7.5625, d = 2.75;
+  if (t < 1 / d) return n * t * t;
+  if (t < 2 / d) return n * (t -= 1.5 / d) * t + 0.75;
+  if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + 0.9375;
+  return n * (t -= 2.625 / d) * t + 0.984375;
+};
+var BASE = {
+  linear: (t) => t,
+  easeInQuad: (t) => t * t,
+  easeOutQuad: (t) => 1 - (1 - t) * (1 - t),
+  easeInOutQuad: (t) => t < 0.5 ? 2 * t * t : 1 - deterministicMath.pow(-2 * t + 2, 2) / 2,
+  easeInCubic: (t) => deterministicMath.pow(t, 3),
+  easeOutCubic: (t) => 1 - deterministicMath.pow(1 - t, 3),
+  easeInOutCubic: (t) => t < 0.5 ? 4 * deterministicMath.pow(t, 3) : 1 - deterministicMath.pow(-2 * t + 2, 3) / 2,
+  easeInQuart: (t) => deterministicMath.pow(t, 4),
+  easeOutQuart: (t) => 1 - deterministicMath.pow(1 - t, 4),
+  easeInOutQuart: (t) => t < 0.5 ? 8 * deterministicMath.pow(t, 4) : 1 - deterministicMath.pow(-2 * t + 2, 4) / 2,
+  easeInQuint: (t) => deterministicMath.pow(t, 5),
+  easeOutQuint: (t) => 1 - deterministicMath.pow(1 - t, 5),
+  easeInOutQuint: (t) => t < 0.5 ? 16 * deterministicMath.pow(t, 5) : 1 - deterministicMath.pow(-2 * t + 2, 5) / 2,
+  easeInSine: (t) => 1 - deterministicMath.cos(t * PI3 / 2),
+  easeOutSine: (t) => deterministicMath.sin(t * PI3 / 2),
+  easeInOutSine: (t) => -(deterministicMath.cos(PI3 * t) - 1) / 2,
+  easeInExpo: (t) => t === 0 ? 0 : deterministicMath.pow(2, 10 * t - 10),
+  easeOutExpo: (t) => t === 1 ? 1 : 1 - deterministicMath.pow(2, -10 * t),
+  easeInOutExpo: (t) => t === 0 ? 0 : t === 1 ? 1 : t < 0.5 ? deterministicMath.pow(2, 20 * t - 10) / 2 : (2 - deterministicMath.pow(2, -20 * t + 10)) / 2,
+  easeInCirc: (t) => 1 - deterministicMath.sqrt(1 - t * t),
+  easeOutCirc: (t) => deterministicMath.sqrt(1 - deterministicMath.pow(t - 1, 2)),
+  easeInOutCirc: (t) => t < 0.5 ? (1 - deterministicMath.sqrt(1 - deterministicMath.pow(2 * t, 2))) / 2 : (deterministicMath.sqrt(1 - deterministicMath.pow(-2 * t + 2, 2)) + 1) / 2,
+  easeInBack: (t) => c3 * deterministicMath.pow(t, 3) - c1 * t * t,
+  easeOutBack: (t) => 1 + c3 * deterministicMath.pow(t - 1, 3) + c1 * deterministicMath.pow(t - 1, 2),
+  easeInOutBack: (t) => t < 0.5 ? deterministicMath.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2) / 2 : (deterministicMath.pow(2 * t - 2, 2) * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2,
+  easeInElastic: (t) => t === 0 ? 0 : t === 1 ? 1 : -deterministicMath.pow(2, 10 * t - 10) * deterministicMath.sin((t * 10 - 10.75) * c4),
+  easeOutElastic: (t) => t === 0 ? 0 : t === 1 ? 1 : deterministicMath.pow(2, -10 * t) * deterministicMath.sin((t * 10 - 0.75) * c4) + 1,
+  easeInOutElastic: (t) => t === 0 ? 0 : t === 1 ? 1 : t < 0.5 ? -(deterministicMath.pow(2, 20 * t - 10) * deterministicMath.sin((20 * t - 11.125) * c5)) / 2 : deterministicMath.pow(2, -20 * t + 10) * deterministicMath.sin((20 * t - 11.125) * c5) / 2 + 1,
+  easeInBounce: (t) => 1 - bounceOut(1 - t),
+  easeOutBounce: bounceOut,
+  easeInOutBounce: (t) => t < 0.5 ? (1 - bounceOut(1 - 2 * t)) / 2 : (1 + bounceOut(2 * t - 1)) / 2,
+  swing: (t) => 0.5 - deterministicMath.cos(t * PI3) / 2
+};
+var EASE = {
+  ...BASE,
+  quad: BASE.easeInOutQuad,
+  cubic: BASE.easeInOutCubic,
+  quart: BASE.easeInOutQuart,
+  quint: BASE.easeInOutQuint,
+  sine: BASE.easeInOutSine,
+  expo: BASE.easeInOutExpo,
+  circ: BASE.easeInOutCirc,
+  back: BASE.easeOutBack,
+  bounce: BASE.easeOutBounce,
+  elastic: BASE.easeOutElastic
+};
+function bezier(x1, y1, x2, y2) {
+  const sx = (t) => 3 * x1 * deterministicMath.pow(1 - t, 2) * t + 3 * x2 * (1 - t) * t * t + deterministicMath.pow(t, 3), sy = (t) => 3 * y1 * deterministicMath.pow(1 - t, 2) * t + 3 * y2 * (1 - t) * t * t + deterministicMath.pow(t, 3);
+  return (x) => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let lo = 0, hi = 1, t = x;
+    for (let i = 0; i < 24; i++) {
+      const cx = sx(t);
+      if (deterministicMath.abs(cx - x) < 1e-5) break;
+      if (cx < x) lo = t;
+      else hi = t;
+      t = (lo + hi) / 2;
+    }
+    return sy(t);
+  };
+}
+function ease(e) {
+  if (e === void 0) return EASE.easeInOutQuad;
+  if (typeof e === "function") return e;
+  if (Array.isArray(e)) return bezier(e[0], e[1], e[2], e[3]);
+  const f = EASE[e];
+  if (!f) throw new Error(`maths: no easing "${String(e)}" (have ${Object.keys(EASE).join(", ")})`);
+  return f;
+}
+var vec2 = {
+  /** add: a + b. sub: a − b. scale: a · s. */
+  add: (a, b) => ({ x: a.x + b.x, y: a.y + b.y }),
+  sub: (a, b) => ({ x: a.x - b.x, y: a.y - b.y }),
+  scale: (a, s) => ({ x: a.x * s, y: a.y * s }),
+  /** dot: the scalar product. cross: the 2D cross product (z of the 3D cross; positive when b is clockwise of a in y-down). */
+  dot: (a, b) => a.x * b.x + a.y * b.y,
+  cross: (a, b) => a.x * b.y - a.y * b.x,
+  /** len/len2: length and squared length. dist/dist2: distance and squared distance between two points. */
+  len: (a) => deterministicMath.hypot(a.x, a.y),
+  len2: (a) => a.x * a.x + a.y * a.y,
+  dist: (a, b) => deterministicMath.hypot(a.x - b.x, a.y - b.y),
+  dist2: (a, b) => deterministicMath.pow(a.x - b.x, 2) + deterministicMath.pow(a.y - b.y, 2),
+  /** Unit vector in the same direction; `{ 0, 0 }` when the input is (near) zero length. */
+  normalize: (a) => {
+    const l = deterministicMath.hypot(a.x, a.y);
+    return l > 1e-9 ? { x: a.x / l, y: a.y / l } : { x: 0, y: 0 };
+  },
+  /** The vector shortened to `max` if it is longer; otherwise a copy. */
+  clampLen: (a, max) => {
+    const l = deterministicMath.hypot(a.x, a.y);
+    return l > max && l > 0 ? { x: a.x / l * max, y: a.y / l * max } : { x: a.x, y: a.y };
+  },
+  /** fromAngle: a vector of length `mag` (default 1) at `rad`. angleOf: the angle of a vector, via atan2. */
+  fromAngle: (rad, mag = 1) => ({ x: deterministicMath.cos(rad) * mag, y: deterministicMath.sin(rad) * mag }),
+  angleOf: (a) => deterministicMath.atan2(a.y, a.x),
+  /** Rotate about the origin by `rad`. */
+  rotate: (a, rad) => {
+    const c = deterministicMath.cos(rad), s = deterministicMath.sin(rad);
+    return { x: a.x * c - a.y * s, y: a.x * s + a.y * c };
+  },
+  /** Component-wise lerp; `t` is not clamped. */
+  lerp: (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }),
+  /** Move `from` at most `maxStep` toward `to`, landing exactly on `to` when within reach. */
+  stepToward: (from, to, maxStep) => {
+    const d = deterministicMath.hypot(to.x - from.x, to.y - from.y);
+    if (d <= maxStep || d < 1e-9) return { x: to.x, y: to.y };
+    const k = maxStep / d;
+    return { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
+  },
+  /** perp: the left-hand perpendicular `{ -y, x }`. reflect: `v` reflected about the unit normal `n`. */
+  perp: (a) => ({ x: -a.y, y: a.x }),
+  reflect: (v, n) => {
+    const d = 2 * (v.x * n.x + v.y * n.y);
+    return { x: v.x - d * n.x, y: v.y - d * n.y };
+  }
+};
+var TAU2 = deterministicMath.PI * 2;
+var toRad = (deg) => deg * PI3 / 180;
+var toDeg = (rad) => rad * 180 / PI3;
+var wrapAngle = (rad) => {
+  let a = rad % TAU2;
+  if (a > PI3) a -= TAU2;
+  else if (a <= -PI3) a += TAU2;
+  return a;
+};
+var signedAngle = (from, to) => wrapAngle(to - from);
+var turnToward = (from, to, maxStep) => {
+  const d = signedAngle(from, to);
+  return deterministicMath.abs(d) <= maxStep ? to : from + deterministicMath.sign(d) * maxStep;
+};
+var lerp = (a, b, t) => a + (b - a) * t;
+var clamp = (v, min, max) => v < min ? min : v > max ? max : v;
+var mapRange = (v, inMin, inMax, outMin, outMax, clampOut = false) => {
+  const t = (v - inMin) / (inMax - inMin || 1);
+  const o = outMin + (outMax - outMin) * t;
+  return clampOut ? clamp(o, deterministicMath.min(outMin, outMax), deterministicMath.max(outMin, outMax)) : o;
+};
+var roundTo = (v, precision = 0) => {
+  const p = deterministicMath.pow(10, precision);
+  return deterministicMath.round(v * p) / p;
+};
+var smoothstep = (a, b, t) => {
+  const x = clamp((t - a) / (b - a || 1), 0, 1);
+  return x * x * (3 - 2 * x);
+};
+var approach = (v, target, rate, dt) => v + (target - v) * (1 - deterministicMath.exp(-rate * dt));
+var hashCode = (s) => {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = deterministicMath.imul(h, 16777619);
+  }
+  return h >>> 0;
+};
+var geom = {
+  /** distance: between two points. angleTo: the angle from A to B in radians. */
+  distance: (ax, ay, bx, by) => deterministicMath.hypot(bx - ax, by - ay),
+  angleTo: (ax, ay, bx, by) => deterministicMath.atan2(by - ay, bx - ax),
+  /** pointInRect: inclusive, `x, y` is the top-left. pointInCircle: inclusive. pointInPolygon: even-odd test over a ring; undefined on the boundary. */
+  pointInRect: (px, py, x, y, w, h) => px >= x && py >= y && px <= x + w && py <= y + h,
+  pointInCircle: (px, py, cx, cy, r) => deterministicMath.pow(px - cx, 2) + deterministicMath.pow(py - cy, 2) <= r * r,
+  pointInPolygon: (px, py, poly) => {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      if (a.y > py !== b.y > py && px < (b.x - a.x) * (py - a.y) / (b.y - a.y) + a.x) inside = !inside;
+    }
+    return inside;
+  },
+  /** Intersection point of segments AB and CD, or null. */
+  segmentIntersection: (a, b, c, d) => {
+    const r = { x: b.x - a.x, y: b.y - a.y }, s = { x: d.x - c.x, y: d.y - c.y };
+    const den = r.x * s.y - r.y * s.x;
+    if (deterministicMath.abs(den) < 1e-12) return null;
+    const t = ((c.x - a.x) * s.y - (c.y - a.y) * s.x) / den, u = ((c.x - a.x) * r.y - (c.y - a.y) * r.x) / den;
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? { x: a.x + r.x * t, y: a.y + r.y * t } : null;
+  },
+  /** Does segment AB pass within `r` of point C? */
+  segmentHitsCircle: (a, b, c, r) => {
+    const abx = b.x - a.x, aby = b.y - a.y;
+    const l2 = abx * abx + aby * aby;
+    const t = l2 ? clamp(((c.x - a.x) * abx + (c.y - a.y) * aby) / l2, 0, 1) : 0;
+    const px = a.x + abx * t, py = a.y + aby * t;
+    return deterministicMath.pow(px - c.x, 2) + deterministicMath.pow(py - c.y, 2) <= r * r;
+  },
+  /** Is the segment AB clear of every circle in `blockers` (each a centre and radius `r`)? Line of sight past cover. */
+  lineOfSight: (a, b, blockers) => blockers.every((c) => !geom.segmentHitsCircle(a, b, c, c.r)),
+  /** Closest point on segment AB to P. */
+  closestOnSegment: (a, b, p) => {
+    const abx = b.x - a.x, aby = b.y - a.y;
+    const l2 = abx * abx + aby * aby;
+    const t = l2 ? clamp(((p.x - a.x) * abx + (p.y - a.y) * aby) / l2, 0, 1) : 0;
+    return { x: a.x + abx * t, y: a.y + aby * t };
+  },
+  /** polygonArea: signed shoelace area. polygonCentroid: area-weighted centroid, `{ 0, 0 }` for a degenerate ring. */
+  polygonArea: (poly) => {
+    let a = 0;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) a += poly[j].x * poly[i].y - poly[i].x * poly[j].y;
+    return a / 2;
+  },
+  polygonCentroid: (poly) => {
+    let x = 0, y = 0, a = 0;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const f = poly[j].x * poly[i].y - poly[i].x * poly[j].y;
+      x += (poly[j].x + poly[i].x) * f;
+      y += (poly[j].y + poly[i].y) * f;
+      a += f;
+    }
+    return a ? { x: x / (3 * a), y: y / (3 * a) } : { x: 0, y: 0 };
+  },
+  /** Andrew's monotone chain convex hull. */
+  convexHull: (pts) => {
+    const p = [...pts].sort((a, b) => a.x - b.x || a.y - b.y);
+    if (p.length < 3) return p;
+    const cross2 = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const lo = [];
+    for (const q of p) {
+      while (lo.length >= 2 && cross2(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop();
+      lo.push(q);
+    }
+    const hi = [];
+    for (let i = p.length - 1; i >= 0; i--) {
+      const q = p[i];
+      while (hi.length >= 2 && cross2(hi[hi.length - 2], hi[hi.length - 1], q) <= 0) hi.pop();
+      hi.push(q);
+    }
+    hi.pop();
+    lo.pop();
+    return lo.concat(hi);
+  },
+  /** Predict a ballistic arc: positions at `steps` even intervals over `time` seconds. */
+  predictPath: (x, y, vx, vy, gx, gy, time, steps = 32) => Array.from({ length: steps + 1 }, (_, i) => {
+    const t = time * i / steps;
+    return { x: x + vx * t + 0.5 * gx * t * t, y: y + vy * t + 0.5 * gy * t * t };
+  })
+};
+var mathsApi = { ease, EASE, bezier, vec: vec2, geom, TAU: TAU2, toRad, toDeg, wrapAngle, signedAngle, turnToward, lerp, clamp, mapRange, roundTo, smoothstep, approach, hashCode };
+function maths() {
+  return { id: "maths", attach() {
+    return { maths: mathsApi };
+  } };
+}
+
+// game/node_modules/@phaser-ae/backdrops/dist/index.js
+var BACKDROP_RESERVED = /* @__PURE__ */ new Set([
+  "time",
+  "res",
+  "px",
+  "physicalPx",
+  "cssScale",
+  "fragment",
+  "uv",
+  "view",
+  "bg",
+  "color",
+  "pointer",
+  "c0",
+  "c1",
+  "c2",
+  "c3",
+  "p0",
+  "p1",
+  "p2",
+  "p3",
+  "p4",
+  "p5",
+  "p6",
+  "p7",
+  "p8",
+  "p9",
+  "p10",
+  "p11",
+  "p12",
+  "p13",
+  "p14",
+  "p15",
+  "u",
+  "bgTex",
+  "bgSamp",
+  "hash21",
+  "noise2",
+  "fbm2",
+  "bgAt",
+  "vs",
+  "fs",
+  "TAU",
+  /* the WebGL2 template's own names: a param of the same name would hide them */
+  "params",
+  "colors",
+  "info",
+  "bgRect",
+  "bgFit",
+  "atlas",
+  "gbBacking",
+  "gbFade",
+  "ditherPx",
+  "result",
+  "main"
+]);
+function backdropScope(paramKeys) {
+  const scope = { uv: "vec2", px: "vec2", physicalPx: "vec2", fragment: "vec4", res: "vec2", time: "float", view: "vec4", bg: "vec4", color: "vec4", cssScale: "vec4", pointer: "vec4", TAU: "float", c0: "vec4", c1: "vec4", c2: "vec4", c3: "vec4" };
+  for (let i = 0; i < 16; i++) scope[`p${i}`] = "float";
+  for (const key of paramKeys) scope[key] = "float";
+  return scope;
+}
+var FULLSCREEN_GL = `#version 300 es
+precision highp float;
+out vec2 uv;
+void main(){ vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2)); gl_Position=vec4(p*2.0-1.0,0,1); uv=vec2(p.x,1.0-p.y); }`;
+function backdropGLSL(def) {
+  const scope = backdropScope(Object.keys(def.params));
+  const code = wgslSnippetToGLSL(def.code, scope);
+  return `#version 300 es
+precision highp float;
+in vec2 uv; out vec4 result;
+uniform vec4 params[4], colors[4], view, info, bgRect, bgFit, cssScale, pointer;
+uniform vec2 gbBacking; uniform sampler2D atlas; uniform float gbFade;
+const float TAU=6.28318530718;
+vec4 bgAt(vec2 p){ if(info.w<0.5)return vec4(0); vec2 q=(p-bgFit.zw)/bgFit.xy; float inside=step(0.0,q.x)*step(q.x,1.0)*step(0.0,q.y)*step(q.y,1.0); return texture(atlas,mix(bgRect.xy,bgRect.zw,clamp(q,0.0,1.0)))*inside; }
+float hash21(vec2 p){vec2 q=fract(p*vec2(123.34,456.21));q+=dot(q,q+45.32);return fract(q.x*q.y);}
+float noise2(vec2 p){vec2 i=floor(p),f=fract(p),u2=f*f*(3.0-2.0*f);return mix(mix(hash21(i),hash21(i+vec2(1,0)),u2.x),mix(hash21(i+vec2(0,1)),hash21(i+vec2(1,1)),u2.x),u2.y);}
+float fbm2(vec2 p){float v=0.0,a=0.5;vec2 q=p;for(int i=0;i<4;i++){v+=a*noise2(q);q=q*2.03+vec2(17,9);a*=0.5;}return v;}
+// the still \xB10.5/255 output dither, as the WGSL template's ditherPx: on the pixel from the top left, alpha-scaled, floored at 0 (light added beyond alpha kept)
+vec4 ditherPx(vec4 c, vec2 p){ float n=fract(52.9829189*fract(dot(floor(p),vec2(0.06711056,0.00583715))))-0.5; return vec4(max(c.rgb+vec3(n*c.a/255.0),vec3(0.0)),c.a); }
+void main(){ vec2 res=info.yz; vec2 px=uv*res; vec2 physicalPx=uv*gbBacking; vec4 fragment=vec4(physicalPx,0,1); float time=info.x; vec4 bg=bgAt(uv); vec4 c0=colors[0], c1=colors[1], c2=colors[2], c3=colors[3];
+${Array.from({ length: 16 }, (_, i) => `float p${i}=params[${i >> 2}][${i % 4}];`).join("\n")}
+${Object.keys(def.params).map((key, i) => `float ${key}=p${i};`).join("\n")}
+vec4 color=vec4(0); { ${code} } result=ditherPx(color*gbFade,vec2(gl_FragCoord.x,gbBacking.y-gl_FragCoord.y)); }`;
+}
+var BackdropsGl = class {
+  constructor(gl) {
+    this.gl = gl;
+    this.vao = gl.createVertexArray();
+  }
+  programs = /* @__PURE__ */ new Map();
+  /** GLSL compile errors by program key: a backdrop that does not compile is reported once and skipped, never retried every frame. */
+  errors = /* @__PURE__ */ new Map();
+  /** The error of each backdrop name's latest definition drawn: a definition that replaces a broken one clears it. */
+  failures = /* @__PURE__ */ new Map();
+  /** Why the backdrop `name` does not draw here, or null. */
+  failure(name) {
+    return this.failures.get(name) ?? null;
+  }
+  vao;
+  /** Draw one backdrop full-screen; `image` is the texture the background lives in (the atlas, or a picture's own); `fade` multiplies its output. */
+  draw(bag, def, values, colors, view, info, rect2, fit, cssScale, image = bag.atlas, pointer2 = [0.5, 0.5, 0, 0], fade = 1) {
+    const gl = this.gl;
+    const key = JSON.stringify([def.code, Object.keys(def.params)]);
+    let p = this.programs.get(key);
+    if (p === null) {
+      this.failures.set(def.name, this.errors.get(key));
+      return;
+    }
+    if (!p) {
+      try {
+        p = compileGlProgram2(gl, FULLSCREEN_GL, backdropGLSL(def), `backdrops:${def.name}`);
+      } catch (err) {
+        const why = `GLSL ${err instanceof Error ? err.message : String(err)}`;
+        this.programs.set(key, null);
+        this.errors.set(key, why);
+        this.failures.set(def.name, why);
+        console.error(`backdrops: "${def.name}" ${why}`);
+        return;
+      }
+      this.programs.set(key, p);
+    }
+    this.failures.delete(def.name);
+    gl.bindVertexArray(this.vao);
+    gl.useProgram(p);
+    gl.disable(gl.DEPTH_TEST);
+    gl.depthMask(false);
+    gl.disable(gl.CULL_FACE);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendEquation(gl.FUNC_ADD);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, image);
+    gl.uniform1i(gl.getUniformLocation(p, "atlas"), 0);
+    for (const [name, v] of [["params", values], ["colors", colors], ["view", view], ["info", info], ["bgRect", rect2], ["bgFit", fit], ["cssScale", [cssScale, cssScale, 0, 0]], ["pointer", Array.from(pointer2)]]) gl.uniform4fv(gl.getUniformLocation(p, name), v);
+    gl.uniform2f(gl.getUniformLocation(p, "gbBacking"), bag.width, bag.height);
+    gl.uniform1f(gl.getUniformLocation(p, "gbFade"), fade);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.bindVertexArray(null);
+  }
+  dispose() {
+    for (const p of this.programs.values()) if (p) this.gl.deleteProgram(p);
+    this.gl.deleteVertexArray(this.vao);
+    this.programs.clear();
+  }
+};
+var parse = (hex4) => {
+  let h = hex4.replace("#", "");
+  if (h.length === 3 || h.length === 4) h = [...h].map((c) => c + c).join("");
+  const n = parseInt(h.padEnd(8, "f"), 16);
+  return [(n >>> 24 & 255) / 255, (n >>> 16 & 255) / 255, (n >>> 8 & 255) / 255, (n & 255) / 255];
+};
+var TITLE_EASE = /^(sine|quad|cubic|quart|quint|expo|circ|back|elastic|bounce)(InOut|In|Out)$/;
+function backdropEase(e) {
+  if (e === void 0) return EASE.easeInOutQuad;
+  if (typeof e === "function") return e;
+  const m = TITLE_EASE.exec(e), key = m ? `ease${m[2]}${m[1][0].toUpperCase()}${m[1].slice(1)}` : e;
+  const f = EASE[key];
+  if (!f) throw new Error(`backdrops: no ease "${String(e)}" (a maths EASE name such as easeOutCubic, or cubicOut)`);
+  return f;
+}
+var durationOf = (opts) => {
+  const d = opts?.duration ?? 0.5;
+  if (!Number.isFinite(d) || d < 0) throw new Error(`backdrops: duration ${String(d)} is not a number of seconds`);
+  return d;
+};
+var DITHER = (
+  /* wgsl */
+  `fn ditherPx(c: vec4<f32>, p: vec2<f32>) -> vec4<f32> {
+    let n = fract(52.9829189 * fract(dot(floor(p), vec2(0.06711056, 0.00583715)))) - 0.5;
+    return vec4(max(c.rgb + vec3(n * c.a / 255.0), vec3(0.0)), c.a);
+}`
+);
+var backdropWGSL = (code, keys = []) => (
+  /* wgsl */
+  `
+const TAU = 6.28318530718;   // a full turn, because every snippet that phases anything by a hash writes it out otherwise
+struct U { params: array<vec4<f32>, 2>, colors: array<vec4<f32>, 2>, view: vec4<f32>, info: vec4<f32>, bgRect: vec4<f32>, bgFit: vec4<f32>, cssScale: vec4<f32>, extraParams: array<vec4<f32>, 2>, pointer: vec4<f32>, extraColors: array<vec4<f32>, 2>, fade: vec4<f32> };   // view: cam x y w h ; info: time, logicalW, logicalH, hasBg ; cssScale: logical\u2192CSS pixels ; pointer: uv x y (eased), down, seconds still ; fade.x: show/hide, multiplied into the output
+@group(0) @binding(0) var<uniform> u: U;
+@group(0) @binding(1) var bgTex: texture_2d<f32>;
+@group(0) @binding(2) var bgSamp: sampler;
+// the background image at a 0..1 screen coordinate (y down); transparent black when none is set or outside a 'contain' fit
+fn bgAt(p: vec2<f32>) -> vec4<f32> {
+    if (u.info.w < 0.5) { return vec4(0.0); }
+    let q = (p - u.bgFit.zw) / u.bgFit.xy;
+    let inside = step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
+    return textureSampleLevel(bgTex, bgSamp, mix(u.bgRect.xy, u.bgRect.zw, clamp(q, vec2(0.0), vec2(1.0))), 0.0) * inside;
+}
+struct Out { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> }
+@vertex fn vs(@builtin(vertex_index) i: u32) -> Out { var p = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0)); var o: Out; o.pos = vec4(p[i], 0.0, 1.0); o.uv = vec2((p[i].x + 1.0) * 0.5, 1.0 - (p[i].y + 1.0) * 0.5); return o; }
+fn hash21(p: vec2<f32>) -> f32 { var q = fract(p * vec2(123.34, 456.21)); q = q + dot(q, q + 45.32); return fract(q.x * q.y); }
+fn noise2(p: vec2<f32>) -> f32 { let i = floor(p); let f = fract(p); let u2 = f * f * (3.0 - 2.0 * f); return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u2.x), mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u2.x), u2.y); }
+// Preserve the authored noise field: four octaves, 2.03 scale, and (17,9) domain offset.
+fn fbm2(p: vec2<f32>) -> f32 { var v = 0.0; var a = 0.5; var q = p; for (var i = 0; i < 4; i++) { v += a * noise2(q); q = q * 2.03 + vec2(17.0, 9.0); a *= 0.5; } return v; }
+${DITHER}
+@fragment fn fs(@location(0) uv: vec2<f32>, @builtin(position) fragment: vec4<f32>) -> @location(0) vec4<f32> {
+    let physicalPx = fragment.xy;
+    let time = u.info.x; let res = u.info.yz; let px = uv * res; let view = u.view; let bg = bgAt(uv);
+    let cssScale = u.cssScale; let pointer = u.pointer;
+    let p0 = u.params[0].x; let p1 = u.params[0].y; let p2 = u.params[0].z; let p3 = u.params[0].w; let p4 = u.params[1].x; let p5 = u.params[1].y; let p6 = u.params[1].z; let p7 = u.params[1].w;
+    let p8 = u.extraParams[0].x; let p9 = u.extraParams[0].y; let p10 = u.extraParams[0].z; let p11 = u.extraParams[0].w; let p12 = u.extraParams[1].x; let p13 = u.extraParams[1].y; let p14 = u.extraParams[1].z; let p15 = u.extraParams[1].w;
+    let c0 = u.colors[0]; let c1 = u.colors[1]; let c2 = u.extraColors[0]; let c3 = u.extraColors[1];
+${keys.map((k2, i) => `    let ${k2} = p${i};`).join("\n")}
+    var color = vec4(0.0, 0.0, 0.0, 0.0);
+    {
+    ${code}
+    }
+    return ditherPx(color * u.fade.x, fragment.xy);
+}`
+);
+function backdrops() {
+  return {
+    id: "backdrops",
+    attach(k) {
+      const stack = [];
+      let glRenderer = null;
+      const releaseGl = () => {
+        glRenderer?.dispose();
+        glRenderer = null;
+      };
+      k.hooks.on("app.dispose", releaseGl);
+      k.hooks.on("boot.contextLost", releaseGl);
+      const keyCache = /* @__PURE__ */ new WeakMap();
+      const keyOf = (def) => {
+        let key = keyCache.get(def);
+        if (key === void 0) {
+          key = JSON.stringify([def.code, Object.keys(def.params)]);
+          keyCache.set(def, key);
+        }
+        return key;
+      };
+      const pipelines = /* @__PURE__ */ new Map();
+      let layout = null;
+      const unis = [];
+      let blitPipe = null, blitUni = null, blank = null;
+      let bgKey = null, bgFit = "cover";
+      const assets = k.assets;
+      const ptr = { x: 0.5, y: 0.5, down: 0, still: 0 }, pointer2 = new Float32Array(4);
+      let lastX = -1, lastY = -1;
+      k.simulate.add("backdrops.pointer", {}, (dt) => {
+        const p = k.input.pointer, w = k.screen.width || 1, h = k.screen.height || 1;
+        ptr.still += dt;
+        if (p) {
+          if (p.x !== lastX || p.y !== lastY) {
+            lastX = p.x;
+            lastY = p.y;
+            ptr.still = 0;
+          }
+          const ease22 = 1 - deterministicMath.exp(-dt / 0.25);
+          ptr.x += (deterministicMath.min(1, deterministicMath.max(0, p.x / w)) - ptr.x) * ease22;
+          ptr.y += (deterministicMath.min(1, deterministicMath.max(0, p.y / h)) - ptr.y) * ease22;
+        }
+        ptr.down = p?.down ? 1 : 0;
+        pointer2.set([ptr.x, ptr.y, ptr.down, ptr.still]);
+      });
+      pointer2.set([ptr.x, ptr.y, 0, 0]);
+      const easings = [];
+      const write = (live, slot, v) => {
+        if (slot === "fade") live.fade = v;
+        else live.values[slot] = v;
+      };
+      const endEasings = (live, slot) => {
+        for (let i = easings.length - 1; i >= 0; i--) {
+          const e = easings[i];
+          if (e.live === live && (slot === void 0 || e.slot === slot)) {
+            easings.splice(i, 1);
+            e.done();
+          }
+        }
+      };
+      const ease2 = (live, slot, to, dur, curve) => {
+        endEasings(live, slot);
+        const from = slot === "fade" ? live.fade : live.values[slot];
+        if (dur <= 0 || live.removed) {
+          if (!live.removed) write(live, slot, to);
+          return Promise.resolve();
+        }
+        return new Promise((done) => {
+          easings.push({ live, slot, from, to, t: 0, dur, ease: curve, done });
+        });
+      };
+      const rebind = (live) => {
+        const def = k.registry.get("backdrop", live.def.name);
+        if (!def || def === live.def) return;
+        const keys = Object.keys(def.params), colorKeys = Object.keys(def.colors);
+        if (keys.length > 16 || colorKeys.length > 4 || keys.some((key) => BACKDROP_RESERVED.has(key))) return;
+        const values = new Float32Array(16), colors = new Float32Array(16);
+        keys.forEach((key, i) => {
+          const j = live.keys.indexOf(key);
+          values[i] = j >= 0 ? live.values[j] : def.params[key];
+        });
+        colorKeys.forEach((key, i) => {
+          const j = live.colorKeys.indexOf(key);
+          colors.set(j >= 0 ? live.colors.subarray(j * 4, j * 4 + 4) : parse(def.colors[key]), i * 4);
+        });
+        if (keys.join("\0") !== live.keys.join("\0")) for (let i = 0; i < live.keys.length; i++) endEasings(live, i);
+        live.def = def;
+        live.keys = keys;
+        live.colorKeys = colorKeys;
+        live.values = values;
+        live.colors = colors;
+      };
+      const rebindAll = () => {
+        for (const live of stack) rebind(live);
+      };
+      k.simulate.add("backdrops.tween", {}, (dt) => {
+        for (let i = 0; i < easings.length; i++) {
+          const e = easings[i];
+          if (e.live.removed) {
+            easings.splice(i--, 1);
+            e.done();
+            continue;
+          }
+          e.t = deterministicMath.min(e.dur, e.t + dt);
+          const p = e.t / e.dur;
+          write(e.live, e.slot, p >= 1 ? e.to : e.from + (e.to - e.from) * e.ease(p));
+          if (p >= 1) {
+            easings.splice(i--, 1);
+            e.done();
+          }
+        }
+      });
+      const finite2 = (name, what, v) => {
+        if (typeof v !== "number" || !Number.isFinite(v)) throw new Error(`backdrops: "${name}" ${what} is ${String(v)}, not a finite number`);
+        return v;
+      };
+      const broken = /* @__PURE__ */ new Map();
+      k.hooks.on("boot.contextLost", () => {
+        pipelines.clear();
+        broken.clear();
+        layout = null;
+        unis.length = 0;
+        blitPipe = null;
+        blitUni = null;
+        blank = null;
+      });
+      const defined = /* @__PURE__ */ new Set();
+      const api = {
+        add(name, params = {}, colors = {}) {
+          const def = k.registry.get("backdrop", name);
+          if (!def) throw new Error(`backdrops: no backdrop "${name}" is composed (have: ${k.registry.list("backdrop").map((d) => d.name).join(", ") || "none"} \u2014 add the backdrop-${name} pack to the manifest)`);
+          const keys = Object.keys(def.params), colorKeys = Object.keys(def.colors);
+          if (keys.length > 16 || colorKeys.length > 4) throw new Error(`backdrops: "${name}" declares too many params/colours (16 / 4)`);
+          for (const key of keys) if (BACKDROP_RESERVED.has(key)) throw new Error(`backdrops: "${name}" param "${key}" is a name the shader already uses`);
+          for (const key of Object.keys(params)) if (!(key in def.params)) throw new Error(`backdrops: "${name}" has no param "${key}"`);
+          for (const key of Object.keys(colors)) if (!(key in def.colors)) throw new Error(`backdrops: "${name}" has no colour "${key}"`);
+          const live = { def, keys, colorKeys, values: new Float32Array(16), colors: new Float32Array(16), removed: false, fade: 1, offset: 0 };
+          keys.forEach((key, i) => {
+            live.values[i] = params[key] ?? def.params[key];
+          });
+          colorKeys.forEach((key, i) => {
+            live.colors.set(parse(colors[key] ?? def.colors[key]), i * 4);
+          });
+          stack.push(live);
+          const remove = () => {
+            if (live.removed) return;
+            live.removed = true;
+            const i = stack.indexOf(live);
+            if (i >= 0) stack.splice(i, 1);
+            endEasings(live);
+          };
+          k.own(remove);
+          const paramAt = (p) => {
+            const i = live.keys.indexOf(p);
+            if (i < 0) throw new Error(`backdrops: "${name}" has no param "${p}"`);
+            return i;
+          };
+          const colorAt = (c) => {
+            const i = live.colorKeys.indexOf(c);
+            if (i < 0) throw new Error(`backdrops: "${name}" has no colour "${c}"`);
+            return i;
+          };
+          const handle = {
+            name,
+            set(p, v) {
+              if (typeof p === "string") {
+                const i = paramAt(p);
+                live.values[i] = finite2(name, `param "${p}"`, v);
+                endEasings(live, i);
+                return;
+              }
+              const ps = Object.entries(p?.params ?? {}).map(([key, x]) => [paramAt(key), finite2(name, `param "${key}"`, x)]);
+              const cs = Object.entries(p?.colors ?? {}).map(([key, hex4]) => [colorAt(key), parse(String(hex4))]);
+              for (const [i, x] of ps) {
+                live.values[i] = x;
+                endEasings(live, i);
+              }
+              for (const [i, rgba2] of cs) live.colors.set(rgba2, i * 4);
+            },
+            setColor(c, hex4) {
+              live.colors.set(parse(hex4), colorAt(c) * 4);
+            },
+            tween(to, opts) {
+              const dur = durationOf(opts), curve = backdropEase(opts?.ease);
+              const ps = Object.entries(to).map(([key, x]) => [paramAt(key), finite2(name, `param "${key}"`, x)]);
+              return Promise.all(ps.map(([i, x]) => ease2(live, i, x, dur, curve))).then(() => void 0);
+            },
+            show(opts) {
+              return ease2(live, "fade", 1, durationOf(opts), backdropEase(opts?.ease));
+            },
+            hide(opts) {
+              return ease2(live, "fade", 0, durationOf(opts), backdropEase(opts?.ease));
+            },
+            get fade() {
+              return live.fade;
+            },
+            get params() {
+              return Object.fromEntries(live.keys.map((key, i) => [key, live.values[i]]));
+            },
+            get time() {
+              return k.clock.time + live.offset;
+            },
+            set time(t) {
+              live.offset = finite2(name, "time", t) - k.clock.time;
+            },
+            remove
+          };
+          return handle;
+        },
+        define(def) {
+          if (k.registry.get("backdrop", def.name) && !defined.has(def.name)) throw new Error(`backdrops: "${def.name}" is a composed pack's backdrop (backdrop-${def.name}); give yours another name`);
+          if (Object.keys(def.params).length > 16 || Object.keys(def.colors).length > 4) throw new Error(`backdrops: "${def.name}" declares too many params/colours (16 / 4)`);
+          for (const key of Object.keys(def.params)) if (BACKDROP_RESERVED.has(key)) throw new Error(`backdrops: "${def.name}" param "${key}" is a name the shader already uses`);
+          registerBackdrop(k, def);
+          defined.add(def.name);
+          rebindAll();
+        },
+        clear() {
+          for (const l of stack) {
+            l.removed = true;
+            endEasings(l);
+          }
+          stack.length = 0;
+        },
+        failure(name) {
+          const def = k.registry.get("backdrop", name);
+          return (def && broken.get(keyOf(def))) ?? glRenderer?.failure(name) ?? null;
+        },
+        background(key, fit = "cover") {
+          if (key !== null) assets.frames(key);
+          const prevKey = bgKey, prevFit = bgFit;
+          bgKey = key;
+          bgFit = fit;
+          k.own(() => {
+            bgKey = prevKey;
+            bgFit = prevFit;
+          });
+        },
+        get backgroundKey() {
+          return bgKey;
+        },
+        get stack() {
+          return stack.map((l) => l.def.name);
+        },
+        get available() {
+          return k.registry.list("backdrop").map((d) => d.name);
+        }
+      };
+      const pipelineFor = (bag, def) => {
+        const key = keyOf(def);
+        let p = pipelines.get(key);
+        if (p) return p;
+        if (!layout) layout = bag.device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }, { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} }, { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: {} }] });
+        const mod = bag.device.createShaderModule({ code: backdropWGSL(def.code, Object.keys(def.params)) });
+        void mod.getCompilationInfo().then((inf) => {
+          for (const m of inf.messages) if (m.type === "error") {
+            const why = `WGSL ${m.lineNum}:${m.linePos} ${m.message}`;
+            if (!broken.has(key)) broken.set(key, why);
+            console.error(`backdrops: "${def.name}" ${why}`);
+          }
+        });
+        p = bag.device.createRenderPipeline({ layout: bag.device.createPipelineLayout({ bindGroupLayouts: [layout] }), vertex: { module: mod, entryPoint: "vs" }, fragment: { module: mod, entryPoint: "fs", targets: [{ format: bag.format, blend: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" } } }] }, primitive: { topology: "triangle-list" } });
+        pipelines.set(key, p);
+        return p;
+      };
+      const bgUniforms = (bag, textureOf) => {
+        if (bgKey === null) return [[0, 0, 0, 0], [1, 1, 0, 0], null];
+        const f = assets.framePlace(assets.frames(bgKey)), own = f.tex ? assets.ownTexture(f.tex) : null, image = textureOf(f.tex);
+        if (!image) return [[0, 0, 0, 0], [1, 1, 0, 0], null];
+        const tw = own?.width ?? assets.size, th = own?.height ?? assets.size;
+        const rect2 = [f.x / tw, f.y / th, (f.x + f.w) / tw, (f.y + f.h) / th];
+        const sw = bag.logicalWidth, sh = bag.logicalHeight, ia = f.w / f.h, sa = sw / sh;
+        let sx = 1, sy = 1;
+        if (bgFit === "cover") {
+          if (ia > sa) sx = ia / sa;
+          else sy = sa / ia;
+        } else if (bgFit === "contain") {
+          if (ia > sa) sy = sa / ia;
+          else sx = ia / sa;
+        }
+        return [rect2, [sx, sy, (1 - sx) / 2, (1 - sy) / 2], image];
+      };
+      const BLIT = (
+        /* wgsl */
+        `
+struct U { rect: vec4<f32>, fit: vec4<f32> };
+@group(0) @binding(0) var<uniform> u: U;
+@group(0) @binding(1) var t: texture_2d<f32>;
+@group(0) @binding(2) var s: sampler;
+struct Out { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> }
+@vertex fn vs(@builtin(vertex_index) i: u32) -> Out { var p = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0)); var o: Out; o.pos = vec4(p[i], 0.0, 1.0); o.uv = vec2((p[i].x + 1.0) * 0.5, 1.0 - (p[i].y + 1.0) * 0.5); return o; }
+${DITHER}
+@fragment fn fs(@location(0) uv: vec2<f32>, @builtin(position) fragment: vec4<f32>) -> @location(0) vec4<f32> {
+    let q = (uv - u.fit.zw) / u.fit.xy;
+    let inside = step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
+    return ditherPx(textureSampleLevel(t, s, mix(u.rect.xy, u.rect.zw, clamp(q, vec2(0.0), vec2(1.0))), 0.0) * inside, fragment.xy);
+}`
+      );
+      k.frame.addPass("backdrops", { after: "begin", before: ["meshes3d", "sprites"] }, (ctx) => {
+        rebindAll();
+        const glBag = ctx.backend["webgl2"];
+        if (glBag) {
+          const [rect22, fit2, image2] = bgUniforms(glBag, (tex) => tex ? glBag.textureOf?.(tex) ?? null : glBag.atlas), hasBg2 = image2 !== null;
+          if (!hasBg2 && !stack.length) return;
+          glRenderer ??= new BackdropsGl(glBag.gl);
+          const cam2 = k.camera.render, time2 = k.clock.time + k.clock.alpha * k.clock.step;
+          const vw2 = glBag.logicalWidth / cam2.zoom, vh2 = glBag.logicalHeight / cam2.zoom;
+          const view = [cam2.x - vw2 / 2, cam2.y - vh2 / 2, vw2, vh2], info = [time2, glBag.logicalWidth, glBag.logicalHeight, hasBg2 ? 1 : 0];
+          if (hasBg2) glRenderer.draw(glBag, { name: "background-image", code: "color = bg;", params: {}, colors: {} }, new Float32Array(16), new Float32Array(16), view, info, rect22, fit2, k.screen.cssScale ?? 1, image2, pointer2);
+          for (const live of stack) if (live.fade > 0) glRenderer.draw(glBag, live.def, live.values, live.colors, view, [time2 + live.offset, info[1], info[2], info[3]], rect22, fit2, k.screen.cssScale ?? 1, image2 ?? glBag.atlas, pointer2, live.fade);
+          return;
+        }
+        const bag = ctx.backend["webgpu"];
+        if (!bag) return;
+        const [rect2, fit, image] = bgUniforms(bag, (tex) => bag.textureOf ? bag.textureOf(tex) : tex ? null : bag.atlas), hasBg = image !== null;
+        if (!stack.length && !hasBg) return;
+        if (!blank) blank = bag.device.createTexture({ size: [1, 1], format: "rgba8unorm", usage: GPUTextureUsage.TEXTURE_BINDING }).createView();
+        const bgView = image ?? blank;
+        if (hasBg) {
+          if (!blitPipe) {
+            const mod = bag.device.createShaderModule({ code: BLIT });
+            blitPipe = bag.device.createRenderPipeline({ layout: "auto", vertex: { module: mod, entryPoint: "vs" }, fragment: { module: mod, entryPoint: "fs", targets: [{ format: bag.format, blend: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" } } }] }, primitive: { topology: "triangle-list" } });
+            blitUni = bag.device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+          }
+          bag.device.queue.writeBuffer(blitUni, 0, new Float32Array([...rect2, ...fit]));
+          const bind = bag.device.createBindGroup({ layout: blitPipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: blitUni } }, { binding: 1, resource: bgView }, { binding: 2, resource: bag.sampler }] });
+          const pass = bag.encoder.beginRenderPass({ colorAttachments: [{ view: bag.view, loadOp: "load", storeOp: "store" }] });
+          pass.setPipeline(blitPipe);
+          pass.setBindGroup(0, bind);
+          pass.draw(3);
+          pass.end();
+        }
+        const cam = k.camera.render, time = k.clock.time + k.clock.alpha * k.clock.step;
+        const vw = bag.logicalWidth / cam.zoom, vh = bag.logicalHeight / cam.zoom;
+        stack.forEach((live, i) => {
+          if (live.fade <= 0 || broken.has(keyOf(live.def))) return;
+          let uni = unis[i];
+          if (!uni) {
+            uni = bag.device.createBuffer({ size: 240, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+            unis[i] = uni;
+          }
+          const data = new Float32Array(60);
+          data.set(live.values.subarray(0, 8), 0);
+          data.set(live.values.subarray(8), 36);
+          data.set(live.colors.subarray(0, 8), 8);
+          data.set(live.colors.subarray(8), 48);
+          data.set([cam.x - vw / 2, cam.y - vh / 2, vw, vh], 16);
+          data.set([time + live.offset, bag.logicalWidth, bag.logicalHeight, hasBg ? 1 : 0], 20);
+          data.set(rect2, 24);
+          data.set(fit, 28);
+          data.set([k.screen.cssScale ?? 1, k.screen.cssScale ?? 1, 0, 0], 32);
+          data.set(pointer2, 44);
+          data[56] = live.fade;
+          bag.device.queue.writeBuffer(uni, 0, data);
+          const bind = bag.device.createBindGroup({ layout: layout ?? (pipelineFor(bag, live.def), layout), entries: [{ binding: 0, resource: { buffer: uni } }, { binding: 1, resource: bgView }, { binding: 2, resource: bag.sampler }] });
+          const pass = bag.encoder.beginRenderPass({ colorAttachments: [{ view: bag.view, loadOp: "load", storeOp: "store" }] });
+          pass.setPipeline(pipelineFor(bag, live.def));
+          pass.setBindGroup(0, bind);
+          pass.draw(3);
+          pass.end();
+        });
+      });
+      k.registry.add("backdrops", Object.assign(Object.create(api), { name: "backdrops" }));
+      return { backdrop: api };
+    }
+  };
+}
+function registerBackdrop(k, def) {
+  for (const key of Object.keys(def.params)) {
+    if (new RegExp(`\\b(let|var|const)\\s+${key}\\s*[=:]`).test(def.code)) throw new Error(`backdrops: "${def.name}" declares "${key}" in its code, and the template already declares it from the param list \u2014 drop the line`);
+  }
+  k.registry.add("backdrop", def);
+}
+
+// game/node_modules/@phaser-ae/backdrop-sky/dist/index.js
+function backdropSky() {
+  return { id: "backdrop-sky", requires: ["backdrops"], attach(k) {
+    registerBackdrop(k, {
+      name: "sky",
+      description: "a two-colour gradient, curve bends it",
+      params: { curve: 1 },
+      colors: { top: "#1a2a6c", bottom: "#fdbb2d" },
+      code: `let t = pow(clamp(uv.y, 0.0, 1.0), max(p0, 0.01)); color = mix(c0, c1, t);`
+    });
+    return {};
+  } };
+}
+
+// game/node_modules/@phaser-ae/backdrop-stars/dist/index.js
+function backdropStars() {
+  return { id: "backdrop-stars", requires: ["backdrops"], attach(k) {
+    registerBackdrop(k, {
+      name: "stars",
+      description: "a parallax starfield that twinkles",
+      params: { density: 1, twinkle: 1, drift: 0 },
+      colors: { tint: "#ffffff" },
+      code: `var acc = 0.0;
+    for (var l = 0u; l < 3u; l++) {
+      let fl = f32(l);
+      let cell = 26.0 - fl * 7.0;                       // nearer layers: sparser, bigger
+      let par = 0.15 + fl * 0.25;                       // nearer layers drift more
+      let cssPx = px * cssScale.xy;
+      let q = (cssPx + view.xy * par + vec2(time * p2 * (fl + 1.0) * 8.0, 0.0)) / cell;
+      // A star may cross its cell boundary. Include neighboring centres rather than
+      // clipping the disc to whichever cell contains this fragment.
+      for (var oy = -1; oy <= 1; oy++) {
+      for (var ox = -1; ox <= 1; ox++) {
+      let id = floor(q) + vec2(f32(ox), f32(oy));
+      let rnd = hash21(id + fl * 91.7);
+      let keep = step(1.0 - 0.12 * p0, rnd);            // a fraction of cells hold a star
+      let centre = vec2(hash21(id + 3.1), hash21(id + 7.7));
+      let d = length(q - id - centre);
+      let core = smoothstep(0.14 + 0.08 * fl, 0.0, d);
+      // Twinkle needs its OWN hash. \`rnd\` survives the keep threshold, so it only spans
+      // [1 - 0.12 * density, 1] \u2014 a phase and frequency derived from it are nearly identical for every
+      // star, and the whole sky then pulses in unison. v2 hit this and fixed it; v3's port did not carry
+      // the fix, and drove a 0.6..1.0 swing off the kept hash, which is the same bug with more amplitude.
+      // Real stars mostly hold steady and a subset glints.
+      let twr = hash21(id + 13.7 + fl * 5.3);
+      let tw = 0.9 + 0.1 * sin(time * (0.4 + twr * 1.2) * p1 + twr * TAU * 7.0);
+      let glint = step(0.72, twr) * pow(max(sin(time * (0.5 + twr * 1.3) * p1 + twr * 47.0), 0.0), 24.0) * 0.7;
+      // Keep v2's exact profile at 1. Zero is genuinely steady; higher settings
+      // increase contrast as well as speed so the live control remains visible.
+      let strength = clamp(p1, 0.0, 4.0);
+      let shimmer = 1.0 + strength * (tw - 1.0) + min(strength, 1.0) * glint;
+      acc += keep * core * shimmer * (0.45 + 0.55 * rnd);
+      }
+      }
+    }
+    color = vec4(c0.rgb * acc, acc) * c0.a;`
+    });
+    return {};
+  } };
+}
+
+// game/node_modules/@phaser-ae/render-texture/dist/index.js
+function renderTexture() {
+  return {
+    id: "render-texture",
+    requires: ["world:2d"],
+    attach(k) {
+      let n = 0;
+      const assets = k.assets;
+      const spare = /* @__PURE__ */ new Map();
+      const live = /* @__PURE__ */ new Map();
+      const dirty = /* @__PURE__ */ new Set();
+      k.hooks.on("scene.kill", ({ handle }) => {
+        const r = live.get(handle);
+        if (!r) return;
+        live.delete(handle);
+        for (const t of dirty) if (t.handle === handle) dirty.delete(t);
+        const list2 = spare.get(r.size) ?? [];
+        list2.push(r.frame);
+        spare.set(r.size, list2);
+      });
+      k.frame.addPass("render-texture", { before: "begin" }, () => {
+        for (const t of [...dirty]) t.flush();
+      });
+      const create = (spec) => {
+        const screen3 = spec.width === void 0 && spec.height === void 0;
+        const W = deterministicMath.max(1, deterministicMath.round(spec.width ?? k.screen.width)), H = deterministicMath.max(1, deterministicMath.round(spec.height ?? k.screen.height));
+        const canvas = new OffscreenCanvas(W, H);
+        const g = canvas.getContext("2d");
+        const big = k.assets.isPicture(W, H);
+        const size = `${big ? "own:" : ""}${W}x${H}`;
+        const reused = spare.get(size)?.pop();
+        const frame = reused ?? (big ? k.assets.addCanvas(`texture-${++n}`, canvas, W, H) : k.assets.addStrip(`texture-${++n}`, canvas, W, H, 1));
+        const h = k.spawn({ id: spec.id ?? "texture", owner: "render-texture", tags: spec.tags ?? ["texture"], x: spec.x ?? (screen3 ? k.screen.width / 2 : 0), y: spec.y ?? (screen3 ? k.screen.height / 2 : 0), width: W, height: H, frame, layer: spec.layer, visible: spec.visible });
+        let flushes = 0;
+        const a = (alpha) => {
+          dirty.add(t);
+          g.globalAlpha = alpha ?? 1;
+        };
+        const t = {
+          handle: h,
+          width: W,
+          height: H,
+          clear(color2) {
+            dirty.add(t);
+            g.globalAlpha = 1;
+            g.clearRect(0, 0, W, H);
+            if (color2) {
+              g.fillStyle = color2;
+              g.fillRect(0, 0, W, H);
+            }
+            return t;
+          },
+          rect(x, y, w, hh, color2, alpha, rot) {
+            a(alpha);
+            g.fillStyle = color2;
+            if (rot) {
+              g.save();
+              g.translate(x + w / 2, y + hh / 2);
+              g.rotate(rot);
+              g.fillRect(-w / 2, -hh / 2, w, hh);
+              g.restore();
+            } else g.fillRect(x, y, w, hh);
+            return t;
+          },
+          line(x0, y0, x1, y1, width, color2, alpha) {
+            a(alpha);
+            g.strokeStyle = color2;
+            g.lineWidth = width;
+            g.lineCap = "round";
+            g.beginPath();
+            g.moveTo(x0, y0);
+            g.lineTo(x1, y1);
+            g.stroke();
+            return t;
+          },
+          poly(points2, width, color2, alpha, closed) {
+            if (points2.length < 2) return t;
+            a(alpha);
+            g.strokeStyle = color2;
+            g.lineWidth = width;
+            g.lineJoin = "round";
+            g.lineCap = "round";
+            g.beginPath();
+            points2.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
+            if (closed) g.closePath();
+            g.stroke();
+            return t;
+          },
+          fill(points2, color2, alpha) {
+            if (points2.length < 3) return t;
+            a(alpha);
+            g.fillStyle = color2;
+            g.beginPath();
+            points2.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
+            g.closePath();
+            g.fill();
+            return t;
+          },
+          circle(cx, cy, r, color2, alpha) {
+            a(alpha);
+            g.fillStyle = color2;
+            g.beginPath();
+            g.arc(cx, cy, r, 0, deterministicMath.PI * 2);
+            g.fill();
+            return t;
+          },
+          ring(cx, cy, r, thickness, color2, alpha) {
+            a(alpha);
+            g.strokeStyle = color2;
+            g.lineWidth = thickness;
+            g.beginPath();
+            g.arc(cx, cy, r, 0, deterministicMath.PI * 2);
+            g.stroke();
+            return t;
+          },
+          text(str2, x, y, o = {}) {
+            a(o.alpha);
+            g.font = o.font ?? "16px sans-serif";
+            g.fillStyle = o.color ?? "#ffffff";
+            g.textAlign = o.align ?? "left";
+            g.textBaseline = o.baseline ?? "top";
+            g.fillText(str2, x, y);
+            return t;
+          },
+          sprite(fi, x, y, w, hh, o = {}) {
+            const r = assets.framePlace(fi);
+            const img = r.tex ? assets.ownTexture(r.tex)?.image ?? null : assets.image;
+            if (!img) return t;
+            const dw = w ?? r.w, dh = hh ?? r.h;
+            a(o.alpha);
+            g.save();
+            g.translate(x, y);
+            if (o.rot) g.rotate(o.rot);
+            g.drawImage(img, r.x, r.y, r.w, r.h, -dw / 2, -dh / 2, dw, dh);
+            if (o.tint) {
+              g.globalCompositeOperation = "multiply";
+              g.fillStyle = o.tint;
+              g.fillRect(-dw / 2, -dh / 2, dw, dh);
+              g.globalCompositeOperation = "destination-in";
+              g.drawImage(img, r.x, r.y, r.w, r.h, -dw / 2, -dh / 2, dw, dh);
+              g.globalCompositeOperation = "source-over";
+            }
+            g.restore();
+            return t;
+          },
+          draw(fn) {
+            dirty.add(t);
+            g.save();
+            fn(g);
+            g.restore();
+            return t;
+          },
+          flush() {
+            dirty.delete(t);
+            if (h.alive) {
+              k.assets.redraw(frame, canvas);
+              flushes++;
+            }
+            return t;
+          },
+          destroy() {
+            h.kill();
+          },
+          get flushes() {
+            return flushes;
+          }
+        };
+        if (spec.clear !== false) t.clear();
+        if (reused !== void 0) k.assets.redraw(frame, canvas);
+        live.set(h, { frame, size });
+        return t;
+      };
+      k.registry.add("texture", { name: "texture", create });
+      return { texture: { create } };
+    }
+  };
+}
+
+// game/node_modules/@phaser-ae/controls-2d/dist/index.js
+var DEFAULT_BINDINGS = {
+  move: { up: ["KeyW", "ArrowUp"], down: ["KeyS", "ArrowDown"], left: ["KeyA", "ArrowLeft"], right: ["KeyD", "ArrowRight"] },
+  intents: {
+    fire: { keys: ["Space", "KeyJ"], pad: ["a"] },
+    action: { keys: ["KeyE", "KeyK"], pad: ["b"] },
+    pause: { keys: ["Escape"], pad: ["start"] }
+  },
+  pad: "any",
+  stick: "left"
+};
+var copyBinding = (b) => ({ ...b.keys ? { keys: [...b.keys] } : {}, ...b.pad ? { pad: [...b.pad] } : {} });
+var copyPlayer = (p) => ({
+  ...p.move ? { move: { up: [...p.move.up], down: [...p.move.down], left: [...p.move.left], right: [...p.move.right] } } : {},
+  intents: Object.fromEntries(Object.entries(p.intents).map(([k, v]) => [k, copyBinding(v)])),
+  pad: p.pad ?? "any",
+  stick: p.stick ?? "left"
+});
+function resolveBindings(opts = {}) {
+  if (opts.players) {
+    if (opts.players.length < 1 || opts.players.length > 4) throw new Error(`controls-2d: players is 1 to 4, not ${opts.players.length}`);
+    return opts.players.map((p, i) => copyPlayer({ ...p, pad: p.pad ?? i }));
+  }
+  const o = opts.bindings ?? {}, d = copyPlayer(DEFAULT_BINDINGS);
+  const intents = { ...d.intents };
+  for (const [k, v] of Object.entries(o.intents ?? {})) {
+    if (v) intents[k] = copyBinding(v);
+    else delete intents[k];
+  }
+  return [{ move: { ...d.move, ...o.move }, intents, pad: o.pad ?? "any", stick: o.stick ?? "left" }];
+}
+function controls2d(opts = {}) {
+  const players = resolveBindings(opts);
+  const aimDeadzone = opts.aimDeadzone ?? 12;
+  return {
+    id: "controls-2d",
+    requires: ["world:2d"],
+    attach(k) {
+      const input = k.input.gameplay, cam = k.camera;
+      const anyKey = (codes) => !!codes?.some((c) => input.keyDown(c));
+      const makePlayer = (index) => {
+        const b = players[index];
+        let origin = null;
+        const now = /* @__PURE__ */ new Map(), down = /* @__PURE__ */ new Map(), up = /* @__PURE__ */ new Map(), padWas = /* @__PURE__ */ new Map();
+        const pad = () => b.pad === "none" ? void 0 : b.pad === "any" ? input.gamepads.find((g) => g.connected) : input.gamepads.find((g) => g.index === b.pad && g.connected);
+        const known = (i) => {
+          if (!b.intents[i]) throw new Error(`controls-2d: player ${index} has no intent "${i}"; bound: ${Object.keys(b.intents).join(", ") || "none"}`);
+        };
+        k.hooks.on("frame.simulate", () => {
+          const g = pad();
+          for (const [i, bind] of Object.entries(b.intents)) {
+            const padDown = !!g && !!bind.pad?.some((n) => g.button(n));
+            const was = now.get(i) ?? false, wasPad = padWas.get(i) ?? false;
+            const tapped = !!bind.keys?.some((c) => input.keyPressed(c)) || padDown && !wasPad;
+            const held = anyKey(bind.keys) || padDown || tapped;
+            down.set(i, tapped);
+            up.set(i, was && !held);
+            now.set(i, held);
+            padWas.set(i, padDown);
+          }
+        }, { as: `controls-2d.intents.${index}` });
+        const stick = (g, which) => g ? { x: g.axis(which === "left" ? "lx" : "rx"), y: g.axis(which === "left" ? "ly" : "ry") } : { x: 0, y: 0 };
+        return {
+          index,
+          axis(name) {
+            const g = pad();
+            if (name === "aim") {
+              const s = stick(g, b.stick === "right" ? "left" : "right"), sl = deterministicMath.hypot(s.x, s.y);
+              if (sl > 0) return sl > 1 ? { x: s.x / sl, y: s.y / sl } : s;
+              const p = input.pointer;
+              if (!p) return { x: 0, y: 0 };
+              const w = cam.toWorld(p.x, p.y), o = origin ?? cam, W = cam.wrap;
+              const dx = W ? wrapDelta3(w.x - o.x, W.w) : w.x - o.x, dy = W ? wrapDelta3(w.y - o.y, W.h) : w.y - o.y, l2 = deterministicMath.hypot(dx, dy);
+              return l2 < aimDeadzone ? { x: 0, y: 0 } : { x: dx / l2, y: dy / l2 };
+            }
+            const m = b.move;
+            let x = m ? (anyKey(m.right) ? 1 : 0) - (anyKey(m.left) ? 1 : 0) : 0;
+            let y = m ? (anyKey(m.down) ? 1 : 0) - (anyKey(m.up) ? 1 : 0) : 0;
+            if (x === 0 && y === 0) ({ x, y } = stick(g, b.stick ?? "left"));
+            const l = deterministicMath.hypot(x, y);
+            return l > 1 ? { x: x / l, y: y / l } : { x, y };
+          },
+          pressed: (i) => {
+            known(i);
+            return now.get(i) ?? false;
+          },
+          justPressed: (i) => {
+            known(i);
+            return down.get(i) ?? false;
+          },
+          justReleased: (i) => {
+            known(i);
+            return up.get(i) ?? false;
+          },
+          aimFrom(o) {
+            origin = o;
+            k.own(() => {
+              if (origin === o) origin = null;
+            });
+          },
+          bind(i, binding) {
+            if (binding) b.intents[i] = copyBinding(binding);
+            else {
+              delete b.intents[i];
+              now.delete(i);
+              down.delete(i);
+              up.delete(i);
+              padWas.delete(i);
+            }
+          },
+          bindMove(keys) {
+            if (keys) b.move = { up: [...keys.up], down: [...keys.down], left: [...keys.left], right: [...keys.right] };
+            else delete b.move;
+          },
+          usePad(p) {
+            b.pad = p;
+          },
+          bindings: () => copyPlayer(b)
+        };
+      };
+      const all = players.map((_, i) => makePlayer(i));
+      const first = all[0];
+      const controls = {
+        index: 0,
+        axis: (n) => first.axis(n),
+        pressed: (i) => first.pressed(i),
+        justPressed: (i) => first.justPressed(i),
+        justReleased: (i) => first.justReleased(i),
+        aimFrom: (o) => first.aimFrom(o),
+        bind: (i, b) => first.bind(i, b),
+        bindMove: (m) => first.bindMove(m),
+        usePad: (p) => first.usePad(p),
+        bindings: () => first.bindings(),
+        player(n) {
+          const p = all[n];
+          if (!p) throw new Error(`controls-2d: no player ${n}; ${all.length} configured`);
+          return p;
+        },
+        players: all.length,
+        get pointer() {
+          const p = input.pointer;
+          if (!p) return null;
+          const w = cam.toWorld(p.x, p.y);
+          return { x: w.x, y: w.y, down: p.down, pressed: p.pressed, released: p.released };
+        }
+      };
+      return { controls };
+    }
+  };
+}
+
+// game/node_modules/@phaser-ae/color/dist/index.js
+var clamp01 = (n) => n < 0 ? 0 : n > 1 ? 1 : n;
+var wrap360 = (h) => (h % 360 + 360) % 360;
+var byte = (n) => deterministicMath.round(clamp01(n) * 255).toString(16).padStart(2, "0");
+function parse2(hex4) {
+  let h = hex4.trim().replace("#", "");
+  if (h.length === 3 || h.length === 4) h = [...h].map((c) => c + c).join("");
+  if (!/^[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(h)) throw new Error(`color: "${hex4}" is not a hex colour`);
+  const n = parseInt(h.padEnd(8, "f"), 16);
+  return [(n >>> 24 & 255) / 255, (n >>> 16 & 255) / 255, (n >>> 8 & 255) / 255, (n & 255) / 255];
+}
+function rgb2(r, g, b, a) {
+  return `#${byte(r)}${byte(g)}${byte(b)}${a === void 0 ? "" : byte(a)}`;
+}
+function hsv(h, s = 1, v = 1) {
+  h = wrap360(h);
+  s = clamp01(s);
+  v = clamp01(v);
+  const c = v * s, x = c * (1 - deterministicMath.abs(h / 60 % 2 - 1)), m = v - c;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return rgb2(r + m, g + m, b + m);
+}
+function toHsv(hex4) {
+  const [r, g, b] = parse2(hex4);
+  const max = deterministicMath.max(r, g, b), min = deterministicMath.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d > 0) {
+    if (max === r) h = 60 * ((g - b) / d % 6);
+    else if (max === g) h = 60 * ((b - r) / d + 2);
+    else h = 60 * ((r - g) / d + 4);
+  }
+  return { h: wrap360(h), s: max ? d / max : 0, v: max };
+}
+function lerp2(a, b, t) {
+  const A = parse2(a), B = parse2(b);
+  t = clamp01(t);
+  return rgb2(A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t);
+}
+function shift(hex4, degrees) {
+  const { h, s, v } = toHsv(hex4);
+  return hsv(h + degrees, s, v);
+}
+function withAlpha(hex4, alpha) {
+  const [r, g, b] = parse2(hex4);
+  return rgb2(r, g, b, alpha);
+}
+function brighten(hex4, amount) {
+  const { h, s, v } = toHsv(hex4);
+  return hsv(h, s, clamp01(v + amount));
+}
+function wheel(opts = {}) {
+  const s = opts.saturation ?? 1, v = opts.value ?? 1;
+  return { hue: (deg) => hsv(deg, s, v), at: (t) => hsv(t * 360, s, v), colors: (count, t0 = 0, t1 = 1) => Array.from({ length: count }, (_, i) => hsv((t0 + (t1 - t0) * i / deterministicMath.max(1, count - 1)) * 360, s, v)) };
+}
+function rainbow(count, opts = {}) {
+  const w = wheel(opts);
+  return Array.from({ length: count }, (_, i) => w.hue(360 * i / deterministicMath.max(1, count)));
+}
+function ramp(fromHue, toHue, count, opts = {}) {
+  const w = wheel(opts);
+  return Array.from({ length: count }, (_, i) => w.hue(fromHue + (toHue - fromHue) * i / deterministicMath.max(1, count - 1)));
+}
+function gradient(from, to, count) {
+  return Array.from({ length: count }, (_, i) => lerp2(from, to, count > 1 ? i / (count - 1) : 0));
+}
+function sample(stops, t) {
+  if (stops.length === 1) return stops[0];
+  const x = clamp01(t) * (stops.length - 1), i = deterministicMath.min(stops.length - 2, deterministicMath.floor(x));
+  return lerp2(stops[i], stops[i + 1], x - i);
+}
+var RAMPS = {
+  fire: ["#fff7e0", "#ffd23f", "#ff8c00", "#ff2d00", "#5c0a00"],
+  spark: ["#ffffff", "#fff0a8", "#ffae00", "#ff6a00"],
+  ember: ["#ffd166", "#ff7b00", "#c81e00", "#360a00"],
+  smoke: ["#d7dde0", "#9aa4aa", "#5a6066", "#2b2f33"],
+  ice: ["#ffffff", "#b3ecff", "#33a1ff", "#0a2a66"],
+  magic: ["#ffffff", "#ff9bf2", "#b14dff", "#3d0a66"],
+  toxic: ["#f0ffd0", "#b6f000", "#5aa800", "#143d00"],
+  rainbow: ["#ff2d55", "#ff9500", "#ffea00", "#34c759", "#00c7ff", "#af52de"]
+};
+function lifeRamp(ramp2) {
+  if (Array.isArray(ramp2)) return ramp2;
+  const stops = RAMPS[ramp2];
+  if (!stops) throw new Error(`color: no life ramp "${String(ramp2)}" (have: ${Object.keys(RAMPS).join(", ")})`);
+  return stops;
+}
+function luminance(hex4) {
+  const [r, g, b] = parse2(hex4);
+  const lin = (c) => c <= 0.04045 ? c / 12.92 : deterministicMath.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+function contrast(a, b) {
+  const x = luminance(a), y = luminance(b);
+  return (deterministicMath.max(x, y) + 0.05) / (deterministicMath.min(x, y) + 0.05);
+}
+function readableOn(background, candidates = ["#000000", "#ffffff"]) {
+  if (!candidates.length) throw new Error("color: readableOn needs at least one candidate ink");
+  let best = candidates[0], bestRatio = -1;
+  for (const ink of candidates) {
+    const r = contrast(background, ink);
+    if (r > bestRatio) {
+      bestRatio = r;
+      best = ink;
+    }
+  }
+  return best;
+}
+function pack2(hex4) {
+  const [r, g, b, a] = parse2(hex4);
+  return (deterministicMath.round(r * 255) << 24 | deterministicMath.round(g * 255) << 16 | deterministicMath.round(b * 255) << 8 | deterministicMath.round(a * 255)) >>> 0;
+}
+var colorApi = { parse: parse2, rgb: rgb2, hsv, toHsv, lerp: lerp2, shift, withAlpha, brighten, wheel, rainbow, ramp, gradient, RAMPS, lifeRamp, sample, pack: pack2, luminance, contrast, readableOn };
+function color() {
+  return { id: "color", attach() {
+    return { color: colorApi };
+  } };
+}
+var SAMPLES = 64;
+function rampAt(r, t, out, o) {
+  const f = deterministicMath.min(deterministicMath.max(t, 0), 1) * SAMPLES, i = deterministicMath.min(deterministicMath.floor(f), SAMPLES - 1), k = f - i;
+  for (let c = 0; c < 3; c++) out[o + c] = r[i * 3 + c] + (r[(i + 1) * 3 + c] - r[i * 3 + c]) * k;
 }
 
 // game/node_modules/@phaser-ae/audio/dist/index.js
@@ -31348,7 +33612,7 @@ var WIDTH = 1024;
 var UiGlRenderer = class {
   constructor(gl) {
     this.gl = gl;
-    this.program = compileGlProgram(gl, UI_VERT, UI_FRAG, "ui");
+    this.program = compileGlProgram2(gl, UI_VERT, UI_FRAG, "ui");
     this.vao = gl.createVertexArray();
     this.data = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.data);
@@ -31903,11 +34167,11 @@ function parseUiTheme(input) {
     const fonts = [];
     for (const f of r.fonts.slice(0, 8)) {
       if (!f || typeof f !== "object") continue;
-      const fr2 = f;
-      const family = str(fr2.family, 48), url = str(fr2.url, 2e3);
+      const fr3 = f;
+      const family = str(fr3.family, 48), url = str(fr3.url, 2e3);
       if (!family || !url || !/^[\w][\w -]*$/.test(family)) continue;
       const entry = { family, url };
-      const bold = str(fr2.bold, 2e3);
+      const bold = str(fr3.bold, 2e3);
       if (bold) entry.bold = bold;
       fonts.push(entry);
     }
@@ -34006,8 +36270,8 @@ function ui() {
         let overSb = null;
         const sb = p ? scrollAt(p.x, p.y) : null;
         if (p && sb?.kind === "list" && sb.overflow && sb.scrollTrack) {
-          const tx2 = sb.scrollTrack.x, ty = sb.scrollTrack.y, tw = 12, th = sb.scrollTrack.height;
-          if (p.x >= tx2 - tw / 2 && p.x <= tx2 + tw / 2 && p.y >= ty - th / 2 && p.y <= ty + th / 2) overSb = sb;
+          const tx3 = sb.scrollTrack.x, ty = sb.scrollTrack.y, tw = 12, th = sb.scrollTrack.height;
+          if (p.x >= tx3 - tw / 2 && p.x <= tx3 + tw / 2 && p.y >= ty - th / 2 && p.y <= ty + th / 2) overSb = sb;
         }
         for (const w of widgets.values()) {
           if (w.kind !== "list" || !w.scrollThumb) continue;
@@ -34259,7 +36523,7 @@ function ui() {
         f[o + 57] = st.shinePeriod;
         f[o + 58] = st.shineWidth;
         f[o + 59] = phase;
-        const tx2 = textureOf(st.texture);
+        const tx3 = textureOf(st.texture);
         f[o + 60] = deterministicMath.max(0, UI_RIM_FINISHES.indexOf(st.borderFinish));
         f[o + 61] = st.borderStripeWidth;
         f[o + 62] = st.borderStripeAngle * deterministicMath.PI / 180;
@@ -34268,15 +36532,15 @@ function ui() {
         u[o + 65] = 0;
         u[o + 66] = 0;
         u[o + 67] = 0;
-        f[o + 68] = tx2 ? tx2.rect[0] : 0;
-        f[o + 69] = tx2 ? tx2.rect[1] : 0;
-        f[o + 70] = tx2 ? tx2.rect[2] : 0;
-        f[o + 71] = tx2 ? tx2.rect[3] : 0;
+        f[o + 68] = tx3 ? tx3.rect[0] : 0;
+        f[o + 69] = tx3 ? tx3.rect[1] : 0;
+        f[o + 70] = tx3 ? tx3.rect[2] : 0;
+        f[o + 71] = tx3 ? tx3.rect[3] : 0;
         f[o + 72] = st.textureScale;
         f[o + 73] = st.textureStrength;
         f[o + 74] = st.textureAngle * deterministicMath.PI / 180;
-        f[o + 75] = tx2 ? UI_TEXTURE_MODES.indexOf(st.textureMode) + 1 : 0;
-        return tx2 ? tx2.tex : -1;
+        f[o + 75] = tx3 ? UI_TEXTURE_MODES.indexOf(st.textureMode) + 1 : 0;
+        return tx3 ? tx3.tex : -1;
       };
       const runs = (n) => {
         const out = [];
@@ -34464,8 +36728,8 @@ function tween() {
           const a = from ? from[key] : cur, b = to[key];
           const colour = isHex(a) || isHex(b);
           if (colour) {
-            parse(String(a));
-            parse(String(b));
+            parse2(String(a));
+            parse2(String(b));
           }
           tracks.push({ key, from: a, to: b, colour });
         }
@@ -34762,831 +37026,6 @@ function save(opts = {}) {
       };
       kern.registry.add("save", { name: "save", read: api.read, write: api.write });
       return { save: api };
-    }
-  };
-}
-
-// game/node_modules/@phaser-ae/backdrops/dist/index.js
-var BACKDROP_RESERVED = /* @__PURE__ */ new Set([
-  "time",
-  "res",
-  "px",
-  "physicalPx",
-  "cssScale",
-  "fragment",
-  "uv",
-  "view",
-  "bg",
-  "color",
-  "pointer",
-  "c0",
-  "c1",
-  "c2",
-  "c3",
-  "p0",
-  "p1",
-  "p2",
-  "p3",
-  "p4",
-  "p5",
-  "p6",
-  "p7",
-  "p8",
-  "p9",
-  "p10",
-  "p11",
-  "p12",
-  "p13",
-  "p14",
-  "p15",
-  "u",
-  "bgTex",
-  "bgSamp",
-  "hash21",
-  "noise2",
-  "fbm2",
-  "bgAt",
-  "vs",
-  "fs",
-  "TAU",
-  /* the WebGL2 template's own names: a param of the same name would hide them */
-  "params",
-  "colors",
-  "info",
-  "bgRect",
-  "bgFit",
-  "atlas",
-  "gbBacking",
-  "gbFade",
-  "ditherPx",
-  "result",
-  "main"
-]);
-function backdropScope(paramKeys) {
-  const scope = { uv: "vec2", px: "vec2", physicalPx: "vec2", fragment: "vec4", res: "vec2", time: "float", view: "vec4", bg: "vec4", color: "vec4", cssScale: "vec4", pointer: "vec4", TAU: "float", c0: "vec4", c1: "vec4", c2: "vec4", c3: "vec4" };
-  for (let i = 0; i < 16; i++) scope[`p${i}`] = "float";
-  for (const key of paramKeys) scope[key] = "float";
-  return scope;
-}
-var FULLSCREEN_GL = `#version 300 es
-precision highp float;
-out vec2 uv;
-void main(){ vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2)); gl_Position=vec4(p*2.0-1.0,0,1); uv=vec2(p.x,1.0-p.y); }`;
-function backdropGLSL(def) {
-  const scope = backdropScope(Object.keys(def.params));
-  const code = wgslSnippetToGLSL(def.code, scope);
-  return `#version 300 es
-precision highp float;
-in vec2 uv; out vec4 result;
-uniform vec4 params[4], colors[4], view, info, bgRect, bgFit, cssScale, pointer;
-uniform vec2 gbBacking; uniform sampler2D atlas; uniform float gbFade;
-const float TAU=6.28318530718;
-vec4 bgAt(vec2 p){ if(info.w<0.5)return vec4(0); vec2 q=(p-bgFit.zw)/bgFit.xy; float inside=step(0.0,q.x)*step(q.x,1.0)*step(0.0,q.y)*step(q.y,1.0); return texture(atlas,mix(bgRect.xy,bgRect.zw,clamp(q,0.0,1.0)))*inside; }
-float hash21(vec2 p){vec2 q=fract(p*vec2(123.34,456.21));q+=dot(q,q+45.32);return fract(q.x*q.y);}
-float noise2(vec2 p){vec2 i=floor(p),f=fract(p),u2=f*f*(3.0-2.0*f);return mix(mix(hash21(i),hash21(i+vec2(1,0)),u2.x),mix(hash21(i+vec2(0,1)),hash21(i+vec2(1,1)),u2.x),u2.y);}
-float fbm2(vec2 p){float v=0.0,a=0.5;vec2 q=p;for(int i=0;i<4;i++){v+=a*noise2(q);q=q*2.03+vec2(17,9);a*=0.5;}return v;}
-// the still \xB10.5/255 output dither, as the WGSL template's ditherPx: on the pixel from the top left, alpha-scaled, floored at 0 (light added beyond alpha kept)
-vec4 ditherPx(vec4 c, vec2 p){ float n=fract(52.9829189*fract(dot(floor(p),vec2(0.06711056,0.00583715))))-0.5; return vec4(max(c.rgb+vec3(n*c.a/255.0),vec3(0.0)),c.a); }
-void main(){ vec2 res=info.yz; vec2 px=uv*res; vec2 physicalPx=uv*gbBacking; vec4 fragment=vec4(physicalPx,0,1); float time=info.x; vec4 bg=bgAt(uv); vec4 c0=colors[0], c1=colors[1], c2=colors[2], c3=colors[3];
-${Array.from({ length: 16 }, (_, i) => `float p${i}=params[${i >> 2}][${i % 4}];`).join("\n")}
-${Object.keys(def.params).map((key, i) => `float ${key}=p${i};`).join("\n")}
-vec4 color=vec4(0); { ${code} } result=ditherPx(color*gbFade,vec2(gl_FragCoord.x,gbBacking.y-gl_FragCoord.y)); }`;
-}
-var BackdropsGl = class {
-  constructor(gl) {
-    this.gl = gl;
-    this.vao = gl.createVertexArray();
-  }
-  programs = /* @__PURE__ */ new Map();
-  /** GLSL compile errors by program key: a backdrop that does not compile is reported once and skipped, never retried every frame. */
-  errors = /* @__PURE__ */ new Map();
-  /** The error of each backdrop name's latest definition drawn: a definition that replaces a broken one clears it. */
-  failures = /* @__PURE__ */ new Map();
-  /** Why the backdrop `name` does not draw here, or null. */
-  failure(name) {
-    return this.failures.get(name) ?? null;
-  }
-  vao;
-  /** Draw one backdrop full-screen; `image` is the texture the background lives in (the atlas, or a picture's own); `fade` multiplies its output. */
-  draw(bag, def, values, colors, view, info, rect2, fit, cssScale, image = bag.atlas, pointer2 = [0.5, 0.5, 0, 0], fade = 1) {
-    const gl = this.gl;
-    const key = JSON.stringify([def.code, Object.keys(def.params)]);
-    let p = this.programs.get(key);
-    if (p === null) {
-      this.failures.set(def.name, this.errors.get(key));
-      return;
-    }
-    if (!p) {
-      try {
-        p = compileGlProgram(gl, FULLSCREEN_GL, backdropGLSL(def), `backdrops:${def.name}`);
-      } catch (err) {
-        const why = `GLSL ${err instanceof Error ? err.message : String(err)}`;
-        this.programs.set(key, null);
-        this.errors.set(key, why);
-        this.failures.set(def.name, why);
-        console.error(`backdrops: "${def.name}" ${why}`);
-        return;
-      }
-      this.programs.set(key, p);
-    }
-    this.failures.delete(def.name);
-    gl.bindVertexArray(this.vao);
-    gl.useProgram(p);
-    gl.disable(gl.DEPTH_TEST);
-    gl.depthMask(false);
-    gl.disable(gl.CULL_FACE);
-    gl.disable(gl.SCISSOR_TEST);
-    gl.enable(gl.BLEND);
-    gl.blendEquation(gl.FUNC_ADD);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, image);
-    gl.uniform1i(gl.getUniformLocation(p, "atlas"), 0);
-    for (const [name, v] of [["params", values], ["colors", colors], ["view", view], ["info", info], ["bgRect", rect2], ["bgFit", fit], ["cssScale", [cssScale, cssScale, 0, 0]], ["pointer", Array.from(pointer2)]]) gl.uniform4fv(gl.getUniformLocation(p, name), v);
-    gl.uniform2f(gl.getUniformLocation(p, "gbBacking"), bag.width, bag.height);
-    gl.uniform1f(gl.getUniformLocation(p, "gbFade"), fade);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.bindVertexArray(null);
-  }
-  dispose() {
-    for (const p of this.programs.values()) if (p) this.gl.deleteProgram(p);
-    this.gl.deleteVertexArray(this.vao);
-    this.programs.clear();
-  }
-};
-var parse2 = (hex4) => {
-  let h = hex4.replace("#", "");
-  if (h.length === 3 || h.length === 4) h = [...h].map((c) => c + c).join("");
-  const n = parseInt(h.padEnd(8, "f"), 16);
-  return [(n >>> 24 & 255) / 255, (n >>> 16 & 255) / 255, (n >>> 8 & 255) / 255, (n & 255) / 255];
-};
-var TITLE_EASE = /^(sine|quad|cubic|quart|quint|expo|circ|back|elastic|bounce)(InOut|In|Out)$/;
-function backdropEase(e) {
-  if (e === void 0) return EASE.easeInOutQuad;
-  if (typeof e === "function") return e;
-  const m = TITLE_EASE.exec(e), key = m ? `ease${m[2]}${m[1][0].toUpperCase()}${m[1].slice(1)}` : e;
-  const f = EASE[key];
-  if (!f) throw new Error(`backdrops: no ease "${String(e)}" (a maths EASE name such as easeOutCubic, or cubicOut)`);
-  return f;
-}
-var durationOf = (opts) => {
-  const d = opts?.duration ?? 0.5;
-  if (!Number.isFinite(d) || d < 0) throw new Error(`backdrops: duration ${String(d)} is not a number of seconds`);
-  return d;
-};
-var DITHER = (
-  /* wgsl */
-  `fn ditherPx(c: vec4<f32>, p: vec2<f32>) -> vec4<f32> {
-    let n = fract(52.9829189 * fract(dot(floor(p), vec2(0.06711056, 0.00583715)))) - 0.5;
-    return vec4(max(c.rgb + vec3(n * c.a / 255.0), vec3(0.0)), c.a);
-}`
-);
-var backdropWGSL = (code, keys = []) => (
-  /* wgsl */
-  `
-const TAU = 6.28318530718;   // a full turn, because every snippet that phases anything by a hash writes it out otherwise
-struct U { params: array<vec4<f32>, 2>, colors: array<vec4<f32>, 2>, view: vec4<f32>, info: vec4<f32>, bgRect: vec4<f32>, bgFit: vec4<f32>, cssScale: vec4<f32>, extraParams: array<vec4<f32>, 2>, pointer: vec4<f32>, extraColors: array<vec4<f32>, 2>, fade: vec4<f32> };   // view: cam x y w h ; info: time, logicalW, logicalH, hasBg ; cssScale: logical\u2192CSS pixels ; pointer: uv x y (eased), down, seconds still ; fade.x: show/hide, multiplied into the output
-@group(0) @binding(0) var<uniform> u: U;
-@group(0) @binding(1) var bgTex: texture_2d<f32>;
-@group(0) @binding(2) var bgSamp: sampler;
-// the background image at a 0..1 screen coordinate (y down); transparent black when none is set or outside a 'contain' fit
-fn bgAt(p: vec2<f32>) -> vec4<f32> {
-    if (u.info.w < 0.5) { return vec4(0.0); }
-    let q = (p - u.bgFit.zw) / u.bgFit.xy;
-    let inside = step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
-    return textureSampleLevel(bgTex, bgSamp, mix(u.bgRect.xy, u.bgRect.zw, clamp(q, vec2(0.0), vec2(1.0))), 0.0) * inside;
-}
-struct Out { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> }
-@vertex fn vs(@builtin(vertex_index) i: u32) -> Out { var p = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0)); var o: Out; o.pos = vec4(p[i], 0.0, 1.0); o.uv = vec2((p[i].x + 1.0) * 0.5, 1.0 - (p[i].y + 1.0) * 0.5); return o; }
-fn hash21(p: vec2<f32>) -> f32 { var q = fract(p * vec2(123.34, 456.21)); q = q + dot(q, q + 45.32); return fract(q.x * q.y); }
-fn noise2(p: vec2<f32>) -> f32 { let i = floor(p); let f = fract(p); let u2 = f * f * (3.0 - 2.0 * f); return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u2.x), mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u2.x), u2.y); }
-// Preserve the authored noise field: four octaves, 2.03 scale, and (17,9) domain offset.
-fn fbm2(p: vec2<f32>) -> f32 { var v = 0.0; var a = 0.5; var q = p; for (var i = 0; i < 4; i++) { v += a * noise2(q); q = q * 2.03 + vec2(17.0, 9.0); a *= 0.5; } return v; }
-${DITHER}
-@fragment fn fs(@location(0) uv: vec2<f32>, @builtin(position) fragment: vec4<f32>) -> @location(0) vec4<f32> {
-    let physicalPx = fragment.xy;
-    let time = u.info.x; let res = u.info.yz; let px = uv * res; let view = u.view; let bg = bgAt(uv);
-    let cssScale = u.cssScale; let pointer = u.pointer;
-    let p0 = u.params[0].x; let p1 = u.params[0].y; let p2 = u.params[0].z; let p3 = u.params[0].w; let p4 = u.params[1].x; let p5 = u.params[1].y; let p6 = u.params[1].z; let p7 = u.params[1].w;
-    let p8 = u.extraParams[0].x; let p9 = u.extraParams[0].y; let p10 = u.extraParams[0].z; let p11 = u.extraParams[0].w; let p12 = u.extraParams[1].x; let p13 = u.extraParams[1].y; let p14 = u.extraParams[1].z; let p15 = u.extraParams[1].w;
-    let c0 = u.colors[0]; let c1 = u.colors[1]; let c2 = u.extraColors[0]; let c3 = u.extraColors[1];
-${keys.map((k2, i) => `    let ${k2} = p${i};`).join("\n")}
-    var color = vec4(0.0, 0.0, 0.0, 0.0);
-    {
-    ${code}
-    }
-    return ditherPx(color * u.fade.x, fragment.xy);
-}`
-);
-function backdrops() {
-  return {
-    id: "backdrops",
-    attach(k) {
-      const stack = [];
-      let glRenderer = null;
-      const releaseGl = () => {
-        glRenderer?.dispose();
-        glRenderer = null;
-      };
-      k.hooks.on("app.dispose", releaseGl);
-      k.hooks.on("boot.contextLost", releaseGl);
-      const keyCache = /* @__PURE__ */ new WeakMap();
-      const keyOf = (def) => {
-        let key = keyCache.get(def);
-        if (key === void 0) {
-          key = JSON.stringify([def.code, Object.keys(def.params)]);
-          keyCache.set(def, key);
-        }
-        return key;
-      };
-      const pipelines = /* @__PURE__ */ new Map();
-      let layout = null;
-      const unis = [];
-      let blitPipe = null, blitUni = null, blank = null;
-      let bgKey = null, bgFit = "cover";
-      const assets = k.assets;
-      const ptr = { x: 0.5, y: 0.5, down: 0, still: 0 }, pointer2 = new Float32Array(4);
-      let lastX = -1, lastY = -1;
-      k.simulate.add("backdrops.pointer", {}, (dt) => {
-        const p = k.input.pointer, w = k.screen.width || 1, h = k.screen.height || 1;
-        ptr.still += dt;
-        if (p) {
-          if (p.x !== lastX || p.y !== lastY) {
-            lastX = p.x;
-            lastY = p.y;
-            ptr.still = 0;
-          }
-          const ease22 = 1 - deterministicMath.exp(-dt / 0.25);
-          ptr.x += (deterministicMath.min(1, deterministicMath.max(0, p.x / w)) - ptr.x) * ease22;
-          ptr.y += (deterministicMath.min(1, deterministicMath.max(0, p.y / h)) - ptr.y) * ease22;
-        }
-        ptr.down = p?.down ? 1 : 0;
-        pointer2.set([ptr.x, ptr.y, ptr.down, ptr.still]);
-      });
-      pointer2.set([ptr.x, ptr.y, 0, 0]);
-      const easings = [];
-      const write = (live, slot, v) => {
-        if (slot === "fade") live.fade = v;
-        else live.values[slot] = v;
-      };
-      const endEasings = (live, slot) => {
-        for (let i = easings.length - 1; i >= 0; i--) {
-          const e = easings[i];
-          if (e.live === live && (slot === void 0 || e.slot === slot)) {
-            easings.splice(i, 1);
-            e.done();
-          }
-        }
-      };
-      const ease2 = (live, slot, to, dur, curve) => {
-        endEasings(live, slot);
-        const from = slot === "fade" ? live.fade : live.values[slot];
-        if (dur <= 0 || live.removed) {
-          if (!live.removed) write(live, slot, to);
-          return Promise.resolve();
-        }
-        return new Promise((done) => {
-          easings.push({ live, slot, from, to, t: 0, dur, ease: curve, done });
-        });
-      };
-      const rebind = (live) => {
-        const def = k.registry.get("backdrop", live.def.name);
-        if (!def || def === live.def) return;
-        const keys = Object.keys(def.params), colorKeys = Object.keys(def.colors);
-        if (keys.length > 16 || colorKeys.length > 4 || keys.some((key) => BACKDROP_RESERVED.has(key))) return;
-        const values = new Float32Array(16), colors = new Float32Array(16);
-        keys.forEach((key, i) => {
-          const j = live.keys.indexOf(key);
-          values[i] = j >= 0 ? live.values[j] : def.params[key];
-        });
-        colorKeys.forEach((key, i) => {
-          const j = live.colorKeys.indexOf(key);
-          colors.set(j >= 0 ? live.colors.subarray(j * 4, j * 4 + 4) : parse2(def.colors[key]), i * 4);
-        });
-        if (keys.join("\0") !== live.keys.join("\0")) for (let i = 0; i < live.keys.length; i++) endEasings(live, i);
-        live.def = def;
-        live.keys = keys;
-        live.colorKeys = colorKeys;
-        live.values = values;
-        live.colors = colors;
-      };
-      const rebindAll = () => {
-        for (const live of stack) rebind(live);
-      };
-      k.simulate.add("backdrops.tween", {}, (dt) => {
-        for (let i = 0; i < easings.length; i++) {
-          const e = easings[i];
-          if (e.live.removed) {
-            easings.splice(i--, 1);
-            e.done();
-            continue;
-          }
-          e.t = deterministicMath.min(e.dur, e.t + dt);
-          const p = e.t / e.dur;
-          write(e.live, e.slot, p >= 1 ? e.to : e.from + (e.to - e.from) * e.ease(p));
-          if (p >= 1) {
-            easings.splice(i--, 1);
-            e.done();
-          }
-        }
-      });
-      const finite2 = (name, what, v) => {
-        if (typeof v !== "number" || !Number.isFinite(v)) throw new Error(`backdrops: "${name}" ${what} is ${String(v)}, not a finite number`);
-        return v;
-      };
-      const broken = /* @__PURE__ */ new Map();
-      k.hooks.on("boot.contextLost", () => {
-        pipelines.clear();
-        broken.clear();
-        layout = null;
-        unis.length = 0;
-        blitPipe = null;
-        blitUni = null;
-        blank = null;
-      });
-      const defined = /* @__PURE__ */ new Set();
-      const api = {
-        add(name, params = {}, colors = {}) {
-          const def = k.registry.get("backdrop", name);
-          if (!def) throw new Error(`backdrops: no backdrop "${name}" is composed (have: ${k.registry.list("backdrop").map((d) => d.name).join(", ") || "none"} \u2014 add the backdrop-${name} pack to the manifest)`);
-          const keys = Object.keys(def.params), colorKeys = Object.keys(def.colors);
-          if (keys.length > 16 || colorKeys.length > 4) throw new Error(`backdrops: "${name}" declares too many params/colours (16 / 4)`);
-          for (const key of keys) if (BACKDROP_RESERVED.has(key)) throw new Error(`backdrops: "${name}" param "${key}" is a name the shader already uses`);
-          for (const key of Object.keys(params)) if (!(key in def.params)) throw new Error(`backdrops: "${name}" has no param "${key}"`);
-          for (const key of Object.keys(colors)) if (!(key in def.colors)) throw new Error(`backdrops: "${name}" has no colour "${key}"`);
-          const live = { def, keys, colorKeys, values: new Float32Array(16), colors: new Float32Array(16), removed: false, fade: 1, offset: 0 };
-          keys.forEach((key, i) => {
-            live.values[i] = params[key] ?? def.params[key];
-          });
-          colorKeys.forEach((key, i) => {
-            live.colors.set(parse2(colors[key] ?? def.colors[key]), i * 4);
-          });
-          stack.push(live);
-          const remove = () => {
-            if (live.removed) return;
-            live.removed = true;
-            const i = stack.indexOf(live);
-            if (i >= 0) stack.splice(i, 1);
-            endEasings(live);
-          };
-          k.own(remove);
-          const paramAt = (p) => {
-            const i = live.keys.indexOf(p);
-            if (i < 0) throw new Error(`backdrops: "${name}" has no param "${p}"`);
-            return i;
-          };
-          const colorAt = (c) => {
-            const i = live.colorKeys.indexOf(c);
-            if (i < 0) throw new Error(`backdrops: "${name}" has no colour "${c}"`);
-            return i;
-          };
-          const handle = {
-            name,
-            set(p, v) {
-              if (typeof p === "string") {
-                const i = paramAt(p);
-                live.values[i] = finite2(name, `param "${p}"`, v);
-                endEasings(live, i);
-                return;
-              }
-              const ps = Object.entries(p?.params ?? {}).map(([key, x]) => [paramAt(key), finite2(name, `param "${key}"`, x)]);
-              const cs = Object.entries(p?.colors ?? {}).map(([key, hex4]) => [colorAt(key), parse2(String(hex4))]);
-              for (const [i, x] of ps) {
-                live.values[i] = x;
-                endEasings(live, i);
-              }
-              for (const [i, rgba2] of cs) live.colors.set(rgba2, i * 4);
-            },
-            setColor(c, hex4) {
-              live.colors.set(parse2(hex4), colorAt(c) * 4);
-            },
-            tween(to, opts) {
-              const dur = durationOf(opts), curve = backdropEase(opts?.ease);
-              const ps = Object.entries(to).map(([key, x]) => [paramAt(key), finite2(name, `param "${key}"`, x)]);
-              return Promise.all(ps.map(([i, x]) => ease2(live, i, x, dur, curve))).then(() => void 0);
-            },
-            show(opts) {
-              return ease2(live, "fade", 1, durationOf(opts), backdropEase(opts?.ease));
-            },
-            hide(opts) {
-              return ease2(live, "fade", 0, durationOf(opts), backdropEase(opts?.ease));
-            },
-            get fade() {
-              return live.fade;
-            },
-            get params() {
-              return Object.fromEntries(live.keys.map((key, i) => [key, live.values[i]]));
-            },
-            get time() {
-              return k.clock.time + live.offset;
-            },
-            set time(t) {
-              live.offset = finite2(name, "time", t) - k.clock.time;
-            },
-            remove
-          };
-          return handle;
-        },
-        define(def) {
-          if (k.registry.get("backdrop", def.name) && !defined.has(def.name)) throw new Error(`backdrops: "${def.name}" is a composed pack's backdrop (backdrop-${def.name}); give yours another name`);
-          if (Object.keys(def.params).length > 16 || Object.keys(def.colors).length > 4) throw new Error(`backdrops: "${def.name}" declares too many params/colours (16 / 4)`);
-          for (const key of Object.keys(def.params)) if (BACKDROP_RESERVED.has(key)) throw new Error(`backdrops: "${def.name}" param "${key}" is a name the shader already uses`);
-          registerBackdrop(k, def);
-          defined.add(def.name);
-          rebindAll();
-        },
-        clear() {
-          for (const l of stack) {
-            l.removed = true;
-            endEasings(l);
-          }
-          stack.length = 0;
-        },
-        failure(name) {
-          const def = k.registry.get("backdrop", name);
-          return (def && broken.get(keyOf(def))) ?? glRenderer?.failure(name) ?? null;
-        },
-        background(key, fit = "cover") {
-          if (key !== null) assets.frames(key);
-          const prevKey = bgKey, prevFit = bgFit;
-          bgKey = key;
-          bgFit = fit;
-          k.own(() => {
-            bgKey = prevKey;
-            bgFit = prevFit;
-          });
-        },
-        get backgroundKey() {
-          return bgKey;
-        },
-        get stack() {
-          return stack.map((l) => l.def.name);
-        },
-        get available() {
-          return k.registry.list("backdrop").map((d) => d.name);
-        }
-      };
-      const pipelineFor = (bag, def) => {
-        const key = keyOf(def);
-        let p = pipelines.get(key);
-        if (p) return p;
-        if (!layout) layout = bag.device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }, { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} }, { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: {} }] });
-        const mod = bag.device.createShaderModule({ code: backdropWGSL(def.code, Object.keys(def.params)) });
-        void mod.getCompilationInfo().then((inf) => {
-          for (const m of inf.messages) if (m.type === "error") {
-            const why = `WGSL ${m.lineNum}:${m.linePos} ${m.message}`;
-            if (!broken.has(key)) broken.set(key, why);
-            console.error(`backdrops: "${def.name}" ${why}`);
-          }
-        });
-        p = bag.device.createRenderPipeline({ layout: bag.device.createPipelineLayout({ bindGroupLayouts: [layout] }), vertex: { module: mod, entryPoint: "vs" }, fragment: { module: mod, entryPoint: "fs", targets: [{ format: bag.format, blend: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" } } }] }, primitive: { topology: "triangle-list" } });
-        pipelines.set(key, p);
-        return p;
-      };
-      const bgUniforms = (bag, textureOf) => {
-        if (bgKey === null) return [[0, 0, 0, 0], [1, 1, 0, 0], null];
-        const f = assets.framePlace(assets.frames(bgKey)), own = f.tex ? assets.ownTexture(f.tex) : null, image = textureOf(f.tex);
-        if (!image) return [[0, 0, 0, 0], [1, 1, 0, 0], null];
-        const tw = own?.width ?? assets.size, th = own?.height ?? assets.size;
-        const rect2 = [f.x / tw, f.y / th, (f.x + f.w) / tw, (f.y + f.h) / th];
-        const sw = bag.logicalWidth, sh = bag.logicalHeight, ia = f.w / f.h, sa = sw / sh;
-        let sx = 1, sy = 1;
-        if (bgFit === "cover") {
-          if (ia > sa) sx = ia / sa;
-          else sy = sa / ia;
-        } else if (bgFit === "contain") {
-          if (ia > sa) sy = sa / ia;
-          else sx = ia / sa;
-        }
-        return [rect2, [sx, sy, (1 - sx) / 2, (1 - sy) / 2], image];
-      };
-      const BLIT = (
-        /* wgsl */
-        `
-struct U { rect: vec4<f32>, fit: vec4<f32> };
-@group(0) @binding(0) var<uniform> u: U;
-@group(0) @binding(1) var t: texture_2d<f32>;
-@group(0) @binding(2) var s: sampler;
-struct Out { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> }
-@vertex fn vs(@builtin(vertex_index) i: u32) -> Out { var p = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0)); var o: Out; o.pos = vec4(p[i], 0.0, 1.0); o.uv = vec2((p[i].x + 1.0) * 0.5, 1.0 - (p[i].y + 1.0) * 0.5); return o; }
-${DITHER}
-@fragment fn fs(@location(0) uv: vec2<f32>, @builtin(position) fragment: vec4<f32>) -> @location(0) vec4<f32> {
-    let q = (uv - u.fit.zw) / u.fit.xy;
-    let inside = step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
-    return ditherPx(textureSampleLevel(t, s, mix(u.rect.xy, u.rect.zw, clamp(q, vec2(0.0), vec2(1.0))), 0.0) * inside, fragment.xy);
-}`
-      );
-      k.frame.addPass("backdrops", { after: "begin", before: ["meshes3d", "sprites"] }, (ctx) => {
-        rebindAll();
-        const glBag = ctx.backend["webgl2"];
-        if (glBag) {
-          const [rect22, fit2, image2] = bgUniforms(glBag, (tex) => tex ? glBag.textureOf?.(tex) ?? null : glBag.atlas), hasBg2 = image2 !== null;
-          if (!hasBg2 && !stack.length) return;
-          glRenderer ??= new BackdropsGl(glBag.gl);
-          const cam2 = k.camera.render, time2 = k.clock.time + k.clock.alpha * k.clock.step;
-          const vw2 = glBag.logicalWidth / cam2.zoom, vh2 = glBag.logicalHeight / cam2.zoom;
-          const view = [cam2.x - vw2 / 2, cam2.y - vh2 / 2, vw2, vh2], info = [time2, glBag.logicalWidth, glBag.logicalHeight, hasBg2 ? 1 : 0];
-          if (hasBg2) glRenderer.draw(glBag, { name: "background-image", code: "color = bg;", params: {}, colors: {} }, new Float32Array(16), new Float32Array(16), view, info, rect22, fit2, k.screen.cssScale ?? 1, image2, pointer2);
-          for (const live of stack) if (live.fade > 0) glRenderer.draw(glBag, live.def, live.values, live.colors, view, [time2 + live.offset, info[1], info[2], info[3]], rect22, fit2, k.screen.cssScale ?? 1, image2 ?? glBag.atlas, pointer2, live.fade);
-          return;
-        }
-        const bag = ctx.backend["webgpu"];
-        if (!bag) return;
-        const [rect2, fit, image] = bgUniforms(bag, (tex) => bag.textureOf ? bag.textureOf(tex) : tex ? null : bag.atlas), hasBg = image !== null;
-        if (!stack.length && !hasBg) return;
-        if (!blank) blank = bag.device.createTexture({ size: [1, 1], format: "rgba8unorm", usage: GPUTextureUsage.TEXTURE_BINDING }).createView();
-        const bgView = image ?? blank;
-        if (hasBg) {
-          if (!blitPipe) {
-            const mod = bag.device.createShaderModule({ code: BLIT });
-            blitPipe = bag.device.createRenderPipeline({ layout: "auto", vertex: { module: mod, entryPoint: "vs" }, fragment: { module: mod, entryPoint: "fs", targets: [{ format: bag.format, blend: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" } } }] }, primitive: { topology: "triangle-list" } });
-            blitUni = bag.device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-          }
-          bag.device.queue.writeBuffer(blitUni, 0, new Float32Array([...rect2, ...fit]));
-          const bind = bag.device.createBindGroup({ layout: blitPipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: blitUni } }, { binding: 1, resource: bgView }, { binding: 2, resource: bag.sampler }] });
-          const pass = bag.encoder.beginRenderPass({ colorAttachments: [{ view: bag.view, loadOp: "load", storeOp: "store" }] });
-          pass.setPipeline(blitPipe);
-          pass.setBindGroup(0, bind);
-          pass.draw(3);
-          pass.end();
-        }
-        const cam = k.camera.render, time = k.clock.time + k.clock.alpha * k.clock.step;
-        const vw = bag.logicalWidth / cam.zoom, vh = bag.logicalHeight / cam.zoom;
-        stack.forEach((live, i) => {
-          if (live.fade <= 0 || broken.has(keyOf(live.def))) return;
-          let uni = unis[i];
-          if (!uni) {
-            uni = bag.device.createBuffer({ size: 240, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-            unis[i] = uni;
-          }
-          const data = new Float32Array(60);
-          data.set(live.values.subarray(0, 8), 0);
-          data.set(live.values.subarray(8), 36);
-          data.set(live.colors.subarray(0, 8), 8);
-          data.set(live.colors.subarray(8), 48);
-          data.set([cam.x - vw / 2, cam.y - vh / 2, vw, vh], 16);
-          data.set([time + live.offset, bag.logicalWidth, bag.logicalHeight, hasBg ? 1 : 0], 20);
-          data.set(rect2, 24);
-          data.set(fit, 28);
-          data.set([k.screen.cssScale ?? 1, k.screen.cssScale ?? 1, 0, 0], 32);
-          data.set(pointer2, 44);
-          data[56] = live.fade;
-          bag.device.queue.writeBuffer(uni, 0, data);
-          const bind = bag.device.createBindGroup({ layout: layout ?? (pipelineFor(bag, live.def), layout), entries: [{ binding: 0, resource: { buffer: uni } }, { binding: 1, resource: bgView }, { binding: 2, resource: bag.sampler }] });
-          const pass = bag.encoder.beginRenderPass({ colorAttachments: [{ view: bag.view, loadOp: "load", storeOp: "store" }] });
-          pass.setPipeline(pipelineFor(bag, live.def));
-          pass.setBindGroup(0, bind);
-          pass.draw(3);
-          pass.end();
-        });
-      });
-      k.registry.add("backdrops", Object.assign(Object.create(api), { name: "backdrops" }));
-      return { backdrop: api };
-    }
-  };
-}
-function registerBackdrop(k, def) {
-  for (const key of Object.keys(def.params)) {
-    if (new RegExp(`\\b(let|var|const)\\s+${key}\\s*[=:]`).test(def.code)) throw new Error(`backdrops: "${def.name}" declares "${key}" in its code, and the template already declares it from the param list \u2014 drop the line`);
-  }
-  k.registry.add("backdrop", def);
-}
-
-// game/node_modules/@phaser-ae/backdrop-sky/dist/index.js
-function backdropSky() {
-  return { id: "backdrop-sky", requires: ["backdrops"], attach(k) {
-    registerBackdrop(k, {
-      name: "sky",
-      description: "a two-colour gradient, curve bends it",
-      params: { curve: 1 },
-      colors: { top: "#1a2a6c", bottom: "#fdbb2d" },
-      code: `let t = pow(clamp(uv.y, 0.0, 1.0), max(p0, 0.01)); color = mix(c0, c1, t);`
-    });
-    return {};
-  } };
-}
-
-// game/node_modules/@phaser-ae/backdrop-stars/dist/index.js
-function backdropStars() {
-  return { id: "backdrop-stars", requires: ["backdrops"], attach(k) {
-    registerBackdrop(k, {
-      name: "stars",
-      description: "a parallax starfield that twinkles",
-      params: { density: 1, twinkle: 1, drift: 0 },
-      colors: { tint: "#ffffff" },
-      code: `var acc = 0.0;
-    for (var l = 0u; l < 3u; l++) {
-      let fl = f32(l);
-      let cell = 26.0 - fl * 7.0;                       // nearer layers: sparser, bigger
-      let par = 0.15 + fl * 0.25;                       // nearer layers drift more
-      let cssPx = px * cssScale.xy;
-      let q = (cssPx + view.xy * par + vec2(time * p2 * (fl + 1.0) * 8.0, 0.0)) / cell;
-      // A star may cross its cell boundary. Include neighboring centres rather than
-      // clipping the disc to whichever cell contains this fragment.
-      for (var oy = -1; oy <= 1; oy++) {
-      for (var ox = -1; ox <= 1; ox++) {
-      let id = floor(q) + vec2(f32(ox), f32(oy));
-      let rnd = hash21(id + fl * 91.7);
-      let keep = step(1.0 - 0.12 * p0, rnd);            // a fraction of cells hold a star
-      let centre = vec2(hash21(id + 3.1), hash21(id + 7.7));
-      let d = length(q - id - centre);
-      let core = smoothstep(0.14 + 0.08 * fl, 0.0, d);
-      // Twinkle needs its OWN hash. \`rnd\` survives the keep threshold, so it only spans
-      // [1 - 0.12 * density, 1] \u2014 a phase and frequency derived from it are nearly identical for every
-      // star, and the whole sky then pulses in unison. v2 hit this and fixed it; v3's port did not carry
-      // the fix, and drove a 0.6..1.0 swing off the kept hash, which is the same bug with more amplitude.
-      // Real stars mostly hold steady and a subset glints.
-      let twr = hash21(id + 13.7 + fl * 5.3);
-      let tw = 0.9 + 0.1 * sin(time * (0.4 + twr * 1.2) * p1 + twr * TAU * 7.0);
-      let glint = step(0.72, twr) * pow(max(sin(time * (0.5 + twr * 1.3) * p1 + twr * 47.0), 0.0), 24.0) * 0.7;
-      // Keep v2's exact profile at 1. Zero is genuinely steady; higher settings
-      // increase contrast as well as speed so the live control remains visible.
-      let strength = clamp(p1, 0.0, 4.0);
-      let shimmer = 1.0 + strength * (tw - 1.0) + min(strength, 1.0) * glint;
-      acc += keep * core * shimmer * (0.45 + 0.55 * rnd);
-      }
-      }
-    }
-    color = vec4(c0.rgb * acc, acc) * c0.a;`
-    });
-    return {};
-  } };
-}
-
-// game/node_modules/@phaser-ae/render-texture/dist/index.js
-function renderTexture() {
-  return {
-    id: "render-texture",
-    requires: ["world:2d"],
-    attach(k) {
-      let n = 0;
-      const assets = k.assets;
-      const spare = /* @__PURE__ */ new Map();
-      const live = /* @__PURE__ */ new Map();
-      const dirty = /* @__PURE__ */ new Set();
-      k.hooks.on("scene.kill", ({ handle }) => {
-        const r = live.get(handle);
-        if (!r) return;
-        live.delete(handle);
-        for (const t of dirty) if (t.handle === handle) dirty.delete(t);
-        const list2 = spare.get(r.size) ?? [];
-        list2.push(r.frame);
-        spare.set(r.size, list2);
-      });
-      k.frame.addPass("render-texture", { before: "begin" }, () => {
-        for (const t of [...dirty]) t.flush();
-      });
-      const create = (spec) => {
-        const screen3 = spec.width === void 0 && spec.height === void 0;
-        const W = deterministicMath.max(1, deterministicMath.round(spec.width ?? k.screen.width)), H = deterministicMath.max(1, deterministicMath.round(spec.height ?? k.screen.height));
-        const canvas = new OffscreenCanvas(W, H);
-        const g = canvas.getContext("2d");
-        const big = k.assets.isPicture(W, H);
-        const size = `${big ? "own:" : ""}${W}x${H}`;
-        const reused = spare.get(size)?.pop();
-        const frame = reused ?? (big ? k.assets.addCanvas(`texture-${++n}`, canvas, W, H) : k.assets.addStrip(`texture-${++n}`, canvas, W, H, 1));
-        const h = k.spawn({ id: spec.id ?? "texture", owner: "render-texture", tags: spec.tags ?? ["texture"], x: spec.x ?? (screen3 ? k.screen.width / 2 : 0), y: spec.y ?? (screen3 ? k.screen.height / 2 : 0), width: W, height: H, frame, layer: spec.layer, visible: spec.visible });
-        let flushes = 0;
-        const a = (alpha) => {
-          dirty.add(t);
-          g.globalAlpha = alpha ?? 1;
-        };
-        const t = {
-          handle: h,
-          width: W,
-          height: H,
-          clear(color2) {
-            dirty.add(t);
-            g.globalAlpha = 1;
-            g.clearRect(0, 0, W, H);
-            if (color2) {
-              g.fillStyle = color2;
-              g.fillRect(0, 0, W, H);
-            }
-            return t;
-          },
-          rect(x, y, w, hh, color2, alpha, rot) {
-            a(alpha);
-            g.fillStyle = color2;
-            if (rot) {
-              g.save();
-              g.translate(x + w / 2, y + hh / 2);
-              g.rotate(rot);
-              g.fillRect(-w / 2, -hh / 2, w, hh);
-              g.restore();
-            } else g.fillRect(x, y, w, hh);
-            return t;
-          },
-          line(x0, y0, x1, y1, width, color2, alpha) {
-            a(alpha);
-            g.strokeStyle = color2;
-            g.lineWidth = width;
-            g.lineCap = "round";
-            g.beginPath();
-            g.moveTo(x0, y0);
-            g.lineTo(x1, y1);
-            g.stroke();
-            return t;
-          },
-          poly(points2, width, color2, alpha, closed) {
-            if (points2.length < 2) return t;
-            a(alpha);
-            g.strokeStyle = color2;
-            g.lineWidth = width;
-            g.lineJoin = "round";
-            g.lineCap = "round";
-            g.beginPath();
-            points2.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
-            if (closed) g.closePath();
-            g.stroke();
-            return t;
-          },
-          fill(points2, color2, alpha) {
-            if (points2.length < 3) return t;
-            a(alpha);
-            g.fillStyle = color2;
-            g.beginPath();
-            points2.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
-            g.closePath();
-            g.fill();
-            return t;
-          },
-          circle(cx, cy, r, color2, alpha) {
-            a(alpha);
-            g.fillStyle = color2;
-            g.beginPath();
-            g.arc(cx, cy, r, 0, deterministicMath.PI * 2);
-            g.fill();
-            return t;
-          },
-          ring(cx, cy, r, thickness, color2, alpha) {
-            a(alpha);
-            g.strokeStyle = color2;
-            g.lineWidth = thickness;
-            g.beginPath();
-            g.arc(cx, cy, r, 0, deterministicMath.PI * 2);
-            g.stroke();
-            return t;
-          },
-          text(str2, x, y, o = {}) {
-            a(o.alpha);
-            g.font = o.font ?? "16px sans-serif";
-            g.fillStyle = o.color ?? "#ffffff";
-            g.textAlign = o.align ?? "left";
-            g.textBaseline = o.baseline ?? "top";
-            g.fillText(str2, x, y);
-            return t;
-          },
-          sprite(fi, x, y, w, hh, o = {}) {
-            const r = assets.framePlace(fi);
-            const img = r.tex ? assets.ownTexture(r.tex)?.image ?? null : assets.image;
-            if (!img) return t;
-            const dw = w ?? r.w, dh = hh ?? r.h;
-            a(o.alpha);
-            g.save();
-            g.translate(x, y);
-            if (o.rot) g.rotate(o.rot);
-            g.drawImage(img, r.x, r.y, r.w, r.h, -dw / 2, -dh / 2, dw, dh);
-            if (o.tint) {
-              g.globalCompositeOperation = "multiply";
-              g.fillStyle = o.tint;
-              g.fillRect(-dw / 2, -dh / 2, dw, dh);
-              g.globalCompositeOperation = "destination-in";
-              g.drawImage(img, r.x, r.y, r.w, r.h, -dw / 2, -dh / 2, dw, dh);
-              g.globalCompositeOperation = "source-over";
-            }
-            g.restore();
-            return t;
-          },
-          draw(fn) {
-            dirty.add(t);
-            g.save();
-            fn(g);
-            g.restore();
-            return t;
-          },
-          flush() {
-            dirty.delete(t);
-            if (h.alive) {
-              k.assets.redraw(frame, canvas);
-              flushes++;
-            }
-            return t;
-          },
-          destroy() {
-            h.kill();
-          },
-          get flushes() {
-            return flushes;
-          }
-        };
-        if (spec.clear !== false) t.clear();
-        if (reused !== void 0) k.assets.redraw(frame, canvas);
-        live.set(h, { frame, size });
-        return t;
-      };
-      k.registry.add("texture", { name: "texture", create });
-      return { texture: { create } };
     }
   };
 }
@@ -36142,7 +37581,7 @@ function compile(op, key) {
 var hex2 = (css) => {
   let c;
   try {
-    c = packColor(css);
+    c = packColor2(css);
   } catch {
     throw new Error(`particles-2d: not a colour "${css}"`);
   }
@@ -36306,7 +37745,7 @@ function contains2(s, x, y) {
 }
 var hex22 = (c) => {
   try {
-    return packColor(c);
+    return packColor2(c);
   } catch {
     throw new Error(`particles-2d: trail colors: not a colour "${c}"`);
   }
@@ -36545,14 +37984,14 @@ var Emitter = class _Emitter {
     if (this.scaleDrivesY) this.ops.set("scaleY", compile(c.scale, "scale"));
     this.color = compileColor(c.color ?? "#ffffff", "color");
     this.tintOp = c.tint ? compileColor(c.tint, "tint") : null;
-    const fr2 = c.frame ?? 0;
-    if (typeof fr2 === "object" && !Array.isArray(fr2)) {
-      const o = fr2;
+    const fr3 = c.frame ?? 0;
+    if (typeof fr3 === "object" && !Array.isArray(fr3)) {
+      const o = fr3;
       this.frames = o.frames.map(this.resolveFrame);
       this.frameCycle = !!o.cycle;
       this.frameQty = deterministicMath.max(1, o.quantity ?? 1);
     } else {
-      this.frames = (Array.isArray(fr2) ? fr2 : [fr2]).map(this.resolveFrame);
+      this.frames = (Array.isArray(fr3) ? fr3 : [fr3]).map(this.resolveFrame);
       this.frameCycle = false;
     }
     if (!this.frames.length) throw new Error("particles-2d: frame list is empty");
@@ -36759,8 +38198,8 @@ var Emitter = class _Emitter {
       }
       ox += this.k0[i * LIFE_KEYS.length];
       oy += this.k0[i * LIFE_KEYS.length + 1];
-      const rx = ox * cr - oy * sr, ry2 = ox * sr + oy * cr;
-      const x = (local ? wx - this.h.x : wx) + rx, y = (local ? wy - this.h.y : wy) + ry2;
+      const rx = ox * cr - oy * sr, ry3 = ox * sr + oy * cr;
+      const x = (local ? wx - this.h.x : wx) + rx, y = (local ? wy - this.h.y : wy) + ry3;
       this.x[i] = x;
       this.y[i] = y;
       this.px[i] = x;
@@ -36807,12 +38246,12 @@ var Emitter = class _Emitter {
         this.mtx[i] = (local ? 0 : this.h.x) + mx * cr - my * sr;
         this.mty[i] = (local ? 0 : this.h.y) + mx * sr + my * cr;
       } else this.hasMove[i] = 0;
-      const birth = this.scaleDrivesX && this.scaleDrivesY ? 1 : this.opV("scale", index, v), inhS = inh?.scale ?? 1, L52 = i * LIFE_KEYS.length;
+      const birth = this.scaleDrivesX && this.scaleDrivesY ? 1 : this.opV("scale", index, v), inhS = inh?.scale ?? 1, L53 = i * LIFE_KEYS.length;
       this.smx[i] = (this.scaleDrivesX ? 1 : birth) * inhS;
       this.smy[i] = (this.scaleDrivesY ? 1 : birth) * inhS;
       if (inh?.rot !== void 0) {
-        this.k0[L52 + 8] = this.k0[L52 + 8] + inh.rot;
-        this.k1[L52 + 8] = this.k1[L52 + 8] + inh.rot;
+        this.k0[L53 + 8] = this.k0[L53 + 8] + inh.rot;
+        this.k1[L53 + 8] = this.k1[L53 + 8] + inh.rot;
       }
       this.color.emit(rng, this.rgb, i * 3);
       if (this.tintOp) {
@@ -37016,9 +38455,9 @@ var Emitter = class _Emitter {
       } else {
         let ax = this.lifeVal(i, 2, t) + (c.gravityX ?? 0), ay = this.lifeVal(i, 3, t) + (c.gravityY ?? 0);
         if (c.turnGravity && rotE) {
-          const tx2 = ax * cr - ay * sr;
+          const tx3 = ax * cr - ay * sr;
           ay = ax * sr + ay * cr;
-          ax = tx2;
+          ax = tx3;
         }
         const px = this.x[i], py = this.y[i];
         for (const f of forces) {
@@ -37038,14 +38477,14 @@ var Emitter = class _Emitter {
             }
             case "noise": {
               const sc = f.scale ?? 0.01, sp = f.speed ?? 0.3, oct = f.octaves ?? 1, e = 0.5;
-              let nx = 0, ny = 0, amp = 1, fr2 = 1;
+              let nx = 0, ny = 0, amp = 1, fr3 = 1;
               for (let o = 0; o < oct; o++) {
-                const X = px * sc * fr2, Y = py * sc * fr2, T2 = t0 * sp * fr2;
-                const dNdy = (vnoise(X, Y + e + T2) - vnoise(X, Y - e + T2)) / (2 * e), dNdx = (vnoise(X + e, Y + T2) - vnoise(X - e, Y + T2)) / (2 * e);
+                const X = px * sc * fr3, Y = py * sc * fr3, T3 = t0 * sp * fr3;
+                const dNdy = (vnoise(X, Y + e + T3) - vnoise(X, Y - e + T3)) / (2 * e), dNdx = (vnoise(X + e, Y + T3) - vnoise(X - e, Y + T3)) / (2 * e);
                 nx += dNdy * amp;
                 ny += -dNdx * amp;
                 amp *= 0.5;
-                fr2 *= 2;
+                fr3 *= 2;
               }
               const no = this.noiseOver, inf = no ? no.op.update ? no.op.update(t, no.s, no.e, null) : no.s : 1;
               ax += nx * f.strength * inf;
@@ -37055,9 +38494,9 @@ var Emitter = class _Emitter {
             default: {
               let fx = f.x, fy = f.y;
               if (!f.world) {
-                const rx = f.x * cr - f.y * sr, ry2 = f.x * sr + f.y * cr;
+                const rx = f.x * cr - f.y * sr, ry3 = f.x * sr + f.y * cr;
                 fx = ex + rx;
-                fy = ey + ry2;
+                fy = ey + ry3;
               }
               const dx = fx - px, dy = fy - py, d2 = dx * dx + dy * dy, d = deterministicMath.sqrt(d2) || 1e-6;
               if (f.kind === "well") {
@@ -37144,20 +38583,20 @@ var Emitter = class _Emitter {
             i--;
             continue;
           }
-          const b = -(sd.bounce ?? 0.4), fr2 = 1 - deterministicMath.min(1, deterministicMath.max(0, sd.friction ?? 0.1));
+          const b = -(sd.bounce ?? 0.4), fr3 = 1 - deterministicMath.min(1, deterministicMath.max(0, sd.friction ?? 0.1));
           const solidX = sd.at(nx, ay0 + oy), solidY = sd.at(ax0 + ox, ny);
           const corner = !solidX && !solidY;
           if (solidX || corner) {
             this.x[i] = ax0;
             this.vx[i] = this.vx[i] * b;
           } else {
-            this.vx[i] = this.vx[i] * fr2;
+            this.vx[i] = this.vx[i] * fr3;
           }
           if (solidY || corner) {
             this.y[i] = ay0;
             this.vy[i] = this.vy[i] * b;
           } else {
-            this.vy[i] = this.vy[i] * fr2;
+            this.vy[i] = this.vy[i] * fr3;
           }
         }
       }
@@ -37243,7 +38682,7 @@ var Emitter = class _Emitter {
       if (this.delay[i] > 0) continue;
       const life = this.life[i], age = deterministicMath.min(this.age[i] + alpha * dt * this.timeScale, life), t = age / life;
       const x = this.px[i] + (this.x[i] - this.px[i]) * alpha + ox, y = this.py[i] + (this.y[i] - this.py[i]) * alpha + oy;
-      const fr2 = this.frame[i], rect2 = this.sys.assets.framePlace(fr2), size = this.size[i];
+      const fr3 = this.frame[i], rect2 = this.sys.assets.framePlace(fr3), size = this.size[i];
       const base = size > 0 ? size / deterministicMath.max(rect2.w, rect2.h) : 1;
       let sx = this.lifeVal(i, 5, t) * base * this.smx[i], sy = this.lifeVal(i, 6, t) * base * this.smy[i];
       const w = rect2.w * sx, h = rect2.h * sy, r = deterministicMath.max(deterministicMath.abs(w), deterministicMath.abs(h));
@@ -37275,7 +38714,7 @@ var Emitter = class _Emitter {
         B = this.rgb[i * 3 + 2];
       }
       const tint2 = ((R & 255) << 24 | (G & 255) << 16 | (B & 255) << 8 | 255) >>> 0;
-      out.add(x, y, rect2.w, rect2.h, fr2, tint2, rot * D2R2, sx, sy, a, blend2);
+      out.add(x, y, rect2.w, rect2.h, fr3, tint2, rot * D2R2, sx, sy, a, blend2);
     }
     void tmp;
   }
@@ -37899,7 +39338,7 @@ function collision() {
       const W = () => r.wrap;
       const rel = (a, b) => {
         const w = W();
-        return w ? { x: a.x - wrapDelta(a.x - b.x, w.w), y: a.y - wrapDelta(a.y - b.y, w.h) } : { x: b.x, y: b.y };
+        return w ? { x: a.x - wrapDelta3(a.x - b.x, w.w), y: a.y - wrapDelta3(a.y - b.y, w.h) } : { x: b.x, y: b.y };
       };
       const contactOf = (m) => deterministicMath.abs(m.x) > deterministicMath.abs(m.y) ? { side: m.x > 0 ? "left" : "right", overlap: deterministicMath.abs(m.x) } : { side: m.y > 0 ? "top" : "bottom", overlap: deterministicMath.abs(m.y) };
       const mtv = (a, bReal) => {
@@ -38879,7 +40318,7 @@ var World = class {
       if (o) n.set(o);
       return n;
     };
-    const f642 = (o) => {
+    const f643 = (o) => {
       const n = new Float64Array(to);
       if (o) n.set(o);
       return n;
@@ -38893,8 +40332,8 @@ var World = class {
     this.invM = f(this.invM);
     this.invI = f(this.invI);
     this.mass = f(this.mass);
-    this.ownM = f642(this.ownM);
-    this.ownI = f642(this.ownI);
+    this.ownM = f643(this.ownM);
+    this.ownI = f643(this.ownI);
     this.dens = f(this.dens);
     this.rest = f(this.rest);
     this.minBounceVelocity = f(this.minBounceVelocity);
@@ -39378,9 +40817,9 @@ var World = class {
     const i1 = incO + incEdge, i2 = incO + (incEdge + 1) % incPoly.n;
     let c1x = ivx[i1], c1y = ivy[i1], c2x = ivx[i2], c2y = ivy[i2];
     const r1 = refO + refEdge, r2 = refO + (refEdge + 1) % refPoly.n;
-    const tx2 = rvx[r2] - rvx[r1], ty = rvy[r2] - rvy[r1];
-    const tl = deterministicMath.hypot(tx2, ty) || 1;
-    const ux = tx2 / tl, uy = ty / tl;
+    const tx3 = rvx[r2] - rvx[r1], ty = rvy[r2] - rvy[r1];
+    const tl = deterministicMath.hypot(tx3, ty) || 1;
+    const ux = tx3 / tl, uy = ty / tl;
     const side1 = -(ux * rvx[r1] + uy * rvy[r1]), side2 = ux * rvx[r2] + uy * rvy[r2];
     let d1 = -(ux * c1x + uy * c1y) - side1, d2 = -(ux * c2x + uy * c2y) - side1;
     if (d1 > 0 && d2 > 0) return null;
@@ -39611,12 +41050,12 @@ var World = class {
     for (const [key, m] of this.manifolds) {
       if (this.sleeping.has(key)) continue;
       const a = m.a, b = m.b, mA = this.invM[a], iA = this.invI[a], mB = this.invM[b], iB = this.invI[b];
-      const nx = m.nx, ny = m.ny, tx2 = -ny, ty = nx;
+      const nx = m.nx, ny = m.ny, tx3 = -ny, ty = nx;
       for (const p of m.p) {
         const rnA = p.rax * ny - p.ray * nx, rnB = p.rbx * ny - p.rby * nx;
         const kN = mA + mB + iA * rnA * rnA + iB * rnB * rnB;
         p.massN = kN > 0 ? 1 / kN : 0;
-        const rtA = p.rax * ty - p.ray * tx2, rtB = p.rbx * ty - p.rby * tx2;
+        const rtA = p.rax * ty - p.ray * tx3, rtB = p.rbx * ty - p.rby * tx3;
         const kT = mA + mB + iA * rtA * rtA + iB * rtB * rtB;
         p.massT = kT > 0 ? 1 / kT : 0;
         const dx = this.x[b] + p.rbx - (this.x[a] + p.rax), dy = this.y[b] + p.rby - (this.y[a] + p.ray);
@@ -39632,9 +41071,9 @@ var World = class {
     for (const [key, m] of this.manifolds) {
       if (this.sleeping.has(key) || m.sensor) continue;
       const a = m.a, b = m.b, mA = this.invM[a], iA = this.invI[a], mB = this.invM[b], iB = this.invI[b];
-      const nx = m.nx, ny = m.ny, tx2 = -ny, ty = nx;
+      const nx = m.nx, ny = m.ny, tx3 = -ny, ty = nx;
       for (const p of m.p) {
-        const px = p.pn * nx + p.pt * tx2, py = p.pn * ny + p.pt * ty;
+        const px = p.pn * nx + p.pt * tx3, py = p.pn * ny + p.pt * ty;
         this.vx[a] -= mA * px;
         this.vy[a] -= mA * py;
         this.av[a] -= iA * (p.rax * py - p.ray * px);
@@ -39651,17 +41090,17 @@ var World = class {
     for (const [key, m] of this.manifolds) {
       if (this.sleeping.has(key) || m.sensor) continue;
       const a = m.a, b = m.b, mA = this.invM[a], iA = this.invI[a], mB = this.invM[b], iB = this.invI[b];
-      const nx = m.nx, ny = m.ny, tx2 = -ny, ty = nx;
+      const nx = m.nx, ny = m.ny, tx3 = -ny, ty = nx;
       let vAx = this.vx[a], vAy = this.vy[a], wA = this.av[a], vBx = this.vx[b], vBy = this.vy[b], wB = this.av[b];
       for (const p of m.p) {
         const dvx = vBx - wB * p.rby - (vAx - wA * p.ray), dvy = vBy + wB * p.rbx - (vAy + wA * p.rax);
-        const vt = dvx * tx2 + dvy * ty - m.tangentSpeed;
+        const vt = dvx * tx3 + dvy * ty - m.tangentSpeed;
         let impulse = -p.massT * vt;
         const maxF = m.friction * p.pn;
         const newImpulse = deterministicMath.min(deterministicMath.max(p.pt + impulse, -maxF), maxF);
         impulse = newImpulse - p.pt;
         p.pt = newImpulse;
-        const px = impulse * tx2, py = impulse * ty;
+        const px = impulse * tx3, py = impulse * ty;
         vAx -= mA * px;
         vAy -= mA * py;
         wA -= iA * (p.rax * py - p.ray * px);
@@ -39879,8 +41318,8 @@ var World = class {
       const pax = this.x[a] + rax, pay = this.y[a] + ray, pbx = this.x[b] + rbx, pby = this.y[b] + rby;
       if (j.kind === "motor") {
         if (!useBias) continue;
-        const tx2 = j.targetX ?? pbx, ty = j.targetY ?? pby;
-        const Cx = pbx - tx2, Cy = pby - ty;
+        const tx3 = j.targetX ?? pbx, ty = j.targetY ?? pby;
+        const Cx = pbx - tx3, Cy = pby - ty;
         const k11 = mB + iB * rby * rby, k12 = -iB * rbx * rby, k22 = mB + iB * rbx * rbx;
         const det = k11 * k22 - k12 * k12;
         const i11 = det ? k22 / det : 0, i12 = det ? -k12 / det : 0, i22 = det ? k11 / det : 0;
@@ -41092,7 +42531,7 @@ function controlsTouch(opts = {}) {
 }
 
 // game/engine.ts
-var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(controls2d()).use(maths()).use(color()).use(typography2()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "stick": { "codes": { "left": "Touch:left", "right": "Touch:right", "up": "Touch:up", "down": "Touch:down" }, "anchor": "bottom-left", "x": 125, "y": 175, "r": 65, "deadzone": 0.25, "tint": "#f4d888" }, "buttons": [{ "code": "Touch:jump", "label": "JUMP", "anchor": "bottom-right", "x": 110, "y": 160, "r": 46, "tint": "#f4d888" }, { "code": "Touch:crouch", "label": "CROUCH", "anchor": "bottom-right", "x": 110, "y": 265, "r": 36, "tint": "#c4d098" }, { "code": "Touch:run", "label": "RUN", "anchor": "bottom-right", "x": 215, "y": 160, "r": 36, "tint": "#e7dfb8" }, { "code": "Touch:sit", "label": "SIT", "anchor": "bottom-right", "x": 215, "y": 265, "r": 36, "tint": "#a8c0a0" }], "touchOnly": true, "alpha": 0.45 }));
+var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(typography2()).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(controls2d()).use(maths()).use(color()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "stick": { "codes": { "left": "Touch:left", "right": "Touch:right", "up": "Touch:up", "down": "Touch:down" }, "anchor": "bottom-left", "x": 125, "y": 175, "r": 65, "deadzone": 0.25, "tint": "#f4d888" }, "buttons": [{ "code": "Touch:jump", "label": "JUMP", "anchor": "bottom-right", "x": 110, "y": 160, "r": 46, "tint": "#f4d888" }, { "code": "Touch:crouch", "label": "CROUCH", "anchor": "bottom-right", "x": 110, "y": 265, "r": 36, "tint": "#c4d098" }, { "code": "Touch:run", "label": "RUN", "anchor": "bottom-right", "x": 215, "y": 160, "r": 36, "tint": "#e7dfb8" }, { "code": "Touch:sit", "label": "SIT", "anchor": "bottom-right", "x": 215, "y": 265, "r": 36, "tint": "#a8c0a0" }], "touchOnly": true, "alpha": 0.45 }));
 var game = composed.game;
 var signals = composed.signals;
 
@@ -41116,14 +42555,30 @@ function paintArt() {
     ctx.fillRect(0, 272, 2400, 448);
   }, { res: 1 });
   game.paint("tunnel", 260, 100, (ctx) => {
-    ctx.fillStyle = "#343d36";
-    ctx.fillRect(0, 0, 260, 100);
-    ctx.fillStyle = "#6d775d";
-    ctx.fillRect(4, 4, 252, 88);
-    ctx.fillStyle = "#8b946a";
-    for (let y = 12; y < 88; y += 24) for (let x = y % 48 === 12 ? 8 : 32; x < 250; x += 60) ctx.fillRect(x, y, 48, 12);
-    ctx.fillStyle = "#a8bd78";
-    ctx.fillRect(0, 0, 260, 8);
+    const stoneColors = ["#6e7860", "#76806a", "#676f5d", "#81876b"];
+    ctx.fillStyle = "#3d483f";
+    ctx.fillRect(0, 4, 260, 96);
+    for (let row = 0; row < 4; row++) {
+      const y = 8 + row * 20;
+      for (let col = 0; col < 6; col++) {
+        const x = col * 48 - (row % 2 ? 24 : 0);
+        ctx.fillStyle = stoneColors[(row * 3 + col) % stoneColors.length];
+        ctx.fillRect(x + 4, y, 44, 16);
+        ctx.fillStyle = "#8d9475";
+        ctx.fillRect(x + 8, y, 32, 4);
+        ctx.fillStyle = "#596454";
+        ctx.fillRect(x + 32, y + 12, 16, 4);
+        ctx.fillRect(x + 12 + (col + row) % 3 * 8, y + 8, 4, 4);
+      }
+    }
+    ctx.fillStyle = "#718352";
+    ctx.fillRect(0, 4, 260, 8);
+    ctx.fillStyle = "#a1ad6d";
+    for (let x = 4; x < 260; x += 20) ctx.fillRect(x, x % 3 ? 4 : 0, 16, 4);
+    ctx.fillStyle = "#303b37";
+    ctx.fillRect(0, 88, 260, 12);
+    ctx.fillStyle = "#50564a";
+    for (let x = 8; x < 260; x += 40) ctx.fillRect(x, 92, 24, 4);
   }, { res: 1 });
   game.paint("signpost", 220, 50, (ctx) => {
     ctx.fillStyle = "#4f4b3b";
@@ -41199,7 +42654,7 @@ function isMobileView() {
 }
 function setTouchOverride(value) {
   touchOverride = value;
-  if (game.scenes.current === "play" || game.scenes.current === "meadow") {
+  if (game.scenes.current === "play" || game.scenes.current === "meadow" || game.scenes.current === "home" || game.scenes.current === "dream-start" || game.scenes.current === "journey" || game.scenes.current === "ending") {
     game.touch.visible = value ?? isMobileView();
   }
 }
@@ -41321,17 +42776,64 @@ function toggleCrouchBehavior() {
   return next;
 }
 
+// game/tokyoArt.ts
+var FRAME = 52;
+var ORIGINAL_FRAME = 64;
+var COLUMNS = 8;
+var MOTION_ROWS = 7;
+var CROUCH_ROWS = 2;
+var CARRY_WIDTH = 92;
+var CARRY_HEIGHT = 68;
+var TOKYO_ART_SCALE = ORIGINAL_FRAME / FRAME;
+var TOKYO_CARRY_CROUCH_START = COLUMNS * MOTION_ROWS;
+async function loadTokyoArt() {
+  await game.assets.load([
+    { kind: "image", key: "tokyo", url: "assets/tokyo-family.png", w: FRAME, h: FRAME, cols: COLUMNS, rows: MOTION_ROWS },
+    { kind: "image", key: "tokyo-crouch", url: "assets/tokyo-family-crouch.png", w: FRAME, h: FRAME, cols: COLUMNS, rows: CROUCH_ROWS },
+    ...["plushie", "ball"].map((toy) => ({
+      kind: "image",
+      key: `tokyo-carry-${toy}`,
+      url: `assets/tokyo-carry-${toy}.png`,
+      w: CARRY_WIDTH,
+      h: CARRY_HEIGHT,
+      cols: COLUMNS,
+      rows: MOTION_ROWS + CROUCH_ROWS
+    }))
+  ]);
+}
+
+// game/entities/Droppings.ts
+var WIDTH2 = 26;
+var LINGER_TIME = 11;
+var FADE_TIME = 0.9;
+function spawnDroppings(x, feet) {
+  const pile = game.spawn({
+    id: "tokyo-poop",
+    texture: "tokyo-poop",
+    x,
+    y: feet,
+    width: WIDTH2,
+    layer: "world",
+    z: 9
+  });
+  pile.y -= pile.height / 2;
+  game.after(LINGER_TIME, () => {
+    game.tween.to(pile, { alpha: 0 }, { duration: FADE_TIME, onComplete: () => pile.destroy() });
+  });
+}
+
 // game/entities/Tokyo.ts
 var WALK_SPEED = 160;
 var RUN_SPEED = 300;
 var CROUCH_SPEED = 70;
 var ACCELERATION = 1500;
 var BRAKING = 2200;
-var JUMP_SPEED = 570;
+var DEFAULT_JUMP = { launchSpeed: 570, releaseSpeed: 220 };
+var RISING_FRAME_SPEED = 220;
 var COYOTE_TIME = 0.1;
 var JUMP_BUFFER = 0.12;
 var STAND_HEIGHT = 60;
-var CROUCH_HEIGHT = 28;
+var CROUCH_HEIGHT = 41;
 var BODY_WIDTH = 76;
 var SPRITE_SCALE = 1.5;
 var FOOT_OFFSET = 39;
@@ -41341,6 +42843,14 @@ var WALK_STRIDE = 144;
 var RUN_STRIDE = 172;
 var CRAWL_STRIDE = 80;
 var MOTION_EPSILON = 0.01;
+var POOP_DURATION = 0.85;
+var POOP_DROP_TIME = 0.42;
+var POOP_COOLDOWN = 1.15;
+var FOOT_PROBE_OFFSET = BODY_WIDTH / 2 - 4;
+var POOP_TOUCH_X = 315;
+var POOP_TOUCH_Y = 265;
+var POOP_TOUCH_RADIUS = 36;
+var UPWARD_PLATFORM_TAG = "one-way-up";
 var run = { spawnX: 220, tokyo: null, scene: "play" };
 function makeBody(x, feet, height, vx = 0, vy = 0) {
   return game.spawn({
@@ -41373,6 +42883,8 @@ function initialData(x, feet) {
     grounded: false,
     crouched: false,
     seated: false,
+    poopTime: 0,
+    poopCooldown: 0,
     sitPhase: "hold",
     sitTime: 0,
     coyote: 0,
@@ -41388,6 +42900,7 @@ function initialData(x, feet) {
     vx: 0,
     vy: 0,
     frame: 0,
+    carrying: null,
     runToggled: false,
     crouchToggled: false,
     sprinting: false
@@ -41406,7 +42919,7 @@ function animationFrame(d) {
       if (d.landing > 0) return 31;
       if (d.jumpLock > 0.083) return 24;
       if (d.jumpLock > 0.05) return 25;
-      if (d.vy < -220) return 26;
+      if (d.vy < -RISING_FRAME_SPEED) return 26;
       if (d.vy < -50) return 27;
       if (d.vy < 90) return 28;
       return d.vy < 300 ? 29 : 30;
@@ -41417,35 +42930,58 @@ function animationFrame(d) {
       if (d.sitPhase === "down") return 40 + deterministicMath.min(1, deterministicMath.floor(d.sitTime / SIT_TRANSITION * 2));
       if (d.sitPhase === "up") return 46 + deterministicMath.min(1, deterministicMath.floor(d.sitTime / SIT_TRANSITION * 2));
       return 42 + deterministicMath.floor(d.elapsed * 3) % 4;
+    case "pooping":
+      if (d.poopTime < SIT_TRANSITION) return 46 + deterministicMath.min(1, deterministicMath.floor((1 - d.poopTime / SIT_TRANSITION) * 2));
+      if (d.poopTime > POOP_DURATION - SIT_TRANSITION) return 40 + deterministicMath.floor((POOP_DURATION - d.poopTime) / SIT_TRANSITION * 2);
+      return 42;
     default:
       return deterministicMath.floor(d.elapsed * 5) % 8;
   }
 }
-function spawnTokyo(x, feet) {
+function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile = DEFAULT_JUMP) {
+  const scaleRatio = visualScale / SPRITE_SCALE;
+  const artScale = visualScale * TOKYO_ART_SCALE;
   const sprite = game.spawn({
     id: "tokyo",
     texture: "tokyo",
     x,
-    y: feet - FOOT_OFFSET,
+    y: feet - FOOT_OFFSET * scaleRatio,
     layer: "world",
     z: 10,
-    scale: SPRITE_SCALE,
+    scale: artScale,
     tags: ["tokyo"],
     data: initialData(x, feet)
   });
   let body = makeBody(x, feet, STAND_HEIGHT);
   let height = STAND_HEIGHT;
-  let wasJump = false, wasSit = false, wasRun = false, wasCrouch = false;
+  let wasJump = false, wasSit = false, wasRun = false, wasCrouch = false, wasPoop = false;
   const d = sprite.data;
   run.tokyo = d;
+  function showPose() {
+    const crouching = d.state === "crouching";
+    if (d.carrying) {
+      sprite.setTexture(`tokyo-carry-${d.carrying}`, d.frame + (crouching ? TOKYO_CARRY_CROUCH_START : 0));
+    } else {
+      sprite.setTexture(crouching ? "tokyo-crouch" : "tokyo", d.frame);
+    }
+  }
+  game.touch.button({
+    code: "Touch:poop",
+    label: "POOP",
+    anchor: "bottom-right",
+    x: POOP_TOUCH_X,
+    y: POOP_TOUCH_Y,
+    r: POOP_TOUCH_RADIUS,
+    tint: "#e7dfb8"
+  });
+  const floorAt = (x2) => {
+    const feetY = body.y + height / 2;
+    const hit = game.physics.raycast(x2, feetY - 4, 0, 1, 8, (h) => h.id !== body.id);
+    return hit && hit.ny < -0.5 ? hit : null;
+  };
   const hasSupport = () => {
     if (body.body.vy < -1) return false;
-    const feetY = body.y + height / 2;
-    for (const offset of [-BODY_WIDTH / 2 + 4, 0, BODY_WIDTH / 2 - 4]) {
-      const hit = game.physics.raycast(body.x + offset, feetY - 4, 0, 1, 8, (h) => h.id !== body.id);
-      if (hit && hit.ny < -0.5) return true;
-    }
-    return false;
+    return Boolean(floorAt(body.x - FOOT_PROBE_OFFSET) || floorAt(body.x) || floorAt(body.x + FOOT_PROBE_OFFSET));
   };
   const canStand = () => {
     const feetY = body.y + height / 2;
@@ -41456,7 +42992,7 @@ function spawnTokyo(x, feet) {
         0,
         -1,
         STAND_HEIGHT - height + 2,
-        (h) => h.id !== body.id
+        (h) => h.id !== body.id && !h.tags.has(UPWARD_PLATFORM_TAG)
       )) return false;
     }
     return true;
@@ -41471,6 +43007,10 @@ function spawnTokyo(x, feet) {
     d.postureGrace = 0.05;
   };
   game.step("tokyo-controls", (dt) => {
+    if (canControl && !canControl()) {
+      body.body.vx = 0;
+      return;
+    }
     const settings = getSettings();
     const move2 = game.controls.axis("move").x;
     const runRaw = game.controls.pressed("run");
@@ -41507,12 +43047,37 @@ function spawnTokyo(x, feet) {
     const crouch = settings.crouchBehavior === "toggle" ? d.crouchToggled || crouchRaw : crouchRaw;
     const sit = game.controls.pressed("sit"), sitPressed = game.controls.justPressed("sit") || sit && !wasSit;
     wasSit = sit;
+    const poop = game.controls.pressed("poop");
+    const poopPressed = game.controls.justPressed("poop") || poop && !wasPoop;
+    wasPoop = poop;
     const wasGrounded = d.grounded;
     d.jumpLock = deterministicMath.max(0, d.jumpLock - dt);
     d.postureGrace = deterministicMath.max(0, d.postureGrace - dt);
     d.grounded = (body.body.grounded || hasSupport() || d.postureGrace > 0 && deterministicMath.abs(body.body.vy) < 80) && d.jumpLock === 0;
     d.landing = !wasGrounded && d.grounded ? 0.09 : deterministicMath.max(0, d.landing - dt);
     d.coyote = d.grounded ? COYOTE_TIME : deterministicMath.max(0, d.coyote - dt);
+    d.poopCooldown = deterministicMath.max(0, d.poopCooldown - dt);
+    if (d.poopTime > 0 && !d.grounded) d.poopTime = 0;
+    if (d.poopTime > 0) {
+      const previousTime = d.poopTime;
+      d.poopTime = deterministicMath.max(0, previousTime - dt);
+      const dropAt = POOP_DURATION - POOP_DROP_TIME;
+      if (previousTime > dropAt && d.poopTime <= dropAt) {
+        const rearOffset = d.facing * FOOT_PROBE_OFFSET;
+        const floor3 = floorAt(body.x - rearOffset) ?? floorAt(body.x) ?? floorAt(body.x + rearOffset);
+        if (floor3) spawnDroppings(floor3.x, floor3.y);
+      }
+      if (d.poopTime === 0) d.poopCooldown = POOP_COOLDOWN;
+      return;
+    }
+    if (poopPressed && d.poopCooldown === 0 && d.grounded && !jumpPressed && !crouch && d.crouchAmount === 0) {
+      d.poopTime = POOP_DURATION;
+      d.jumpBuffer = 0;
+      d.seated = false;
+      d.sitPhase = "hold";
+      body.body.vx = 0;
+      return;
+    }
     d.jumpBuffer = jumpPressed ? JUMP_BUFFER : deterministicMath.max(0, d.jumpBuffer - dt);
     if (sitPressed && d.grounded && d.crouchAmount === 0 && !crouch) {
       d.seated = !d.seated;
@@ -41540,14 +43105,14 @@ function spawnTokyo(x, feet) {
     body.body.vx = approach2(body.body.vx, target, (deterministicMath.abs(move2) > 0.1 ? ACCELERATION : BRAKING) * dt);
     if (deterministicMath.abs(move2) > 0.1 && !d.seated) d.facing = move2 < 0 ? -1 : 1;
     if (d.jumpBuffer > 0 && d.coyote > 0 && d.crouchAmount === 0 && !d.seated && !standingUp) {
-      body.body.vy = -JUMP_SPEED;
+      body.body.vy = -jumpProfile.launchSpeed;
       d.coyote = 0;
       d.jumpBuffer = 0;
       d.jumpLock = 0.1;
       d.grounded = false;
       d.landing = 0;
     }
-    if (!jump && body.body.vy < -220) body.body.vy = -220;
+    if (!jump && body.body.vy < -jumpProfile.releaseSpeed) body.body.vy = -jumpProfile.releaseSpeed;
   }, { before: "physics-2d" });
   game.step("tokyo-visual", (dt) => {
     const distance = deterministicMath.abs(body.x - d.x);
@@ -41561,7 +43126,8 @@ function spawnTokyo(x, feet) {
     d.crouchMotion = d.crouchAmount === 0 ? "none" : !d.crouched ? "rising" : d.crouchAmount < 1 ? "lowering" : moving ? "crawling" : "idle";
     const standingUp = !d.seated && d.sitPhase === "up" && d.sitTime < SIT_TRANSITION;
     let next = "idle";
-    if (!d.grounded || d.landing > 0) next = "jumping";
+    if (d.poopTime > 0) next = "pooping";
+    else if (!d.grounded || d.landing > 0) next = "jumping";
     else if (d.seated || standingUp) next = "sitting";
     else if (d.crouchAmount > 0) next = "crouching";
     else if (deterministicMath.abs(d.vx) > 12) next = d.sprinting ? "running" : "walking";
@@ -41569,11 +43135,31 @@ function spawnTokyo(x, feet) {
     d.state = next;
     d.frame = animationFrame(d);
     sprite.x = deterministicMath.round(d.x);
-    sprite.y = deterministicMath.round(d.feet - FOOT_OFFSET);
-    sprite.sx = d.facing * SPRITE_SCALE;
-    sprite.setTexture(d.state === "crouching" ? "tokyo-crouch" : "tokyo", d.frame);
+    sprite.y = deterministicMath.round(d.feet - FOOT_OFFSET * scaleRatio);
+    sprite.sx = d.facing * artScale;
+    sprite.sy = artScale;
+    showPose();
   }, { after: "physics-2d", before: "rig-follow.camera" });
-  return sprite;
+  return Object.assign(sprite, {
+    carry(toy) {
+      d.carrying = toy;
+      showPose();
+    },
+    warpTo(x2, feet2, facing) {
+      body.x = x2;
+      body.y = feet2 - height / 2;
+      body.body.vx = 0;
+      body.body.vy = 0;
+      d.x = x2;
+      d.feet = feet2;
+      d.vx = 0;
+      d.vy = 0;
+      d.facing = facing;
+      sprite.x = x2;
+      sprite.y = feet2 - FOOT_OFFSET * scaleRatio;
+      sprite.sx = facing * artScale;
+    }
+  });
 }
 
 // game/sky.ts
@@ -42089,10 +43675,426 @@ function currentArea(x) {
   return PARK_AREAS.filter((area) => x >= area.x - 180).pop()?.name ?? PARK_AREAS[0].name;
 }
 
+// game/home.ts
+var HOME_FLOOR = 593;
+var HOME_START = 224;
+var HOME_LAMP = 72;
+var HOME_BASKET = 401;
+var HOME_BED = 1165;
+var FAMILY_FRAME_SIZE = 112;
+var FAMILY_GROUND_OFFSET = 48;
+var FAMILY_BASE_FRAMES = 8;
+var FAMILY_HOME_FRAMES = 22;
+var FAMILY_ROOM_FRAMES = 7;
+var HOME_FAMILY = [
+  { id: "sandesh", name: "Sandesh", x: 157, line: "Come here, Tokyo!" },
+  { id: "sushil", name: "Sushil", x: 308, line: "There you are, Tokyo!" },
+  { id: "reshika", name: "Reshika", x: 467, line: "Good girl, Tokyo!" },
+  { id: "senny", name: "Senny", x: 625, line: "Go fetch, Tokyo!" },
+  { id: "dad", name: "Dad", x: 783, line: "Tokyo, over here!" },
+  { id: "mom", name: "Mom", x: 948, line: "Here\u2019s a treat, Tokyo." }
+];
+var homePreview = { sofa: null, room: "living", phase: "play" };
+var home = { phase: "play", room: "living", lightOn: true, holding: null, ball: "ready", playedWith: [] };
+var HOME_PROPS = ["plushie", "ball", "bowl-full", "bowl-empty", "light-switch"];
+var HOME_PIXEL_IMAGES = [
+  "sofa",
+  "armchair",
+  "coffee-table",
+  "lamp-off",
+  "lamp-on",
+  "sideboard",
+  "bed",
+  "rug",
+  "basket",
+  "laptop-desk",
+  "pc-desk",
+  "vanity",
+  "wardrobe",
+  "bed-sandesh",
+  "bed-sushil",
+  "bed-parents",
+  "bed-shared",
+  "music-keyboard",
+  "sushil-pc-desk"
+];
+var FURNITURE = [
+  { key: "rug", x: 634, bottom: 631, width: 526 },
+  { key: "sofa", x: 420, bottom: 568, width: 336 },
+  { key: "armchair", x: 828, bottom: 569, width: 164 },
+  { key: "coffee-table", x: 595, bottom: 585, width: 198 },
+  { key: "sideboard", x: 1072, bottom: 557, width: 211 },
+  { key: "bed", x: HOME_BED, bottom: 607, width: 145 },
+  { key: "basket", x: HOME_BASKET, bottom: 599, width: 61 }
+];
+async function loadHomeArt() {
+  await game.assets.load([
+    { kind: "image", key: "home-room", url: "assets/home/room.png" },
+    ...HOME_PROPS.map((key) => ({ kind: "image", key: `home-${key}`, url: `assets/home/pixel-${key}.png` })),
+    ...HOME_PIXEL_IMAGES.map((key) => ({
+      kind: "image",
+      key: `home-pixel-${key}`,
+      url: `assets/home/pixel-${key}.png`
+    })),
+    ...HOME_FAMILY.map(({ id: id2 }) => ({
+      kind: "image",
+      key: `family-${id2}`,
+      url: `assets/family/${id2}.png`,
+      w: FAMILY_FRAME_SIZE,
+      h: FAMILY_FRAME_SIZE,
+      cols: FAMILY_BASE_FRAMES,
+      rows: 1
+    })),
+    ...HOME_FAMILY.map(({ id: id2 }) => ({
+      kind: "image",
+      key: `family-home-${id2}`,
+      url: `assets/family/${id2}-home-motion.png`,
+      w: FAMILY_FRAME_SIZE,
+      h: FAMILY_FRAME_SIZE,
+      cols: FAMILY_HOME_FRAMES,
+      rows: 1
+    })),
+    ...HOME_FAMILY.map(({ id: id2 }) => ({
+      kind: "image",
+      key: `family-room-${id2}`,
+      url: `assets/family/${id2}-room.png`,
+      w: FAMILY_FRAME_SIZE,
+      h: FAMILY_FRAME_SIZE,
+      cols: FAMILY_ROOM_FRAMES,
+      rows: 1
+    }))
+  ]);
+}
+function spawnHomeRoom() {
+  game.background.picture("home-room", "stretch");
+  for (const { key, x, bottom, width } of FURNITURE) {
+    const spec = { id: `home-${key}`, texture: `home-pixel-${key}`, x, y: bottom, width, layer: "world", z: 1 };
+    const item = game.spawn(spec);
+    item.y -= item.height / 2;
+  }
+  const lamp = game.spawn({ id: "home-lamp", texture: "home-pixel-lamp-on", x: HOME_LAMP + 36, y: 439, height: 250, layer: "world", z: 2 });
+  game.spawn({ id: "home-light-switch", texture: "home-light-switch", x: HOME_LAMP, y: 387, width: 24, layer: "world", z: 2 });
+  const shade2 = game.spawn({
+    id: "home-shade",
+    texture: "white",
+    x: 640,
+    y: 360,
+    width: 1280,
+    height: 720,
+    tint: "#1d213e",
+    alpha: 0,
+    layer: "front",
+    z: 100
+  });
+  return { lamp, shade: shade2 };
+}
+
+// game/homeRooms.ts
+var HOME_ROOM_WIDTH = 1408;
+var HOME_WALK_Y = 624;
+var HOME_ROOMS = [
+  { id: "living", name: "Living room", wall: "#edbb8f", accent: "#b77e59" },
+  { id: "sandesh", name: "Sandesh\u2019s room", wall: "#d9b68d", accent: "#9b774e" },
+  { id: "sushil", name: "Sushil\u2019s room", wall: "#c1b892", accent: "#788166" },
+  { id: "parents", name: "Mom and Dad\u2019s room", wall: "#deb29e", accent: "#ac776f" },
+  { id: "senny-reshu", name: "Senny and Reshu\u2019s room", wall: "#d8b09e", accent: "#a8797b" }
+];
+var HOME_WIDTH = HOME_ROOM_WIDTH * HOME_ROOMS.length;
+function roomX(id2, localX) {
+  return HOME_ROOMS.findIndex((room) => room.id === id2) * HOME_ROOM_WIDTH + localX;
+}
+var HOME_ENTRY = 310;
+var HOME_LIGHT_SWITCH = 62;
+var HOME_TOY_BASKET = 432;
+var HOME_SOFA_SEAT_X = 826;
+var HOME_SOFA_FEET = HOME_WALK_Y - 6;
+var HOME_TREATS = roomX("senny-reshu", 1120);
+var HOME_DOG_BED = roomX("senny-reshu", 1248);
+var HOME_DOG_BED_TOP = HOME_WALK_Y - 40;
+var HOME_STATIONS = {
+  sandesh: {
+    x: roomX("sandesh", 516),
+    scale: 2.55,
+    name: "Sandesh",
+    activity: "On a client call",
+    line: "I\u2019ll send the update this afternoon. Hi, Tokyo!",
+    prompt: "Say hello",
+    pace: 0.5,
+    labelHeight: 215
+  },
+  sushil: {
+    x: roomX("sushil", 555),
+    scale: 2.45,
+    name: "Sushil",
+    activity: "Playing guitar",
+    line: "That song\u2019s for you, Tokyo.",
+    prompt: "Say hello",
+    pace: 0.24,
+    labelHeight: 218
+  },
+  mom: {
+    x: roomX("parents", 331),
+    scale: 2.29,
+    name: "Mom",
+    activity: "Doing yoga",
+    line: "Breathe in, breathe out. Your treats are by your bed.",
+    prompt: "Say hello",
+    pace: 0.68,
+    labelHeight: 250
+  },
+  dad: {
+    x: roomX("parents", 1041),
+    scale: 2.47,
+    name: "Dad",
+    activity: "Doing push-ups",
+    line: "One more rep, then a pat for you.",
+    prompt: "Say hello",
+    pace: 0.25,
+    labelHeight: 176
+  },
+  reshika: {
+    x: roomX("senny-reshu", 230),
+    scale: 2.36,
+    name: "Reshu",
+    activity: "Doing makeup",
+    line: "Just a little blush. Good girl, Tokyo!",
+    prompt: "Say hello",
+    pace: 0.48,
+    labelHeight: 201
+  },
+  senny: {
+    x: roomX("senny-reshu", 567),
+    scale: 2.5,
+    name: "Senny",
+    activity: "Creating on the PC",
+    line: "I\u2019m making a game! Want to play fetch?",
+    prompt: "Play fetch",
+    pace: 0.32,
+    labelHeight: 212
+  }
+};
+
+// game/dreamArt.ts
+var DREAM_GATE_SCALE = 4;
+var DREAM_SHADOW_WIDTH = 161;
+var DREAM_SHADOW_FOOT_OFFSET = 47;
+var LIGHT_GRID = 42;
+var SHIELD_GRID = 30;
+var RUNE_COLORS = { O: "#694d56", S: "#c69a62", G: "#e6bf7c", L: "#fff0ae" };
+async function loadDreamSprites() {
+  await game.assets.load([
+    { kind: "image", key: "dream-owl", url: "assets/dream/owl-sprites.png", w: 27, h: 27, cols: 2, rows: 1 },
+    { kind: "image", key: "dream-cat", url: "assets/dream/cats-sprites.png", w: 27, h: 24, cols: 4, rows: 1 },
+    { kind: "image", key: "dream-entity", url: "assets/dream/shadow-sprites.png", w: 48, h: 36, cols: 2, rows: 1 }
+  ]);
+  paintSafeLight();
+  paintKennelGate();
+  paintPuzzleStones();
+}
+function paintSafeLight() {
+  game.paint("dream-light", LIGHT_GRID, LIGHT_GRID, (ctx, frame) => {
+    for (let y = 0; y < LIGHT_GRID; y++) {
+      for (let x = 0; x < LIGHT_GRID; x++) {
+        const dx = x + 0.5 - LIGHT_GRID / 2;
+        const glow = deterministicMath.hypot(dx, (y - 18) * 1.15);
+        const pool = deterministicMath.hypot(dx, (y - 30) * 2.45);
+        if (pool < 11) ctx.fillStyle = "#ffe19b55";
+        else if (pool < 16) ctx.fillStyle = "#edb96030";
+        else if (pool < 19) ctx.fillStyle = "#d89c4520";
+        else if (glow < 5 + frame) ctx.fillStyle = "#ffe19b40";
+        else if (glow < 10 + frame) ctx.fillStyle = "#edb96020";
+        else if (glow < 13 + frame) ctx.fillStyle = "#edb96012";
+        else continue;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+    ctx.fillStyle = "#ffc76c";
+    ctx.fillRect(20, 15, 2, 5);
+    ctx.fillRect(19, 16, 4, 3);
+    ctx.fillStyle = "#fff2c4";
+    ctx.fillRect(20, 16, 2, 2);
+    ctx.fillRect(26, 13 + frame % 2, 1, 1);
+    ctx.fillRect(15, 20 - frame % 2, 1, 1);
+  }, { frames: 4, res: 1 });
+  game.paint("dream-shield", SHIELD_GRID, SHIELD_GRID, (ctx) => {
+    const center = SHIELD_GRID / 2;
+    for (let y = 0; y < SHIELD_GRID; y++) {
+      for (let x = 0; x < SHIELD_GRID; x++) {
+        const radius = deterministicMath.hypot(x + 0.5 - center, y + 0.5 - center);
+        if (radius < 12) ctx.fillStyle = "#ffdf8520";
+        else if (radius < 13.6) ctx.fillStyle = "#ffdb8480";
+        else if (radius < 14.3) ctx.fillStyle = "#da9c4c48";
+        else continue;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+    ctx.fillStyle = "#fff3c6";
+    for (const [x, y] of [[4, 8], [20, 3], [26, 19], [9, 26]]) ctx.fillRect(x, y, 1, 1);
+  }, { res: 1 });
+}
+function paintKennelGate() {
+  game.paint("dream-gate", 27, 42, (ctx, frame) => {
+    ctx.fillStyle = "#2d2225";
+    ctx.fillRect(1, 1, 5, 41);
+    ctx.fillRect(21, 1, 5, 41);
+    ctx.fillRect(4, 1, 19, 4);
+    ctx.fillStyle = "#995e3c";
+    ctx.fillRect(2, 2, 3, 39);
+    ctx.fillRect(22, 2, 3, 39);
+    ctx.fillRect(5, 2, 17, 2);
+    ctx.fillStyle = "#c28652";
+    ctx.fillRect(2, 3, 1, 35);
+    ctx.fillRect(22, 3, 1, 35);
+    ctx.fillRect(5, 2, 17, 1);
+    ctx.fillStyle = "#653e31";
+    ctx.fillRect(4, 6, 1, 10);
+    ctx.fillRect(24, 13, 1, 14);
+    const panelX = frame === 0 ? 5 : 19;
+    const panelWidth = frame === 0 ? 17 : 5;
+    ctx.fillStyle = "#2d272a";
+    ctx.fillRect(panelX, 6, panelWidth, 34);
+    ctx.clearRect(panelX + 1, 8, panelWidth - 2, 23);
+    ctx.fillStyle = "#685549";
+    for (let x = panelX + 1; x < panelX + panelWidth - 1; x += 3) ctx.fillRect(x, 8, 1, 23);
+    ctx.fillRect(panelX + 1, 14, panelWidth - 2, 1);
+    ctx.fillRect(panelX + 1, 23, panelWidth - 2, 1);
+    ctx.fillStyle = "#794d36";
+    ctx.fillRect(panelX + 1, 7, panelWidth - 2, 1);
+    ctx.fillRect(panelX + 1, 31, panelWidth - 2, 8);
+    ctx.fillStyle = "#a77145";
+    ctx.fillRect(panelX + 1, 32, panelWidth - 2, 1);
+    ctx.fillRect(panelX + 1, 36, panelWidth - 2, 1);
+    ctx.fillStyle = "#c69851";
+    ctx.fillRect(panelX + panelWidth - 4, 24, 3, 2);
+  }, { frames: 2, res: 1 });
+  game.pixels("dream-latch", [
+    "............",
+    ".....OOO....",
+    "....OGGO....",
+    "....OGO.....",
+    "....OGO.....",
+    "..OOOOOOOO..",
+    ".OSGGGGGSO..",
+    ".OGGLOOGSO..",
+    ".OGGLOOGSO..",
+    ".OGGGGGSSO..",
+    "..OOOOOOOO..",
+    "............",
+    "............"
+  ], RUNE_COLORS, 1);
+}
+function paintPuzzleStones() {
+  game.paint("dream-puzzle-pad", 17, 17, (ctx, frame) => {
+    ctx.fillStyle = "#463749";
+    ctx.fillRect(2, 3, 13, 12);
+    ctx.fillRect(4, 2, 9, 14);
+    ctx.fillStyle = frame ? "#9a653e" : "#635477";
+    ctx.fillRect(3, 4, 11, 10);
+    ctx.fillRect(5, 3, 7, 12);
+    ctx.fillStyle = frame ? "#ddb476" : "#a398b5";
+    ctx.fillRect(5, 4, 7, 9);
+    ctx.fillRect(4, 5, 9, 7);
+    ctx.fillStyle = frame ? "#efd394" : "#c0b6d0";
+    ctx.fillRect(5, 4, 7, 1);
+    ctx.fillRect(4, 5, 1, 3);
+  }, { frames: 2, res: 1 });
+  game.pixels("dream-moon", [
+    "............",
+    "....OOO.....",
+    "...OLGO.....",
+    "..OLGO......",
+    "..OLGO......",
+    "..OLGO......",
+    "..OLGGO.....",
+    "...OGGGO.O..",
+    "...OGGGGOO..",
+    "....OSSSO...",
+    ".....OOO....",
+    "............"
+  ], RUNE_COLORS, 1);
+  game.pixels("dream-star", [
+    "............",
+    ".....O......",
+    "....OGO.....",
+    "....OLO.....",
+    ".OOOOGOOOO..",
+    ".OSLLLLGSO..",
+    "..OOGLGOO...",
+    "...OGGGO....",
+    "...OGOSO....",
+    "..OOOOOOO...",
+    "..OO...OO...",
+    "............"
+  ], RUNE_COLORS, 1);
+}
+
+// game/journey.ts
+var DREAM_LEVELS = [
+  { number: 1, name: "The Dark Place", title: "FOLLOW THE VOICE", background: "dream-dark", family: null },
+  { number: 2, name: "The Kennel", title: "FIND THE OPEN GATE", background: "dream-kennel", family: "sandesh" },
+  { number: 3, name: "The First House", title: "FIND THE WAY OUT", background: "dream-night-house", family: "sushil" },
+  { number: 4, name: "The Dark Forest", title: "FOLLOW THE FIREFLIES", background: "dream-forest", family: "dad" },
+  { number: 5, name: "The Grassland", title: "CROSS THE WIDE FIELD", background: "dream-grassland", family: "mom" },
+  { number: 6, name: "The City", title: "MAKE TWO NEW FRIENDS", background: "dream-city", family: "reshika" },
+  { number: 7, name: "The Puzzle House", title: "FOLLOW THE PAWPRINTS", background: "home-room", family: "senny" },
+  { number: 8, name: "The Toy World", title: "FIND YOUR PLUSHIE", background: "dream-toys", family: null },
+  { number: 9, name: "The Spring Outdoors", title: "BRING EVERYONE TOGETHER", background: "dream-spring", family: null }
+];
+var journey = { stage: 1, rescued: [], visitedCats: [], plushie: false, puzzleStep: 0 };
+async function loadJourneyArt() {
+  await game.assets.load([
+    { kind: "image", key: "dream-dark", url: "assets/dream/dark.png" },
+    { kind: "image", key: "dream-kennel", url: "assets/dream/kennel.png" },
+    { kind: "image", key: "dream-night-house", url: "assets/dream/night-house.png" },
+    { kind: "image", key: "dream-forest", url: "assets/dream/forest.png" },
+    { kind: "image", key: "dream-grassland", url: "assets/dream/grassland.png" },
+    { kind: "image", key: "dream-city", url: "assets/dream/city.png" },
+    { kind: "image", key: "dream-toys", url: "assets/dream/toys.png" },
+    { kind: "image", key: "dream-spring", url: "assets/dream/spring.png" }
+  ]);
+  await loadDreamSprites();
+}
+function beginDream() {
+  journey.stage = 1;
+  journey.rescued = [];
+  journey.visitedCats = [];
+  journey.plushie = false;
+  journey.puzzleStep = 0;
+  game.scenes.go("dream-start");
+}
+function prepareDreamStage(stage) {
+  const selected = deterministicMath.max(1, deterministicMath.min(DREAM_LEVELS.length, deterministicMath.round(stage || 1)));
+  journey.stage = selected;
+  const order = ["sandesh", "sushil", "dad", "mom", "reshika", "senny"];
+  journey.rescued = order.slice(0, deterministicMath.max(0, deterministicMath.min(6, selected - 2)));
+  journey.visitedCats = selected > 6 ? [0, 1] : [];
+  journey.plushie = selected > 8;
+  journey.puzzleStep = selected > 7 ? 2 : 0;
+  game.scenes.go(selected === 1 ? "dream-start" : "journey");
+}
+function completeDreamStage() {
+  const stage = journey.stage;
+  const milestone = DREAM_LEVELS[stage - 1]?.family;
+  if (milestone && !journey.rescued.includes(milestone)) journey.rescued.push(milestone);
+  if (stage === 8) journey.plushie = true;
+  if (stage === 9) {
+    journey.rescued = ["sandesh", "sushil", "dad", "mom", "reshika", "senny"];
+    journey.plushie = true;
+    game.scenes.go("ending");
+    return;
+  }
+  journey.stage = stage + 1;
+  journey.visitedCats = [];
+  journey.puzzleStep = 0;
+  game.scenes.go("journey");
+}
+
 // game/debug.ts
 function addDebugControls() {
   game.inspect.state(() => ({
     ...run,
+    home,
+    journey: { ...journey },
     playground: { ...park, badges: badges() },
     mobileView: isMobileView(),
     touchVisible: game.touch?.visible ?? false,
@@ -42108,12 +44110,55 @@ function addDebugControls() {
   }));
   game.cheats.add({
     name: "screen",
-    does: "Open title, play, meadow, story, parkmap, celebration, pause, or settings",
+    does: "Open title, play, meadow, story, home, dream-start, parkmap, celebration, pause, or settings",
     args: "name",
     run: (name) => {
-      const target = ["settings", "play", "pause", "story", "meadow", "parkmap", "celebration"].includes(name ?? "") ? name : "title";
+      const target = ["settings", "play", "pause", "story", "home", "dream-start", "journey", "ending", "meadow", "parkmap", "celebration"].includes(name ?? "") ? name : "title";
       game.scenes.go(target);
       return `Switched to screen: ${target}`;
+    }
+  });
+  game.cheats.add({
+    name: "home-room",
+    does: "Start in a Level 0 room, optionally at treat time or bedtime",
+    args: "living|sandesh|sushil|parents|senny-reshu [treats|bedtime]",
+    run: (name, phase) => {
+      const room = HOME_ROOMS.find((candidate) => candidate.id === name);
+      if (!room) return "Choose living, sandesh, sushil, parents, or senny-reshu.";
+      homePreview.room = room.id;
+      homePreview.phase = phase === "treats" || phase === "bedtime" ? phase : "play";
+      game.scenes.go("home");
+      return `Opened ${room.name}.`;
+    }
+  });
+  game.cheats.add({
+    name: "home-sofa",
+    does: "Open Level 0 with a family member sitting on the sofa",
+    args: "name",
+    run: (name) => {
+      const guest = HOME_FAMILY.find((member) => member.id === name?.toLowerCase());
+      if (!guest) return "Choose Sandesh, Sushil, Reshika, Senny, Dad, or Mom.";
+      homePreview.sofa = guest.id;
+      game.scenes.go("home");
+      return `${guest.name} has the sofa seat.`;
+    }
+  });
+  game.cheats.add({
+    name: "dream",
+    does: "Jump into any story level, with the progress earned before it",
+    args: "1-9",
+    run: (level) => {
+      const stage = deterministicMath.max(1, deterministicMath.min(9, Number(level) || 1));
+      prepareDreamStage(stage);
+      return "Started dream level " + stage;
+    }
+  });
+  game.cheats.add({
+    name: "dream-win",
+    does: "Complete the current dream level through its normal exit",
+    run: () => {
+      completeDreamStage();
+      return "Completed the current dream level";
     }
   });
   game.cheats.add({
@@ -42221,13 +44266,124 @@ function addDebugControls() {
   });
 }
 
+// game/menuStyles.ts
+var MENU_BUTTON_HEIGHT = 64;
+var menuButtonStyles = {
+  primary: {
+    base: "good",
+    designHeight: MENU_BUTTON_HEIGHT,
+    font: "bold 26px sans",
+    fill: "#f1c07d",
+    fillTo: "#de9b53",
+    textColor: "#352219",
+    textColorTo: "#352219",
+    border: 2,
+    borderColor: "#f9d394",
+    radius: 6,
+    corner: "cut",
+    depth: 5,
+    depthColor: "#9d6335",
+    textShadowX: 0,
+    textShadowY: 0,
+    hover: { fill: "#ffe0a2", fillTo: "#efb879" }
+  },
+  secondary: {
+    base: "flat",
+    designHeight: MENU_BUTTON_HEIGHT,
+    font: "bold 26px sans",
+    fill: "#324840",
+    fillTo: "#253932",
+    textColor: "#f8ecd0",
+    textColorTo: "#f8ecd0",
+    border: 2,
+    borderColor: "#738774",
+    radius: 6,
+    corner: "cut",
+    depth: 5,
+    depthColor: "#131f1b",
+    textShadowX: 0,
+    textShadowY: 0,
+    hover: { fill: "#496153", fillTo: "#354e42" }
+  }
+};
+
 // game/scenes/Title.ts
+var MENU_LEFT = 88;
+var STORY_BUTTON_Y = 346;
+var PLAYGROUND_BUTTON_Y = 466;
+var TOKYO_X = 878;
+var TOKYO_FEET_Y = 581;
+var TOKYO_SCALE = 4;
+var SEATED_FOOT_OFFSET = 21 * TOKYO_SCALE;
+var SEATED_FIRST_FRAME = 42;
+var SEATED_FRAME_COUNT = 4;
+function openStory() {
+  game.scenes.go("story");
+}
 var Title = {
   name: "title",
   enter() {
     game.touch.visible = false;
-    spawnScenery(true);
-    addFullscreenButton({ anchor: "top-right", x: -16, y: 16 });
+    game.camera.snap(game.screen.width / 2, game.screen.height / 2, 1);
+    game.background.picture("title-home-dusk", "stretch");
+    game.text("Tokyo\u2019s", MENU_LEFT, 140, {
+      size: 102,
+      font: "serif-bold",
+      color: "#fff4d9",
+      align: "left",
+      shadow: { color: "#131d1a", x: 3, y: 4 }
+    });
+    game.text("Journey", MENU_LEFT, 240, {
+      size: 112,
+      font: "serif-bold",
+      color: "#f3c37e",
+      align: "left",
+      shadow: { color: "#131d1a", x: 3, y: 4 }
+    });
+    game.ui.button({
+      id: "choose-story",
+      anchor: "top-left",
+      x: MENU_LEFT,
+      y: STORY_BUTTON_Y,
+      h: MENU_BUTTON_HEIGHT,
+      text: "Story Mode",
+      icon: "book",
+      iconSize: 29,
+      onClick: openStory,
+      style: menuButtonStyles.primary
+    });
+    game.text(
+      "Start at home and follow Tokyo into her dream.",
+      MENU_LEFT,
+      435,
+      { size: 19, font: "sans", color: "#f2e5cd", align: "left" }
+    );
+    game.ui.button({
+      id: "choose-playground",
+      anchor: "top-left",
+      x: MENU_LEFT,
+      y: PLAYGROUND_BUTTON_Y,
+      h: MENU_BUTTON_HEIGHT,
+      text: "Playground",
+      icon: "paw",
+      iconSize: 29,
+      onClick: startPlayground,
+      style: menuButtonStyles.secondary
+    });
+    game.text(
+      "Explore the park at your own pace.",
+      MENU_LEFT,
+      555,
+      { size: 19, font: "sans", color: "#f2e5cd", align: "left" }
+    );
+    if (!isMobileView()) {
+      game.text(
+        "2  Story Mode     Enter  Playground",
+        MENU_LEFT,
+        637,
+        { size: 16, font: "mono", color: "#d8dac1", align: "left" }
+      );
+    }
     game.ui.button({
       id: "settings-btn",
       anchor: "top-right",
@@ -42239,60 +44395,42 @@ var Title = {
       accessibleLabel: "Settings",
       onClick: () => game.scenes.push("settings")
     });
-    game.text("A LITTLE DOG. A WORLD OF POSSIBILITIES.", 640, 112, { size: 18, font: "mono-bold", color: "#566952" });
-    game.text("TOKYO'S JOURNEY", 640, 173, {
-      size: 62,
-      font: "mono-bold",
-      color: "#33483d",
-      shadow: { color: "#eff0cb", x: 4, y: 4 }
+    addFullscreenButton({ anchor: "top-right", x: -16, y: 16 });
+    game.spawn({
+      id: "title-tokyo-shadow",
+      texture: "shadow",
+      x: TOKYO_X,
+      y: TOKYO_FEET_Y,
+      width: 148,
+      layer: "world",
+      alpha: 0.52
     });
-    game.text("What kind of day shall we have?", 640, 236, { size: 22, font: "mono", color: "#566952" });
-    const tokyo = game.spawn({ id: "title-tokyo", texture: "tokyo", x: 640, y: 334, scale: 2.3, layer: "world" });
-    game.spawn({ id: "title-butterfly", texture: "park-insects", frame: 0, x: 536, y: 304, width: 38, layer: "world" });
-    game.spawn({ id: "title-stick", texture: "park-sticks", frame: 0, x: 751, y: 371, width: 46, layer: "world" });
-    game.ui.button({
-      id: "choose-playground",
-      anchor: "center",
-      x: -260,
-      y: 95,
-      h: 76,
-      text: "Playground",
-      style: "good",
-      icon: "paw",
-      onClick: startPlayground
+    const tokyo = game.spawn({
+      id: "title-tokyo",
+      texture: "tokyo",
+      frame: SEATED_FIRST_FRAME,
+      x: TOKYO_X,
+      y: TOKYO_FEET_Y - SEATED_FOOT_OFFSET,
+      scale: TOKYO_SCALE,
+      layer: "world",
+      z: 1
     });
-    game.ui.button({
-      id: "choose-story",
-      anchor: "center",
-      x: 260,
-      y: 95,
-      h: 76,
-      text: "Story Mode",
-      style: "blue",
-      icon: "book",
-      onClick: () => game.scenes.go("story")
-    });
-    game.text("FREE PLAY / A park full of discoveries", 380, 522, { size: 16, font: "mono-bold", color: "#33483d" });
-    game.text("CHAPTER 01 / The Movement Meadow", 900, 522, { size: 16, font: "mono-bold", color: "#33483d" });
-    game.text(
-      "Fetch. Sniff. Make friends. Find your own adventure.",
-      640,
-      610,
-      { size: 19, font: "mono", color: "#f7efcf", shadow: { color: "#253c36", x: 2, y: 2 } }
-    );
-    game.text("ENTER: PLAYGROUND     /     2: STORY MODE", 640, 665, { size: 16, font: "mono-bold", color: "#e7dfb8" });
     let elapsed = 0;
     game.step("title", (dt) => {
       elapsed += dt;
-      tokyo.setFrame(deterministicMath.floor(elapsed * 5) % 8);
-      if (game.input.keyPressed("Enter") || game.input.keyPressed("Space")) startPlayground();
-      if (game.input.keyPressed("Digit2")) game.scenes.go("story");
+      tokyo.setFrame(SEATED_FIRST_FRAME + deterministicMath.floor(elapsed * 2.5) % SEATED_FRAME_COUNT);
+      if (game.touch.visible) game.touch.visible = false;
+      if (game.input.keyPressed("Digit2")) {
+        openStory();
+      } else if (!game.ui.focus && (game.input.keyPressed("Enter") || game.input.keyPressed("Space"))) {
+        startPlayground();
+      }
     });
   }
 };
 
 // game/scenes/Play.ts
-var STATES2 = ["idle", "walking", "running", "jumping", "crouching", "sitting"];
+var STATES2 = ["idle", "walking", "running", "jumping", "crouching", "sitting", "pooping"];
 var Play = {
   name: "meadow",
   enter() {
@@ -42358,7 +44496,7 @@ var Play = {
     });
     const labels = STATES2.map((state, index) => game.text(
       state.toUpperCase(),
-      290 + index * 140,
+      250 + index * 130,
       647,
       { size: 17, font: "mono-bold", color: "#81958b", align: "center" }
     ));
@@ -42385,7 +44523,7 @@ var Play = {
         label.color = STATES2[index] === tokyo.data.state ? "#f4d888" : "#81958b";
       });
       const settings = getSettings();
-      hintsLabel.text = game.touch.visible ? `STICK MOVE/CROUCH   \u2022   JUMP   \u2022   RUN [${settings.runBehavior.toUpperCase()}]   \u2022   CROUCH [${settings.crouchBehavior.toUpperCase()}]   \u2022   SIT` : `A/D WALK   SHIFT RUN [${settings.runBehavior.toUpperCase()}]   SPACE JUMP   DOWN/C CROUCH [${settings.crouchBehavior.toUpperCase()}]   E SIT   R RESET`;
+      hintsLabel.text = game.touch.visible ? `STICK MOVE/CROUCH   \u2022   JUMP   \u2022   RUN [${settings.runBehavior.toUpperCase()}]   \u2022   CROUCH [${settings.crouchBehavior.toUpperCase()}]   \u2022   SIT   \u2022   POOP` : `A/D WALK   SHIFT RUN [${settings.runBehavior.toUpperCase()}]   SPACE JUMP   DOWN/C CROUCH [${settings.crouchBehavior.toUpperCase()}]   E SIT   G POOP   R RESET`;
       telemetry.text = `${deterministicMath.round(deterministicMath.abs(tokyo.data.vx))} px/s`;
       shadow.x = tokyo.x;
       shadow.y = GROUND_Y - 2;
@@ -42422,6 +44560,7 @@ var Pause = {
     });
     game.ui.button({ parent: menu, h: 72, text: "Restart", icon: "restart", onClick: () => {
       if (run.scene === "play") startPlayground();
+      else if (run.scene === "home") game.scenes.go("home");
       else {
         run.spawnX = 220;
         game.scenes.go("meadow");
@@ -43119,18 +45258,18 @@ function parkSparkles(x, y) {
 }
 function spawnParkWildlife(interactions) {
   for (let i = 0; i < 4; i++) {
-    const home = 5100 + i * 250;
+    const home2 = 5100 + i * 250;
     const dog = game.spawn({
       id: `park-dog-${i + 1}`,
       texture: "park-villain-dogs",
       frame: i,
-      x: home,
+      x: home2,
       y: PARK_GROUND - 46,
       height: 92,
       layer: "world",
       z: 8,
       tags: ["park-dog"],
-      data: { home, direction: i % 2 ? 1 : -1, friendly: park.friends.includes(i), mood: "patrolling", clock: i }
+      data: { home: home2, direction: i % 2 ? 1 : -1, friendly: park.friends.includes(i), mood: "patrolling", clock: i }
     });
     const name = game.text(
       DOG_NAMES[i],
@@ -43160,7 +45299,7 @@ function spawnParkWildlife(interactions) {
     game.step(`dog-behavior-${i}`, (dt) => {
       const d = dog.data, tokyo = run.tokyo;
       d.clock += dt;
-      const dx = (tokyo?.x ?? home) - dog.x;
+      const dx = (tokyo?.x ?? home2) - dog.x;
       const nearby = deterministicMath.abs(dx) < 180;
       if (d.friendly && nearby && deterministicMath.abs(dx) > DOG_PERSONAL_SPACE) {
         d.direction = deterministicMath.sign(dx);
@@ -43176,9 +45315,9 @@ function spawnParkWildlife(interactions) {
       } else {
         d.mood = "patrolling";
         dog.x += d.direction * DOG_SPEED * dt;
-        if (deterministicMath.abs(dog.x - home) > 80) d.direction = dog.x > home ? -1 : 1;
+        if (deterministicMath.abs(dog.x - home2) > 80) d.direction = dog.x > home2 ? -1 : 1;
       }
-      dog.x = deterministicMath.max(home - 150, deterministicMath.min(home + 150, dog.x));
+      dog.x = deterministicMath.max(home2 - 150, deterministicMath.min(home2 + 150, dog.x));
       dog.sx = d.direction;
       dog.setFrame(i + deterministicMath.floor(d.clock * 2) % 2 * 4);
       dog.tint = d.friendly ? "#fff3ca" : "#ffffff";
@@ -43530,7 +45669,7 @@ var Playground = {
     const prompt = game.text("", 560, 645, { size: 18, font: "mono-bold", color: "#f5e2a8" });
     const message = game.text("", 560, 678, { size: 15, font: "mono", color: "#c6d6b6" });
     const controls = game.text(
-      "A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   F interact   M map",
+      "",
       640,
       112,
       { size: 15, font: "mono-bold", color: "#354c42", shadow: { color: "#eff0cb", x: 1, y: 1 } }
@@ -43552,7 +45691,7 @@ var Playground = {
       if (getTouchOverride() === null) game.touch.visible = isMobileView();
       area.text = currentArea(tokyo.x);
       tally.text = `TREATS ${park.treats.length}/12  |  BADGES ${badges().filter(Boolean).length}/8`;
-      controls.text = game.touch.visible ? "STICK move / down to crawl    JUMP / RUN / SIT    INTERACT to play    MAP for activities" : "A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   F interact   M map";
+      controls.text = game.touch.visible ? "STICK move / down to crawl    JUMP / RUN / SIT / POOP    INTERACT to play    MAP for activities" : "A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   G poop   F interact   M map";
       prompt.text = game.touch.visible ? activities.prompt().replaceAll("F:", "Interact:").replaceAll("E:", "Sit:").replaceAll("DOWN +", "Crouch +") : activities.prompt();
       message.text = park.messageTime > 0 ? park.message : "No timer. No damage. Just a very good day for a dog.";
       shadow.x = tokyo.x;
@@ -43630,40 +45769,126 @@ var ParkMap = {
 };
 
 // game/scenes/Story.ts
+var MENU_LEFT2 = 88;
+var HOME_BUTTON_Y = 352;
+var MEADOW_BUTTON_Y = 467;
+var TOKYO_X2 = 917;
+var TOKYO_FEET_Y2 = 614;
+var TOKYO_SCALE2 = 4;
+var CARRY_FOOT_OFFSET = 21 * TOKYO_SCALE2;
+var IDLE_FRAME_COUNT = 8;
+function startHome() {
+  game.scenes.go("home");
+}
+function returnToMenu() {
+  game.scenes.go("title");
+}
 var Story = {
   name: "story",
   enter() {
     game.touch.visible = false;
-    spawnScenery(true);
-    game.text("STORY MODE", 640, 122, { size: 48, font: "mono-bold", color: "#33483d" });
-    game.text("Every journey begins with a little courage.", 640, 185, { size: 21, font: "mono", color: "#52674f" });
-    game.spawn({ id: "story-portal", texture: "park-portal", frame: 1, x: 985, y: 425, height: 240, layer: "world" });
-    game.spawn({ id: "story-tokyo", texture: "tokyo", x: 306, y: 480, scale: 2, layer: "world" });
-    game.text("CHAPTER 01 / THE MOVEMENT MEADOW", 640, 282, { size: 24, font: "mono-bold", color: "#33483d" });
-    game.text("Ten treats wait beyond Tokyo's front door.", 640, 335, { size: 18, font: "mono", color: "#435d49" });
-    game.text("Leap, crawl the tunnel, and raise the flag.", 640, 368, { size: 18, font: "mono", color: "#435d49" });
+    game.camera.snap(game.screen.width / 2, game.screen.height / 2, 1);
+    game.background.picture("story-living-room", "stretch");
+    game.text("Home Before", MENU_LEFT2, 165, {
+      size: 74,
+      font: "serif-bold",
+      color: "#fff4d9",
+      align: "left",
+      shadow: { color: "#241b15", x: 3, y: 4 }
+    });
+    game.text("the Dream", MENU_LEFT2, 242, {
+      size: 87,
+      font: "serif-bold",
+      color: "#f3c37e",
+      align: "left",
+      shadow: { color: "#241b15", x: 3, y: 4 }
+    });
+    game.text(
+      "Play with the family, then settle in for bed.",
+      MENU_LEFT2,
+      312,
+      { size: 20, font: "sans", color: "#f2e5cd", align: "left" }
+    );
+    game.ui.button({
+      id: "story-home",
+      anchor: "top-left",
+      x: MENU_LEFT2,
+      y: HOME_BUTTON_Y,
+      h: MENU_BUTTON_HEIGHT,
+      text: "Start at Home",
+      icon: "play",
+      iconSize: 29,
+      style: menuButtonStyles.primary,
+      onClick: startHome
+    });
     game.ui.button({
       id: "story-chapter",
-      anchor: "center",
-      y: 90,
-      h: 66,
-      text: "Begin chapter 1",
-      icon: "play",
-      style: "good",
+      anchor: "top-left",
+      x: MENU_LEFT2,
+      y: MEADOW_BUTTON_Y,
+      h: MENU_BUTTON_HEIGHT,
+      text: "Movement Meadow",
+      icon: "paw",
+      iconSize: 29,
+      style: menuButtonStyles.secondary,
       onClick: () => {
         run.spawnX = 220;
         game.scenes.go("meadow");
       }
     });
-    game.ui.button({ id: "story-back", anchor: "center", y: 180, h: 56, text: "Choose a mode", icon: "back", style: "flat", onClick: () => game.scenes.go("title") });
     game.text(
-      "More chapters will follow. The playground is open for free play now.",
-      640,
-      651,
-      { size: 16, font: "mono", color: "#f7efcf", shadow: { color: "#253c36", x: 2, y: 2 } }
+      "Jump to the ten-treat challenge.",
+      MENU_LEFT2,
+      553,
+      { size: 19, font: "sans", color: "#f2e5cd", align: "left" }
     );
-    game.step("story", () => {
-      if (game.input.keyPressed("Escape")) game.scenes.go("title");
+    game.ui.button({
+      id: "story-back",
+      anchor: "top-left",
+      x: MENU_LEFT2,
+      y: 44,
+      h: 46,
+      text: "Back to Menu",
+      icon: "back",
+      iconSize: 20,
+      style: menuButtonStyles.secondary,
+      onClick: returnToMenu
+    });
+    if (!isMobileView()) {
+      game.text(
+        "Enter  Start at Home     Esc  Back",
+        MENU_LEFT2,
+        637,
+        { size: 16, font: "mono", color: "#e6d7bc", align: "left" }
+      );
+    }
+    game.spawn({
+      id: "story-tokyo-shadow",
+      texture: "shadow",
+      x: TOKYO_X2,
+      y: TOKYO_FEET_Y2,
+      width: 152,
+      layer: "world",
+      alpha: 0.48
+    });
+    const tokyo = game.spawn({
+      id: "story-tokyo",
+      texture: "tokyo-carry-plushie",
+      x: TOKYO_X2,
+      y: TOKYO_FEET_Y2 - CARRY_FOOT_OFFSET,
+      scale: TOKYO_SCALE2,
+      layer: "world",
+      z: 1
+    });
+    let elapsed = 0;
+    game.step("story", (dt) => {
+      elapsed += dt;
+      tokyo.setFrame(deterministicMath.floor(elapsed * 4) % IDLE_FRAME_COUNT);
+      if (game.input.keyPressed("Escape")) {
+        returnToMenu();
+      } else if (!game.ui.focus && game.input.keyPressed("Enter")) {
+        startHome();
+      }
     });
   }
 };
@@ -43674,7 +45899,16 @@ var Celebration = {
   enter() {
     game.touch.visible = false;
     game.ui.panel({ anchor: "center", w: 1280, h: 720, z: 20, safeArea: false, style: "dark" });
-    game.spawn({ id: "celebration-tokyo", texture: "tokyo", frame: 42, x: 640, y: 270, z: 21, scale: 3, layer: "hud" });
+    game.spawn({
+      id: "celebration-tokyo",
+      texture: "tokyo",
+      frame: 42,
+      x: 640,
+      y: 270,
+      z: 21,
+      scale: 3 * TOKYO_ART_SCALE,
+      layer: "hud"
+    });
     game.text("THE BEST KIND OF ADVENTURE", 640, 125, { z: 21, size: 36, font: "mono-bold", color: "#f5df96" });
     game.text("Eight badges. New friends. One very happy Tokyo.", 640, 385, { z: 21, size: 24, font: "mono", color: "#e6edda" });
     game.ui.button({ id: "celebrate-continue", anchor: "center", y: 110, z: 21, h: 64, text: "Keep playing", icon: "paw", style: "good", onClick: () => game.scenes.pop() });
@@ -43685,20 +45919,2275 @@ var Celebration = {
   }
 };
 
+// game/homeDoors.ts
+var PIXEL = 4;
+var DOOR_WIDTH = 144;
+var DOOR_HEIGHT = 340;
+var DOOR_INSET = 88;
+var BARRIER_WIDTH = 32;
+var HOME_DOOR_RANGE = 108;
+var HOME_DOOR_PROMPT_Y = HOME_WALK_Y - 128;
+var HOME_DOOR_ENTER_RANGE = 24;
+var HOME_DOOR_CLOSE_RANGE = 148;
+var HOME_DOOR_ARRIVAL_OFFSET = 68;
+function paintHomeDoors() {
+  game.paint("home-doorway", DOOR_WIDTH / PIXEL, DOOR_HEIGHT / PIXEL, (ctx, frame) => {
+    const sill = DOOR_HEIGHT / PIXEL;
+    function rect2(color2, x, y, w, h) {
+      ctx.fillStyle = color2;
+      ctx.fillRect(x, y, w, h);
+    }
+    rect2("#493227", 0, 0, 36, sill);
+    rect2("#ad7851", 1, 1, 34, sill - 2);
+    rect2("#d5a578", 2, 2, 32, 2);
+    rect2("#ce9667", 2, 4, 2, sill - 6);
+    rect2("#865939", 32, 4, 2, sill - 6);
+    rect2("#372821", 5, 6, 26, sill - 8);
+    if (frame === 0) {
+      rect2("#8e5c3d", 6, 7, 24, sill - 9);
+      rect2("#ac764d", 7, 7, 22, sill - 10);
+      for (const [y, h] of [[12, 29], [48, 28]]) {
+        rect2("#704732", 10, y, 16, h);
+        rect2("#996640", 11, y + 1, 14, h - 2);
+        rect2("#c58c5a", 12, y + 2, 12, 1);
+        rect2("#825438", 23, y + 3, 1, h - 6);
+      }
+      rect2("#5b3d2e", 25, 43, 4, 5);
+      rect2("#f0ca77", 25, 44, 3, 2);
+    } else {
+      rect2("#674a3d", 12, 10, 17, sill - 14);
+      rect2("#4f392e", 12, sill - 17, 17, 3);
+      rect2("#9b6f50", 10, sill - 14, 19, 5);
+      rect2("#b78c64", 8, sill - 9, 22, 6);
+      rect2("#704a34", 6, 7, 6, sill - 10);
+      rect2("#b58155", 7, 7, 2, sill - 10);
+      rect2("#dec27f", 9, 44, 2, 2);
+    }
+    rect2("#694732", 4, sill - 2, 28, 1);
+    rect2("#d0a370", 4, sill - 1, 28, 1);
+  }, { res: 1, frames: 2 });
+}
+function spawnDoorFace(room, next, localX, facing) {
+  const x = roomX(room, localX);
+  const id2 = `home-door-${room}-to-${next}`;
+  const door = game.spawn({
+    id: id2,
+    texture: "home-doorway",
+    x,
+    y: HOME_WALK_Y - DOOR_HEIGHT / 2,
+    sx: PIXEL * facing,
+    sy: PIXEL,
+    layer: "world",
+    z: 1,
+    data: { open: false, next }
+  });
+  function spawnBarrier() {
+    return game.spawn({
+      id: `${id2}-barrier`,
+      x,
+      y: HOME_WALK_Y / 2,
+      width: BARRIER_WIDTH,
+      height: HOME_WALK_Y,
+      visible: false,
+      layer: "world",
+      body: { type: "static", friction: 0 }
+    });
+  }
+  let barrier = spawnBarrier();
+  return {
+    room,
+    x,
+    get open() {
+      return door.data.open;
+    },
+    setOpen(open) {
+      if (door.data.open === open) return;
+      if (open) barrier.destroy();
+      else barrier = spawnBarrier();
+      door.data.open = open;
+      door.setFrame(open ? 1 : 0);
+    }
+  };
+}
+function spawnHomeDoors() {
+  return HOME_ROOMS.slice(1).flatMap((room, index) => {
+    const previous = HOME_ROOMS[index];
+    const left = spawnDoorFace(previous.id, room.id, HOME_ROOM_WIDTH - DOOR_INSET, 1);
+    const right = spawnDoorFace(room.id, previous.id, DOOR_INSET, -1);
+    return [
+      { from: left, to: right, facing: 1 },
+      { from: right, to: left, facing: -1 }
+    ];
+  });
+}
+
+// game/homePrompt.ts
+var HOME_PROMPT_HEIGHT = 48;
+var BISCUIT_TEXTURE_WIDTH = 320;
+var BISCUIT_SHADOW_DEPTH = 4;
+var BISCUIT_END = [
+  [25, 11],
+  [22, 5],
+  [17, 2],
+  [10, 2],
+  [5, 6],
+  [2, 11],
+  [2, 18],
+  [7, 24],
+  [2, 29],
+  [2, 36],
+  [5, 41],
+  [10, 45],
+  [17, 45],
+  [22, 42],
+  [25, 36]
+];
+var KEY_GLYPHS = {
+  F: ["####", "#...", "###.", "#...", "#..."],
+  Y: ["#..#", "#..#", ".##.", ".#..", ".#.."]
+};
+function paintHomePromptKeys() {
+  for (const [key, glyph] of Object.entries(KEY_GLYPHS)) {
+    game.paint(`home-prompt-key-${key}`, 12, 12, (ctx) => {
+      ctx.fillStyle = "#593822";
+      ctx.fillRect(1, 2, 10, 8);
+      ctx.fillRect(2, 1, 8, 10);
+      ctx.fillStyle = "#825431";
+      ctx.fillRect(2, 2, 8, 1);
+      ctx.fillStyle = "#fff1ce";
+      for (const [y, row] of glyph.entries()) {
+        for (const [x, pixel] of [...row].entries()) {
+          if (pixel === "#") ctx.fillRect(4 + x, 4 + y, 1, 1);
+        }
+      }
+    }, { res: 1 });
+  }
+}
+function spawnHomePrompt(onClick) {
+  const biscuit = game.graphics({
+    id: "home-interact-biscuit",
+    width: BISCUIT_TEXTURE_WIDTH,
+    height: HOME_PROMPT_HEIGHT + BISCUIT_SHADOW_DEPTH,
+    layer: "hud"
+  });
+  biscuit.handle.visible = false;
+  const button = game.ui.button({
+    id: "home-interact-button",
+    h: HOME_PROMPT_HEIGHT,
+    iconSize: 24,
+    z: 3,
+    hidden: true,
+    safeArea: false,
+    tabIndex: -1,
+    bounce: false,
+    onClick,
+    style: {
+      designHeight: HOME_PROMPT_HEIGHT,
+      font: "bold 18px sans",
+      textColor: "#382415",
+      fill: "#00000000",
+      fillTo: "#00000000",
+      border: 0,
+      depth: 0,
+      shadow: 0,
+      gloss: 0,
+      bevel: 0,
+      textStroke: 0,
+      textOutline: 0,
+      textShadowX: 0,
+      textShadowY: 0
+    }
+  });
+  let paintedWidth = 0;
+  let paintedState = "";
+  return {
+    measure(label, input) {
+      const icon = input === "touch" ? "paw" : `home-prompt-key-${input}`;
+      if (button.ui.icon !== icon) button.ui.icon = icon;
+      if (button.ui.text !== label) button.ui.text = label;
+      button.ui.hidden = false;
+      return button.ui.rect.w;
+    },
+    place(x, y, width) {
+      button.ui.x = x;
+      button.ui.y = y;
+      biscuit.handle.x = x + biscuit.width / 2;
+      biscuit.handle.y = y + biscuit.height / 2;
+      biscuit.handle.visible = width > 0;
+      const state = button.ui.pressed ? "pressed" : button.ui.hover ? "hover" : "normal";
+      if (width === paintedWidth && state === paintedState) return;
+      paintedWidth = width;
+      paintedState = state;
+      biscuit.clear().draw((ctx) => {
+        ctx.beginPath();
+        ctx.moveTo(...BISCUIT_END[0]);
+        for (const [endX, endY] of BISCUIT_END.slice(1)) ctx.lineTo(endX, endY);
+        for (let i = BISCUIT_END.length - 1; i >= 0; i--) {
+          const [endX, endY] = BISCUIT_END[i];
+          ctx.lineTo(width - endX, endY);
+        }
+        ctx.closePath();
+        const bakedColor = ctx.createLinearGradient(0, 2, 0, 45);
+        bakedColor.addColorStop(0, state === "hover" ? "#ffe6b4" : "#f7d7a1");
+        bakedColor.addColorStop(1, state === "pressed" ? "#cf9256" : "#e2ab70");
+        ctx.fillStyle = bakedColor;
+        ctx.shadowColor = "#30201866";
+        ctx.shadowOffsetY = 3;
+        ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.strokeStyle = "#65402a";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = "#a96f4199";
+        for (const lobe of [13, width - 13]) {
+          ctx.fillRect(lobe - 3, 11, 3, 2);
+          ctx.fillRect(lobe + 2, 8, 2, 2);
+          ctx.fillRect(lobe, 36, 3, 2);
+          ctx.fillRect(lobe - 5, 34, 2, 2);
+        }
+      });
+    },
+    hide() {
+      button.ui.hidden = true;
+      biscuit.handle.visible = false;
+    }
+  };
+}
+
+// game/homeInterior.ts
+var HEIGHT = 720;
+var ROOM_PIXEL = 4;
+var WALL_BOTTOM = HOME_WALK_Y - 24;
+var FLOOR_BOARD_HEIGHT = 24;
+var NIGHTSTAND_TOP = HOME_WALK_Y - 56;
+var LAMP_HEIGHT = 218;
+var BED_TOP_THICKNESS = 12;
+var DOG_BED_CUSHION_WIDTH = 102;
+var WOOD = "#603e35";
+var TRIM = "#a56c4c";
+var LAMP_X = 92;
+var FLOOR_BOARDS = ["#a56e52", "#b27b59", "#aa7253", "#b57e5c"];
+var HOME_DIALOGUE_WIDTH = 220;
+var HOME_DIALOGUE_HEIGHT = 64;
+var DIALOGUE_TAIL = 14;
+var FURNITURE2 = [
+  { key: "armchair", x: 158, width: 154 },
+  { key: "coffee-table", x: 302, width: 136 },
+  { key: "basket", x: HOME_TOY_BASKET, width: 75, bottom: HOME_WALK_Y + 4 },
+  { key: "rug", x: 784, width: 458, height: 44, bottom: HOME_WALK_Y + 43 },
+  { key: "sofa", x: HOME_SOFA_SEAT_X + 16, width: 324 },
+  { key: "sideboard", x: 1128, width: 192 },
+  { key: "sideboard", x: roomX("parents", 196), width: 156 },
+  { key: "bed", x: HOME_DOG_BED, width: 168, bottom: HOME_WALK_Y + 12 }
+];
+var ROOM_FIXTURES = [
+  { key: "wardrobe", room: "sandesh", x: 274 },
+  { key: "laptop-desk", room: "sandesh", x: 749 },
+  { key: "bed-sandesh", room: "sandesh", x: 1080, mattress: { left: -60, right: 132, lift: 128 } },
+  { key: "music-keyboard", room: "sushil", x: 250 },
+  { key: "sushil-pc-desk", room: "sushil", x: 714 },
+  { key: "bed-sushil", room: "sushil", x: 1008, mattress: { left: -58, right: 138, lift: 120 } },
+  { key: "bed-parents", room: "parents", x: 674, mattress: { left: -20, right: 152, lift: 156 } },
+  { key: "vanity", room: "senny-reshu", x: 309 },
+  { key: "pc-desk", room: "senny-reshu", x: 657 },
+  { key: "bed-shared", room: "senny-reshu", x: 1056, mattress: { left: -58, right: 132, lift: 132 } }
+];
+function paintHomeInterior() {
+  paintHomeDoors();
+  paintHomePromptKeys();
+  for (const room of HOME_ROOMS) {
+    game.paint(`home-room-${room.id}`, HOME_ROOM_WIDTH / ROOM_PIXEL, HEIGHT / ROOM_PIXEL, (ctx) => {
+      function rect2(color2, x, y, w, h) {
+        const left = deterministicMath.round(x / ROOM_PIXEL);
+        const top = deterministicMath.round(y / ROOM_PIXEL);
+        ctx.fillStyle = color2;
+        ctx.fillRect(
+          left,
+          top,
+          deterministicMath.max(1, deterministicMath.round((x + w) / ROOM_PIXEL) - left),
+          deterministicMath.max(1, deterministicMath.round((y + h) / ROOM_PIXEL) - top)
+        );
+      }
+      function frame(x, y, w, h) {
+        rect2("#70473344", x + 8, y + 8, w, h);
+        rect2(WOOD, x, y, w, h);
+        rect2(TRIM, x + 4, y + 4, w - 8, h - 8);
+        rect2("#d39a6a", x + 8, y + 8, w - 16, 4);
+        rect2("#493531", x + 8, y + 12, w - 16, h - 20);
+      }
+      function shelf(x, y, colors) {
+        for (const [i, color2] of colors.entries()) {
+          const h = 24 + i * 9 % 24;
+          const left = x + 12 + i * 16;
+          rect2(WOOD, left, y - h, 16, h);
+          rect2(color2, left + 4, y - h + 4, 8, h - 4);
+          rect2("#eed5a48a", left + 4, y - h + 8, 8, 4);
+        }
+        const width = colors.length * 16 + 28;
+        rect2("#9e623f55", x + 4, y + 8, width, 8);
+        rect2(WOOD, x, y, width, 12);
+        rect2(TRIM, x, y, width, 4);
+        for (const support of [x + 16, x + width - 28]) rect2("#95654b", support, y + 12, 12, 16);
+      }
+      function print(x, y, color2) {
+        frame(x, y, 112, 100);
+        rect2("#efd8b2", x + 12, y + 16, 88, 72);
+        rect2(color2, x + 24, y + 28, 64, 48);
+        rect2("#f3c484", x + 64, y + 32, 12, 12);
+        rect2("#6a7d68", x + 24, y + 60, 64, 16);
+        rect2("#8f9b74", x + 28, y + 52, 28, 12);
+        rect2("#526755", x + 52, y + 64, 36, 12);
+      }
+      function window2(x, y, w, curtain) {
+        const h = 184;
+        frame(x, y, w, h);
+        const sky = ["#546e79", "#708b91", "#a2a097", "#d1aa8c", "#e7b888", "#efc494"];
+        for (const [i, color2] of sky.entries()) rect2(color2, x + 12, y + 12 + i * 26, w - 24, 26);
+        rect2("#f9d99f", x + w - 78, y + 85, 20, 20);
+        rect2("#f9d99f", x + w - 74, y + 81, 12, 28);
+        const hills = [24, 20, 28, 34, 40, 28, 20, 20, 32, 40, 44, 48];
+        for (const [i, rise] of hills.entries()) {
+          const span = (w - 24) / hills.length;
+          rect2("#617d72", x + 12 + i * span, y + h - 12 - rise, span, rise);
+          rect2("#49685b", x + 12 + i * span, y + h - 12 - rise / 2, span, rise / 2);
+        }
+        rect2(WOOD, x + w / 2 - 4, y + 8, 8, h - 12);
+        rect2(WOOD, x + 8, y + 80, w - 16, 8);
+        rect2(WOOD, x - 8, y + h - 4, w + 16, 12);
+        rect2("#bd8159", x - 8, y + h - 4, w + 16, 4);
+        rect2(WOOD, x - 16, y - 12, w + 32, 8);
+        for (const edge of [x - 8, x + w - 24]) {
+          rect2(curtain, edge, y - 4, 32, h - 10);
+          rect2("#27202e29", edge + 20, y - 4, 8, h - 10);
+          rect2("#f4d3ba39", edge + 4, y - 4, 8, h - 10);
+          rect2("#dfad75", edge, y + 110, 32, 8);
+        }
+      }
+      function corkboard(x, y) {
+        frame(x, y, 184, 106);
+        rect2("#aa8056", x + 12, y + 16, 160, 78);
+        for (const [dx, dy, w, h, color2] of [
+          [20, 24, 44, 48, "#e9d6af"],
+          [72, 36, 35, 50, "#d7a07d"],
+          [119, 24, 36, 42, "#a2b09a"]
+        ]) {
+          rect2("#855a4399", x + dx + 4, y + dy + 4, w, h);
+          rect2(color2, x + dx, y + dy, w, h);
+          rect2("#825d4d", x + dx + 8, y + dy + 12, w - 16, 4);
+          rect2("#825d4d", x + dx + 8, y + dy + 20, w - 20, 4);
+          rect2("#9a5445", x + dx + 16, y + dy + 4, 4, 4);
+        }
+      }
+      function nightstand(x, y, color2) {
+        rect2(WOOD, x, y, 68, 52);
+        rect2(color2, x + 4, y + 4, 60, 36);
+        rect2("#c39469", x + 4, y + 4, 60, 4);
+        rect2("#e6b87f", x + 26, y + 19, 16, 4);
+        rect2("#6a4437", x + 4, y + 49, 8, 8);
+        rect2("#6a4437", x + 56, y + 49, 8, 8);
+        rect2(WOOD, x + 31, y - 36, 6, 34);
+        rect2(WOOD, x + 21, y - 6, 26, 6);
+        rect2("#9d6c51", x + 16, y - 38, 37, 14);
+        rect2("#d7a16d", x + 20, y - 50, 29, 23);
+        rect2("#f4cf93", x + 24, y - 54, 21, 22);
+        rect2("#aa764c", x + 16, y - 30, 37, 4);
+      }
+      function seat(x, y, color2, back = false) {
+        rect2(WOOD, x - 28, y + 4, 12, HOME_WALK_Y - y - 4);
+        rect2(WOOD, x + 20, y + 4, 12, HOME_WALK_Y - y - 4);
+        if (back) {
+          rect2(WOOD, x - 40, y - 88, 24, 92);
+          rect2(color2, x - 36, y - 84, 16, 68);
+        }
+        rect2(WOOD, x - 36, y, 76, 12);
+        rect2(color2, x - 32, y - 4, 68, 8);
+      }
+      function mat2(x, y, w, color2) {
+        rect2("#66473570", x - 4, y + 4, w + 8, 36);
+        rect2(WOOD, x, y, w, 32);
+        rect2(color2, x + 4, y + 4, w - 8, 24);
+        rect2("#f2cdb660", x + 16, y + 8, w - 32, 4);
+        rect2("#392d4338", x + 4, y + 24, w - 8, 4);
+      }
+      function plant(x, y) {
+        rect2("#576949", x - 4, y - 76, 8, 56);
+        rect2("#657953", x - 24, y - 64, 24, 12);
+        rect2("#829067", x - 32, y - 72, 28, 12);
+        rect2("#617954", x + 4, y - 56, 24, 12);
+        rect2("#82926c", x + 12, y - 64, 24, 12);
+        rect2("#49634d", x - 24, y - 44, 20, 8);
+        rect2("#98604a", x - 16, y - 28, 32, 28);
+        rect2("#b97254", x - 20, y - 32, 40, 8);
+        rect2("#c58864", x - 12, y - 24, 8, 20);
+      }
+      rect2(room.wall, 0, 0, HOME_ROOM_WIDTH, WALL_BOTTOM);
+      for (let row = 21; row < WALL_BOTTOM / ROOM_PIXEL; row++) {
+        for (let col = 0; col < HOME_ROOM_WIDTH / ROOM_PIXEL; col++) {
+          const mixed = deterministicMath.imul(col + 47, 73244475) ^ deterministicMath.imul(row + 19, 668265261);
+          const speck = ((mixed ^ mixed >>> 16) >>> 0) % 97;
+          if (speck < 4) rect2("#a0624534", col * ROOM_PIXEL, row * ROOM_PIXEL, ROOM_PIXEL, ROOM_PIXEL);
+          else if (speck < 10) rect2("#fff0b850", col * ROOM_PIXEL, row * ROOM_PIXEL, ROOM_PIXEL, ROOM_PIXEL);
+        }
+      }
+      rect2(room.accent, 0, 0, HOME_ROOM_WIDTH, 78);
+      rect2("#593d3733", 0, 70, HOME_ROOM_WIDTH, 8);
+      rect2("#ffe0ac80", 0, 78, HOME_ROOM_WIDTH, 4);
+      rect2("#855a4633", 0, WALL_BOTTOM - 36, HOME_ROOM_WIDTH, 36);
+      rect2(WOOD, 0, WALL_BOTTOM, HOME_ROOM_WIDTH, HOME_WALK_Y - WALL_BOTTOM);
+      rect2(TRIM, 0, WALL_BOTTOM + 4, HOME_ROOM_WIDTH, 4);
+      for (const x of [0, HOME_ROOM_WIDTH - 20]) {
+        rect2("#755141", x, 82, 20, HOME_WALK_Y - 82);
+        rect2("#bc8a66", x + 4, 82, 8, HOME_WALK_Y - 82);
+      }
+      for (const [row, color2] of FLOOR_BOARDS.entries()) {
+        const y = HOME_WALK_Y + row * FLOOR_BOARD_HEIGHT;
+        rect2(color2, 0, y, HOME_ROOM_WIDTH, FLOOR_BOARD_HEIGHT);
+        rect2("#88553d", 0, y + FLOOR_BOARD_HEIGHT - 4, HOME_ROOM_WIDTH, 4);
+        rect2("#ca936744", 0, y + 4, HOME_ROOM_WIDTH, 4);
+        for (let x = -128 + row * 83 % 256; x < HOME_ROOM_WIDTH; x += 256) {
+          rect2("#83523a", x, y, 4, FLOOR_BOARD_HEIGHT - 4);
+          rect2("#d398685b", x + 28, y + 8, 92, 4);
+          rect2("#79463430", x + 128, y + 18, 78, 4);
+        }
+      }
+      switch (room.id) {
+        case "living":
+          shelf(116, 262, ["#9a5746", "#627e70", "#d49a5f", "#a66b66", "#536a67", "#ca965f", "#956355"]);
+          shelf(172, 332, ["#a66b66", "#d49a5f", "#536a67", "#9a5746", "#627e70"]);
+          print(469, 202, "#89a19a");
+          window2(687, 161, 285, "#9e5348");
+          print(1136, 203, "#8eaa91");
+          plant(1010, HOME_WALK_Y);
+          break;
+        case "sandesh": {
+          const x = HOME_STATIONS.sandesh.x - roomX(room.id, 0);
+          window2(959, 153, 262, "#8b7662");
+          shelf(192, 256, ["#626d7b", "#a37655", "#85655c", "#556c66", "#bc9258", "#7d8670"]);
+          corkboard(664, 232);
+          print(449, 197, "#8b9681");
+          mat2(401, HOME_WALK_Y, 471, "#8e7774");
+          seat(x - 16, HOME_WALK_Y - 49, "#86665b", true);
+          break;
+        }
+        case "sushil": {
+          const x = HOME_STATIONS.sushil.x - roomX(room.id, 0);
+          window2(920, 146, 269, "#64776c");
+          frame(305, 179, 145, 120);
+          rect2("#b27855", 320, 195, 114, 88);
+          rect2("#432f31", 340, 200, 74, 72);
+          rect2("#604449", 348, 208, 58, 56);
+          rect2("#dbac68", 365, 225, 24, 24);
+          rect2("#fff0bc", 373, 233, 8, 8);
+          shelf(611, 264, ["#b97b61", "#627e70", "#d49a5f", "#a66b66", "#536a67", "#d29d76"]);
+          shelf(167, 328, ["#817371", "#b66f54", "#718471", "#c29c6e", "#aa8868"]);
+          mat2(273, HOME_WALK_Y, 480, "#9a845a");
+          seat(x - 26, HOME_WALK_Y - 47, "#9a6a4d");
+          const ampX = 344;
+          const ampY = HOME_WALK_Y - 110;
+          frame(ampX, ampY, 128, 102);
+          rect2("#61565a", ampX + 12, ampY + 19, 104, 74);
+          rect2("#3a3537", ampX + 29, ampY + 29, 70, 55);
+          for (let grille = 33; grille < 82; grille += 8) rect2("#544b50", ampX + 32, ampY + grille, 64, 4);
+          rect2("#daad70", ampX + 16, ampY + 19, 12, 4);
+          rect2("#2a2327", ampX + 45, ampY - 4, 30, 8);
+          nightstand(1180, NIGHTSTAND_TOP, "#bb865e");
+          plant(805, HOME_WALK_Y);
+          break;
+        }
+        case "parents":
+          window2(532, 145, 297, "#926779");
+          print(152, 220, "#9d927b");
+          print(288, 175, "#a2aa85");
+          print(960, 197, "#bca17c");
+          nightstand(891, NIGHTSTAND_TOP, "#ad755d");
+          mat2(209, HOME_WALK_Y, 244, "#688a81");
+          mat2(893, HOME_WALK_Y, 306, "#8c667a");
+          plant(1216, HOME_WALK_Y);
+          break;
+        case "senny-reshu": {
+          const reshu = HOME_STATIONS.reshika.x - roomX(room.id, 0);
+          const senny = HOME_STATIONS.senny.x - roomX(room.id, 0);
+          window2(968, 137, 272, "#966e86");
+          print(166, 190, "#aeb3a1");
+          shelf(306, 223, ["#bb805a", "#936f76", "#977b66", "#a99179", "#b67376"]);
+          seat(reshu - 20, HOME_WALK_Y - 45, "#a76b79");
+          corkboard(700, 222);
+          shelf(527, 246, ["#6b7d7a", "#b8805c", "#965f66", "#e0ad68", "#697282"]);
+          seat(senny - 30, HOME_WALK_Y - 44, "#687b73", true);
+          mat2(892, HOME_WALK_Y, 407, "#8f7483");
+          break;
+        }
+      }
+    }, { res: 1 });
+  }
+  game.paint("home-foot-shadow", 100, 20, (ctx) => {
+    ctx.fillStyle = "#57383155";
+    ctx.beginPath();
+    ctx.ellipse(50, 10, 49, 8, 0, 0, deterministicMath.PI * 2);
+    ctx.fill();
+  });
+  game.paint("home-dialogue-box", HOME_DIALOGUE_WIDTH + DIALOGUE_TAIL * 2, HOME_DIALOGUE_HEIGHT, (ctx) => {
+    const left = DIALOGUE_TAIL + 1;
+    const right = left + HOME_DIALOGUE_WIDTH - 2;
+    const bottom = HOME_DIALOGUE_HEIGHT - 5;
+    ctx.beginPath();
+    ctx.moveTo(left + 5, 2);
+    ctx.lineTo(right - 5, 2);
+    ctx.lineTo(right, 7);
+    ctx.lineTo(right, bottom - 5);
+    ctx.lineTo(right - 5, bottom);
+    ctx.lineTo(left + 5, bottom);
+    ctx.lineTo(left, bottom - 5);
+    ctx.lineTo(left, bottom - 9);
+    ctx.lineTo(2, bottom - 5);
+    ctx.lineTo(left, bottom - 23);
+    ctx.lineTo(left, 7);
+    ctx.closePath();
+    ctx.fillStyle = "#fff1d6";
+    ctx.shadowColor = "#4d322b55";
+    ctx.shadowOffsetY = 3;
+    ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.strokeStyle = "#634638";
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+  }, { res: 1 });
+}
+function spawnBedTop(id2, x, y, width) {
+  game.spawn({
+    id: `home-bed-top-${id2}`,
+    x,
+    y: y + BED_TOP_THICKNESS / 2,
+    width,
+    height: BED_TOP_THICKNESS,
+    layer: "world",
+    visible: false,
+    tags: [UPWARD_PLATFORM_TAG],
+    body: { type: "static", friction: 0, oneWay: "up" }
+  });
+}
+function spawnHomeInterior() {
+  for (const room of HOME_ROOMS) {
+    const texture = `home-room-${room.id}`;
+    game.spawn({
+      id: texture,
+      texture,
+      x: roomX(room.id, HOME_ROOM_WIDTH / 2),
+      y: HEIGHT / 2,
+      scale: ROOM_PIXEL,
+      layer: "back"
+    });
+  }
+  for (const fixture of ROOM_FIXTURES) {
+    const x = roomX(fixture.room, fixture.x);
+    const item = game.spawn({
+      id: `home-${fixture.key}`,
+      texture: `home-pixel-${fixture.key}`,
+      x,
+      y: HOME_WALK_Y,
+      scale: ROOM_PIXEL,
+      layer: "world",
+      z: 2
+    });
+    item.y -= item.height * ROOM_PIXEL / 2;
+    if ("mattress" in fixture) {
+      const { left, right, lift } = fixture.mattress;
+      spawnBedTop(fixture.room, x + (left + right) / 2, HOME_WALK_Y - lift, right - left);
+    }
+  }
+  for (const piece of FURNITURE2) {
+    const item = game.spawn({
+      id: `home-${piece.key === "sideboard" ? `sideboard-${piece.x}` : piece.key}`,
+      texture: `home-pixel-${piece.key}`,
+      x: piece.x,
+      y: "bottom" in piece ? piece.bottom : HOME_WALK_Y,
+      width: piece.width,
+      height: "height" in piece ? piece.height : void 0,
+      layer: "world",
+      z: piece.key === "bed" ? 3 : 1
+    });
+    item.y -= item.height / 2;
+  }
+  spawnBedTop("tokyo", HOME_DOG_BED, HOME_DOG_BED_TOP, DOG_BED_CUSHION_WIDTH);
+  const lamp = game.spawn({
+    id: "home-lamp",
+    texture: "home-pixel-lamp-on",
+    x: LAMP_X,
+    y: HOME_WALK_Y - LAMP_HEIGHT / 2,
+    height: LAMP_HEIGHT,
+    layer: "world",
+    z: 2
+  });
+  game.spawn({
+    id: "home-light-switch",
+    texture: "home-light-switch",
+    x: HOME_LIGHT_SWITCH,
+    y: 420,
+    width: 22,
+    layer: "world",
+    z: 2
+  });
+  const shade2 = game.spawn({
+    id: "home-shade",
+    texture: "white",
+    x: game.screen.width / 2,
+    y: HEIGHT / 2,
+    width: game.screen.width,
+    height: HEIGHT,
+    tint: "#24203e",
+    alpha: 0,
+    layer: "hud"
+  });
+  return { lamp, shade: shade2 };
+}
+function spawnHomeFootShadow(x, width) {
+  return game.spawn({
+    id: "home-foot-shadow",
+    texture: "home-foot-shadow",
+    x,
+    y: HOME_WALK_Y + 2,
+    width,
+    layer: "world",
+    z: 3
+  });
+}
+
+// game/scenes/Home.ts
+var WALL_WIDTH = 28;
+var ROOM_FADE_TIME = 0.22;
+var GRAVITY2 = 1500;
+var INTERACT_RANGE = 72;
+var INTERACT_HEIGHT = 32;
+var TOKYO_SCALE3 = 1.95;
+var HOME_JUMP = { launchSpeed: 748, releaseSpeed: 730 };
+var TOKYO_SHADOW_WIDTH = 89;
+var SURFACE_PROBE_OFFSET = 4;
+var FAMILY_FRAME_TIME = 0.18;
+var FAMILY_RELEASE_TIME = FAMILY_FRAME_TIME * 2;
+var FAMILY_LEAVE_RANGE = 104;
+var FAMILY_RETURN_DELAY = 2;
+var FAMILY_ENGAGED_FRAME_TIME = 0.6;
+var FAMILY_SEATED = [18, 18, 19, 19];
+var FAMILY_SEATED_PLAY = [19, 20, 20, 19, 20, 19];
+var ROOM_ACTIVITY = [0, 1, 2, 1];
+var ROOM_GREETING = [3, 4, 5];
+var ROOM_ENGAGED = [5, 5, 6, 5];
+var ROOM_RESUME = [4, 3];
+var FAMILY_KNEELING_LABEL_HEIGHT = 186;
+var FAMILY_SOFA_LABEL_HEIGHT = 204;
+var FAMILY_ACTIVITY_GAP = 21;
+var ROOM_PREVIEW_X = 568;
+var BALL_RELEASE_X = 55;
+var BALL_RELEASE_HEIGHT = 83;
+var BALL_THROW_DISTANCE = 204;
+var BALL_THROW_TIME = 0.65;
+var BALL_ARC = 53;
+var BALL_SIZE = 25;
+var PLUSHIE_SIZE = 42;
+var BOWL_SIZE = 60;
+var TOY_DROP_OFFSET = 44;
+var RESTING_FOOT_OFFSET = 21 * TOKYO_SCALE3 * TOKYO_ART_SCALE;
+var EAT_MUZZLE_OFFSET = 53;
+var EAT_TIME = 1.05;
+var EAT_FRAMES = [48, 49, 50, 51, 52, 51, 52, 53, 54, 55];
+var SLEEP_WAIT = 0.55;
+var DREAM_FADE = 0.8;
+var LOW_TOKYO_FRAME = 35;
+var SHADE_ALPHA = 0.46;
+var MESSAGE_TIME = 3.6;
+var MESSAGE_RANGE = 104;
+var DIALOGUE_FONT_SIZE = 16;
+var DIALOGUE_LINE_HEIGHT = 1.25;
+var DIALOGUE_PADDING = 13;
+var DIALOGUE_GAP = 7;
+var FAMILY_PROMPT_OFFSET = 38;
+var FAMILY_PROMPT_GAP = 82;
+var PROP_PROMPT_GAP = 36;
+var SCREEN_EDGE = 16;
+function changeFamilyState(pose, state) {
+  if (pose.state === state) return;
+  pose.state = state;
+  pose.time = 0;
+}
+var GOAL = {
+  play: "Visit your family or pick up your plushie.",
+  treats: "Treat time! Your bowl is in the last room.",
+  eating: "Enjoy your treats.",
+  bedtime: "Bedtime. Your bed is in Senny and Reshu\u2019s room.",
+  sleeping: "Good night, Tokyo."
+};
+function beside(anchor, elementWidth) {
+  const point = game.camera.toScreen(anchor.x, anchor.y);
+  const right = point.x + anchor.gap;
+  const limit = game.screen.width - elementWidth - SCREEN_EDGE;
+  const onRight = right <= limit;
+  const x = onRight ? right : point.x - anchor.gap - elementWidth;
+  return { x: deterministicMath.max(SCREEN_EDGE, x), y: point.y, onRight };
+}
+function spawnRoomBounds() {
+  const height = game.screen.height;
+  for (const [id2, x, y, width, colliderHeight] of [
+    ["floor", HOME_WIDTH / 2, HOME_WALK_Y + 24, HOME_WIDTH, 48],
+    ...Array.from({ length: HOME_ROOMS.length + 1 }, (_, index) => [`wall-${index}`, index * HOME_ROOM_WIDTH, height / 2, WALL_WIDTH, height])
+  ]) {
+    game.spawn({
+      id: `home-${id2}`,
+      x,
+      y,
+      width,
+      height: colliderHeight,
+      layer: "world",
+      visible: false,
+      body: { type: "static", friction: 0 }
+    });
+  }
+}
+var Home = {
+  name: "home",
+  enter() {
+    const { sofa: previewGuest, room: previewRoom, phase: previewPhase } = homePreview;
+    Object.assign(homePreview, { sofa: null, room: "living", phase: "play" });
+    Object.assign(home, { room: previewRoom, phase: previewPhase, lightOn: true, holding: null, ball: "ready", playedWith: [] });
+    run.scene = "home";
+    const { width, height } = game.screen;
+    const entry = previewGuest ? HOME_SOFA_SEAT_X - 62 : previewRoom === "living" ? HOME_ENTRY : roomX(previewRoom, ROOM_PREVIEW_X);
+    function frameRoom(room, playerX) {
+      const left = roomX(room, 0);
+      const cameraX = deterministicMath.max(left + width / 2, deterministicMath.min(left + HOME_ROOM_WIDTH - width / 2, playerX));
+      game.rig.bounds({ x: left, y: 0, w: HOME_ROOM_WIDTH, h: height });
+      game.camera.snap(cameraX, height / 2, 1);
+    }
+    frameRoom(home.room, entry);
+    game.physics.gravity(0, GRAVITY2);
+    game.touch.visible = getTouchOverride() ?? isMobileView();
+    const { lamp, shade: shade2 } = spawnHomeInterior();
+    const doors = spawnHomeDoors();
+    spawnRoomBounds();
+    let enteringRoom = false;
+    const busy = () => enteringRoom || home.phase === "eating" || home.phase === "sleeping";
+    const tokyo = spawnTokyo(entry, HOME_WALK_Y, () => !busy(), TOKYO_SCALE3, HOME_JUMP);
+    game.rig.follow(tokyo);
+    const tokyoShadow = spawnHomeFootShadow(entry, TOKYO_SHADOW_WIDTH);
+    const members = HOME_FAMILY.map(({ id: id2 }, i) => {
+      const station = HOME_STATIONS[id2];
+      const { scale: scale2, name, activity } = station;
+      const onSofa = id2 === previewGuest;
+      const x = onSofa ? HOME_SOFA_SEAT_X : station.x;
+      const feet = onSofa ? HOME_SOFA_FEET : HOME_WALK_Y;
+      const shadow = onSofa ? null : spawnHomeFootShadow(x, id2 === "dad" ? 206 : 76);
+      const pose = { state: onSofa ? "sitting" : "activity", time: i * 0.23, away: 0, facing: 1, activity };
+      const sprite = game.spawn({
+        id: `home-${id2}`,
+        texture: `family-${onSofa ? "home" : "room"}-${id2}`,
+        x,
+        y: feet - FAMILY_GROUND_OFFSET * scale2,
+        scale: scale2,
+        frame: onSofa ? FAMILY_SEATED[0] : 0,
+        layer: "world",
+        z: 5,
+        data: pose
+      });
+      const labelY = feet - (onSofa ? FAMILY_SOFA_LABEL_HEIGHT : station.labelHeight);
+      const title = game.text(name, x, labelY, {
+        size: 21,
+        font: "sans-bold",
+        color: "#fff1d0",
+        baseline: "bottom",
+        layer: "front",
+        z: 8,
+        stroke: { color: "#392b26", width: 2 },
+        shadow: { color: "#392b2680", x: 0, y: 2 }
+      });
+      const activityLabel = game.text(onSofa ? "" : activity, x, labelY + FAMILY_ACTIVITY_GAP, {
+        size: 15,
+        font: "mono-bold",
+        color: "#f5e2c0",
+        baseline: "bottom",
+        layer: "front",
+        z: 8,
+        stroke: { color: "#392b26", width: 2 }
+      });
+      const promptAnchor = { x, y: sprite.y - FAMILY_PROMPT_OFFSET, gap: FAMILY_PROMPT_GAP };
+      return { id: id2, ...station, sprite, title, activityLabel, shadow, promptAnchor, onSofa };
+    });
+    const plushie = game.spawn({
+      id: "home-plushie",
+      texture: "home-plushie",
+      x: HOME_TOY_BASKET,
+      y: HOME_WALK_Y - 39,
+      width: PLUSHIE_SIZE,
+      layer: "world",
+      z: 11
+    });
+    const ball = game.spawn({
+      id: "home-ball",
+      texture: "home-ball",
+      x: HOME_STATIONS.senny.x,
+      y: HOME_WALK_Y,
+      width: BALL_SIZE,
+      layer: "world",
+      z: 11,
+      visible: false
+    });
+    const bowl = game.spawn({
+      id: "home-bowl",
+      texture: home.phase === "bedtime" ? "home-bowl-empty" : "home-bowl-full",
+      x: HOME_TREATS,
+      y: HOME_WALK_Y - 8,
+      width: BOWL_SIZE,
+      layer: "world",
+      z: 7
+    });
+    const quietTokyo = game.spawn({
+      id: "home-resting-tokyo",
+      texture: "tokyo",
+      frame: LOW_TOKYO_FRAME,
+      x: 0,
+      y: 0,
+      scale: TOKYO_SCALE3 * TOKYO_ART_SCALE,
+      layer: "world",
+      z: 10,
+      visible: false
+    });
+    game.ui.pauseButton();
+    game.ui.muteButton();
+    const goalPanel = game.graphics({ layer: "hud" });
+    goalPanel.draw((ctx) => {
+      ctx.fillStyle = "#252c2be8";
+      ctx.fillRect(24, 26, 586, 81);
+      ctx.fillStyle = "#d7ad70";
+      ctx.fillRect(24, 26, 3, 81);
+    });
+    const goal = game.text(GOAL.play, 42, 81, { size: 18, font: "mono", align: "left", color: "#f6e5c2" });
+    const roomTitle = game.text("", 42, 49, { size: 21, font: "mono-bold", align: "left", color: "#f5d391" });
+    const roomFade = game.spawn({
+      id: "home-room-fade",
+      texture: "white",
+      x: width / 2,
+      y: height / 2,
+      width,
+      height,
+      tint: "#211a17",
+      alpha: 0,
+      layer: "hud",
+      z: 900
+    });
+    const dialogueBox = game.spawn({
+      id: "home-dialogue-box",
+      texture: "home-dialogue-box",
+      x: 0,
+      y: 0,
+      layer: "hud",
+      z: 4,
+      visible: false
+    });
+    const dialogue = game.typography.write({
+      font: game.typography.face({ family: "sans-bold", size: DIALOGUE_FONT_SIZE }).font,
+      text: "",
+      layer: "hud",
+      z: 5,
+      style: { color: "#392b26", fontSize: DIALOGUE_FONT_SIZE, lineHeight: DIALOGUE_LINE_HEIGHT },
+      constraints: { width: { mode: "at-most", size: HOME_DIALOGUE_WIDTH - DIALOGUE_PADDING * 2 } },
+      layout: { wrap: "word" }
+    });
+    let interactRequested = false;
+    const prompt = spawnHomePrompt(() => {
+      interactRequested = true;
+    });
+    let elapsed = 0;
+    let eatingSince = 0;
+    let messageUntil = 0;
+    let messageAnchor = null;
+    let flight = null;
+    function say2(line, anchor) {
+      dialogue.set({ text: line });
+      messageUntil = elapsed + MESSAGE_TIME;
+      messageAnchor = anchor;
+    }
+    function enterRoom(door) {
+      enteringRoom = true;
+      const arriveX = door.to.x + door.facing * HOME_DOOR_ARRIVAL_OFFSET;
+      game.tween.to(roomFade, { alpha: 1 }, { duration: ROOM_FADE_TIME, onComplete: () => {
+        door.from.setOpen(false);
+        door.to.setOpen(true);
+        home.room = door.to.room;
+        tokyo.warpTo(arriveX, HOME_WALK_Y, door.facing);
+        frameRoom(home.room, arriveX);
+        messageAnchor = null;
+        game.tween.to(roomFade, { alpha: 0 }, { duration: ROOM_FADE_TIME, onComplete: () => {
+          door.to.setOpen(false);
+          enteringRoom = false;
+        } });
+      } });
+    }
+    function openTreatTime() {
+      if (home.phase === "play") home.phase = "treats";
+    }
+    function setLight(on) {
+      home.lightOn = on;
+      lamp.setTexture(on ? "home-pixel-lamp-on" : "home-pixel-lamp-off");
+    }
+    function surfaceBelow(x, feet) {
+      const y = feet - SURFACE_PROBE_OFFSET;
+      const hit = game.physics.raycast(
+        x,
+        y,
+        0,
+        1,
+        HOME_WALK_Y - y + SURFACE_PROBE_OFFSET,
+        (body) => body.tags.has(UPWARD_PLATFORM_TAG) || body.id.startsWith("home-floor")
+      );
+      return hit?.y ?? HOME_WALK_Y;
+    }
+    function setHolding(toy) {
+      home.holding = toy;
+      tokyo.carry(toy);
+    }
+    function dropToy() {
+      if (home.holding === null) return;
+      const toy = home.holding === "plushie" ? plushie : ball;
+      toy.x = tokyo.x + tokyo.data.facing * TOY_DROP_OFFSET;
+      toy.y = surfaceBelow(toy.x, tokyo.data.feet) - toy.height / 2 + 2;
+      toy.visible = true;
+      if (home.holding === "ball") home.ball = "floor";
+      setHolding(null);
+    }
+    function pickUp(toy) {
+      dropToy();
+      const prop = toy === "plushie" ? plushie : ball;
+      prop.visible = false;
+      setHolding(toy);
+      if (toy === "ball") {
+        home.ball = "carried";
+        say2("Bring the ball back to Senny.", { x: tokyo.x, y: tokyo.y - 50, gap: PROP_PROMPT_GAP });
+      } else {
+        openTreatTime();
+      }
+    }
+    function toss(x, facing) {
+      home.ball = "flying";
+      ball.visible = true;
+      const from = x + facing * BALL_RELEASE_X;
+      flight = { from, to: from + facing * BALL_THROW_DISTANCE, time: 0 };
+      ball.x = from;
+      ball.y = HOME_WALK_Y - BALL_RELEASE_HEIGHT;
+    }
+    function playWith(member) {
+      const pose = member.sprite.data;
+      if (pose.state === "greeting") return;
+      const fetch2 = member.id === "senny" && !member.onSofa;
+      const needsBall = fetch2 && home.ball !== "ready" && home.ball !== "carried";
+      if (pose.state === "engaged" && !fetch2) return;
+      if (fetch2) {
+        if (!needsBall) {
+          if (home.holding === "ball") setHolding(null);
+          ball.visible = false;
+          home.ball = "windup";
+        }
+      }
+      if (!home.playedWith.includes(member.id)) home.playedWith.push(member.id);
+      openTreatTime();
+      pose.away = 0;
+      pose.facing = member.onSofa && tokyo.x < member.sprite.x ? -1 : 1;
+      changeFamilyState(pose, needsBall ? "engaged" : "greeting");
+      const line = needsBall ? "Bring the ball back to me." : member.onSofa ? "Come here, Tokyo. Good girl!" : member.line;
+      say2(line, member.promptAnchor);
+    }
+    function animateMember(member, dt) {
+      const pose = member.sprite.data;
+      pose.time += dt;
+      const fetch2 = member.id === "senny" && !member.onSofa;
+      if (pose.state === "greeting") {
+        if (fetch2 && home.ball === "windup" && pose.time >= FAMILY_RELEASE_TIME) {
+          toss(member.sprite.x, 1);
+        }
+        const frames2 = member.onSofa ? FAMILY_SEATED_PLAY : ROOM_GREETING;
+        if (pose.time >= FAMILY_FRAME_TIME * frames2.length) changeFamilyState(pose, "engaged");
+      }
+      if (pose.state === "greeting" || pose.state === "engaged") {
+        const here = deterministicMath.abs(tokyo.x - member.sprite.x) <= FAMILY_LEAVE_RANGE;
+        pose.away = here ? 0 : pose.away + dt;
+        if (pose.away >= FAMILY_RETURN_DELAY) {
+          changeFamilyState(pose, member.onSofa ? "sitting" : "resuming");
+        }
+      }
+      if (pose.state === "resuming" && pose.time >= FAMILY_FRAME_TIME * ROOM_RESUME.length) {
+        changeFamilyState(pose, "activity");
+      }
+      const activity = pose.state === "activity";
+      const feet = member.onSofa ? HOME_SOFA_FEET : HOME_WALK_Y;
+      const labelOffset = member.onSofa ? FAMILY_SOFA_LABEL_HEIGHT : member.id === "dad" && !activity ? FAMILY_KNEELING_LABEL_HEIGHT : member.labelHeight;
+      member.title.y = feet - labelOffset;
+      member.activityLabel.visible = activity;
+      member.activityLabel.y = member.title.y + FAMILY_ACTIVITY_GAP;
+      if (member.shadow && member.id === "dad") member.shadow.width = activity ? 206 : 100;
+      const frames = {
+        activity: ROOM_ACTIVITY,
+        greeting: member.onSofa ? FAMILY_SEATED_PLAY : ROOM_GREETING,
+        engaged: member.onSofa ? FAMILY_SEATED : fetch2 ? [6] : ROOM_ENGAGED,
+        resuming: fetch2 ? [6] : ROOM_RESUME,
+        sitting: FAMILY_SEATED
+      }[pose.state];
+      const cadence = activity ? member.pace : pose.state === "engaged" || pose.state === "sitting" ? FAMILY_ENGAGED_FRAME_TIME : FAMILY_FRAME_TIME;
+      member.sprite.sx = member.scale * pose.facing;
+      member.sprite.setFrame(frames[deterministicMath.floor(pose.time / cadence) % frames.length]);
+    }
+    function restPose(x, y, facing) {
+      tokyo.visible = false;
+      quietTokyo.visible = true;
+      quietTokyo.x = x;
+      quietTokyo.y = y;
+      quietTokyo.sx = facing * TOKYO_SCALE3 * TOKYO_ART_SCALE;
+    }
+    function eatTreats() {
+      home.phase = "eating";
+      dropToy();
+      const facing = tokyo.x < HOME_TREATS ? 1 : -1;
+      const x = HOME_TREATS - facing * EAT_MUZZLE_OFFSET;
+      tokyo.warpTo(x, HOME_WALK_Y, facing);
+      eatingSince = elapsed;
+      quietTokyo.setFrame(EAT_FRAMES[0]);
+      restPose(x, HOME_WALK_Y - RESTING_FOOT_OFFSET, facing);
+      game.after(EAT_TIME, () => {
+        bowl.setTexture("home-bowl-empty");
+        quietTokyo.visible = false;
+        tokyo.visible = true;
+        home.phase = "bedtime";
+      });
+    }
+    function goToSleep() {
+      home.phase = "sleeping";
+      dropToy();
+      quietTokyo.setFrame(LOW_TOKYO_FRAME);
+      restPose(HOME_DOG_BED, HOME_DOG_BED_TOP - RESTING_FOOT_OFFSET, 1);
+      setLight(false);
+      game.touch.visible = false;
+      const fade = game.spawn({
+        id: "home-dream-fade",
+        texture: "white",
+        x: width / 2,
+        y: height / 2,
+        width,
+        height,
+        tint: "#10111e",
+        alpha: 0,
+        layer: "hud",
+        z: 1e3
+      });
+      game.after(SLEEP_WAIT, () => {
+        game.tween.to(fade, { alpha: 1 }, { duration: DREAM_FADE, onComplete: beginDream });
+      });
+    }
+    const targets = [
+      ...doors.map(({ from }) => ({
+        at: () => !from.open && from.room === home.room ? from.x : Infinity,
+        y: () => HOME_DOOR_PROMPT_Y,
+        gap: PROP_PROMPT_GAP,
+        range: HOME_DOOR_RANGE,
+        label: () => "Open door",
+        act: () => from.setOpen(true)
+      })),
+      ...members.map((member) => ({
+        at: () => {
+          const pose = member.sprite.data;
+          const canReturnBall = member.id === "senny" && !member.onSofa && home.holding === "ball";
+          return pose.state === "greeting" || pose.state === "engaged" && !canReturnBall ? Infinity : member.sprite.x;
+        },
+        y: () => member.promptAnchor.y,
+        gap: FAMILY_PROMPT_GAP,
+        label: () => member.onSofa ? "Play" : member.id === "senny" && home.holding === "ball" ? "Return ball" : member.prompt,
+        act: () => playWith(member)
+      })),
+      {
+        at: () => HOME_LIGHT_SWITCH,
+        y: () => 420,
+        gap: PROP_PROMPT_GAP,
+        label: () => home.lightOn ? "Turn off lamp" : "Turn on lamp",
+        act: () => setLight(!home.lightOn)
+      },
+      {
+        at: () => home.holding === "plushie" ? Infinity : plushie.x,
+        y: () => plushie.y - 44,
+        gap: PROP_PROMPT_GAP,
+        surface: () => plushie.y + plushie.height / 2,
+        label: () => "Pick up plushie",
+        act: () => pickUp("plushie")
+      },
+      {
+        at: () => home.ball === "floor" ? ball.x : Infinity,
+        y: () => ball.y - 44,
+        gap: PROP_PROMPT_GAP,
+        surface: () => ball.y + ball.height / 2,
+        label: () => "Pick up ball",
+        act: () => pickUp("ball")
+      },
+      {
+        at: () => home.phase === "treats" ? HOME_TREATS : Infinity,
+        y: () => bowl.y - 44,
+        gap: PROP_PROMPT_GAP,
+        label: () => "Eat treats",
+        act: eatTreats
+      },
+      {
+        at: () => home.phase === "bedtime" ? HOME_DOG_BED : Infinity,
+        y: () => HOME_WALK_Y - 80,
+        gap: 88,
+        surface: () => deterministicMath.abs(tokyo.data.feet - HOME_DOG_BED_TOP) <= INTERACT_HEIGHT ? HOME_DOG_BED_TOP : HOME_WALK_Y,
+        label: () => "Go to sleep",
+        act: goToSleep
+      }
+    ];
+    const dropTarget = {
+      at: () => tokyo.x,
+      y: () => tokyo.y - 60,
+      gap: FAMILY_PROMPT_GAP,
+      label: () => "Put down toy",
+      act: dropToy
+    };
+    game.step("home-interactions", (dt) => {
+      elapsed += dt;
+      if (!busy()) {
+        for (const door of doors) {
+          if (!door.from.open || door.from.room !== home.room) continue;
+          const distance2 = deterministicMath.abs(tokyo.x - door.from.x);
+          if (distance2 > HOME_DOOR_CLOSE_RANGE) door.from.setOpen(false);
+          else if (distance2 <= HOME_DOOR_ENTER_RANGE && tokyo.data.grounded) enterRoom(door);
+        }
+      }
+      for (const member of members) animateMember(member, dt);
+      const feet = quietTokyo.visible ? quietTokyo.y + RESTING_FOOT_OFFSET : tokyo.data.feet;
+      tokyoShadow.x = quietTokyo.visible ? quietTokyo.x : tokyo.x;
+      const surface = surfaceBelow(tokyoShadow.x, feet);
+      tokyoShadow.y = surface + 2;
+      tokyoShadow.alpha = deterministicMath.max(0.2, 1 - (surface - feet) / 150);
+      if (flight) {
+        flight.time += dt;
+        const t = deterministicMath.min(1, flight.time / BALL_THROW_TIME);
+        ball.x = flight.from + (flight.to - flight.from) * t * (2 - t);
+        const releaseLift = BALL_RELEASE_HEIGHT - BALL_SIZE / 2;
+        ball.y = HOME_WALK_Y - BALL_SIZE / 2 - releaseLift * (1 - t) - BALL_ARC * deterministicMath.sin(deterministicMath.PI * t);
+        if (t === 1) {
+          home.ball = "floor";
+          flight = null;
+        }
+      }
+      const room = HOME_ROOMS.find((candidate) => candidate.id === home.room);
+      roomTitle.text = room.name;
+      goal.text = home.phase === "play" && room.id === "living" ? "Pick up your plushie or open the door to explore." : GOAL[home.phase];
+      shade2.alpha = home.phase === "sleeping" || !home.lightOn && room.id === "living" ? SHADE_ALPHA : 0;
+      if (messageAnchor && elapsed < messageUntil && !busy() && deterministicMath.abs(tokyo.x - messageAnchor.x) <= MESSAGE_RANGE) {
+        const point = beside(messageAnchor, HOME_DIALOGUE_WIDTH);
+        const bottom = point.y - HOME_PROMPT_HEIGHT / 2 - DIALOGUE_GAP;
+        const centerY = bottom - HOME_DIALOGUE_HEIGHT / 2;
+        dialogueBox.x = point.x + HOME_DIALOGUE_WIDTH / 2;
+        dialogueBox.y = centerY;
+        dialogueBox.sx = point.onRight ? 1 : -1;
+        dialogueBox.visible = true;
+        const textHeight = dialogue.measure().lineCount * DIALOGUE_FONT_SIZE * DIALOGUE_LINE_HEIGHT;
+        dialogue.object.x = point.x + DIALOGUE_PADDING;
+        dialogue.object.y = centerY - textHeight / 2;
+        dialogue.object.visible = true;
+      } else {
+        dialogueBox.visible = false;
+        dialogue.object.visible = false;
+      }
+      if (home.phase === "eating") {
+        const progress = (elapsed - eatingSince) / EAT_TIME;
+        const frame = deterministicMath.min(EAT_FRAMES.length - 1, deterministicMath.floor(progress * EAT_FRAMES.length));
+        quietTokyo.setFrame(EAT_FRAMES[frame]);
+      }
+      if (busy()) {
+        interactRequested = false;
+        prompt.hide();
+        return;
+      }
+      if (game.controls.justPressed("pause")) {
+        interactRequested = false;
+        game.scenes.push("pause");
+        return;
+      }
+      let chosen;
+      let distance = Infinity;
+      if (tokyo.data.grounded) {
+        for (const target of targets) {
+          const gap = deterministicMath.abs(tokyo.x - target.at());
+          const targetSurface = target.surface?.() ?? HOME_WALK_Y;
+          if (gap <= (target.range ?? INTERACT_RANGE) && gap < distance && deterministicMath.abs(tokyo.data.feet - targetSurface) <= INTERACT_HEIGHT) {
+            chosen = target;
+            distance = gap;
+          }
+        }
+      }
+      chosen ??= home.holding && tokyo.data.grounded ? dropTarget : void 0;
+      if (chosen) {
+        const key = game.input.gamepads.some((pad) => pad.connected) ? "Y" : "F";
+        const promptWidth = prompt.measure(chosen.label(), game.touch.visible ? "touch" : key);
+        const point = beside({ x: chosen.at(), y: chosen.y(), gap: chosen.gap }, promptWidth);
+        prompt.place(point.x, point.y - HOME_PROMPT_HEIGHT / 2, promptWidth);
+      } else {
+        prompt.hide();
+      }
+      if (interactRequested || game.controls.justPressed("interact")) {
+        interactRequested = false;
+        chosen?.act();
+      }
+    }, { after: "rig-follow.camera" });
+  },
+  exit() {
+    game.touch.visible = false;
+  }
+};
+
+// game/scenes/DreamStart.ts
+var WIDTH3 = 1280;
+var FLOOR = 540;
+var SAFE_LIGHTS = [204, 467, 730, 993, 1174];
+var SAFE_RADIUS = 86;
+var BUFFER_RADIUS = 120;
+var ENTITY_SPEED = 194;
+var DreamStart = {
+  name: "dream-start",
+  enter() {
+    let stopped = false;
+    let caughtAlready = false;
+    let elapsed = 0;
+    game.camera.snap(WIDTH3 / 2, 360, 1);
+    game.background.picture("dream-dark", "stretch");
+    game.physics.gravity(0, 1500);
+    game.touch.visible = getTouchOverride() ?? isMobileView();
+    game.touch.button({
+      code: "Touch:interact",
+      label: "ENTER",
+      anchor: "bottom-right",
+      x: 320,
+      y: 152,
+      r: 40,
+      tint: "#eee0ff"
+    });
+    game.ui.pauseButton();
+    game.ui.muteButton();
+    for (const [id2, x, y, w, h] of [
+      ["dream-floor", WIDTH3 / 2, FLOOR + 24, WIDTH3, 48],
+      ["dream-left-edge", 0, 360, 32, 720],
+      ["dream-right-edge", WIDTH3, 360, 32, 720]
+    ]) {
+      game.spawn({
+        id: id2,
+        x,
+        y,
+        width: w,
+        height: h,
+        visible: false,
+        layer: "world",
+        body: { type: "static", friction: 0 }
+      });
+    }
+    run.scene = "journey";
+    const tokyo = spawnTokyo(120, FLOOR, () => !stopped, 1.42);
+    const lights = [];
+    for (let i = 0; i < SAFE_LIGHTS.length; i++) {
+      const x = SAFE_LIGHTS[i];
+      const sprite = game.spawn({
+        id: "dark-place-light-" + (i + 1),
+        texture: "dream-light",
+        x,
+        y: FLOOR - 42,
+        width: 170,
+        height: 170,
+        layer: "world",
+        z: 2,
+        frame: i % 4
+      });
+      lights.push({ x, sprite });
+    }
+    const aura = game.spawn({
+      id: "dream-light-around-tokyo",
+      texture: "dream-shield",
+      x: 120,
+      y: FLOOR - 34,
+      width: 120,
+      layer: "world",
+      z: 9,
+      alpha: 0.82
+    });
+    const shadow = game.spawn({
+      id: "dream-roaming-shadow",
+      texture: "dream-entity",
+      x: 852,
+      y: FLOOR - DREAM_SHADOW_FOOT_OFFSET,
+      width: DREAM_SHADOW_WIDTH,
+      layer: "world",
+      z: 8,
+      frame: 0
+    });
+    game.text(
+      "THE DARK PLACE",
+      WIDTH3 / 2,
+      94,
+      { size: 30, font: "mono-bold", color: "#eee2ff", shadow: { color: "#171323", x: 2, y: 3 } }
+    );
+    game.text(
+      "A voice calls from a little light in the distance\u2026",
+      WIDTH3 / 2,
+      132,
+      { size: 16, font: "mono", color: "#d4c6f2" }
+    );
+    const voice = game.text(
+      "\u201CTokyo? I\u2019m over here\u2026\u201D  \u2014  Senny",
+      1051,
+      357,
+      {
+        size: 17,
+        font: "mono-bold",
+        color: "#fff0d1",
+        shadow: { color: "#3b2670", x: 2, y: 2 }
+      }
+    );
+    const objective = game.text(
+      "Find the glowing doorway.",
+      WIDTH3 / 2,
+      615,
+      { size: 18, font: "mono-bold", color: "#f7eacc", shadow: { color: "#171323", x: 2, y: 2 } }
+    );
+    const prompt = game.text(
+      "",
+      WIDTH3 / 2,
+      675,
+      { size: 14, font: "mono-bold", color: "#f0e5ff", shadow: { color: "#171323", x: 1, y: 2 } }
+    );
+    function caught() {
+      if (caughtAlready) return;
+      stopped = true;
+      caughtAlready = true;
+      game.ui.panel({ anchor: "center", w: 608, h: 298, z: 30, safeArea: false, style: "dark" });
+      game.text(
+        "THE SHADOW FOUND TOKYO",
+        WIDTH3 / 2,
+        237,
+        { z: 31, size: 32, font: "mono-bold", color: "#edbdd6" }
+      );
+      game.text(
+        "The warm light will protect her next time.",
+        WIDTH3 / 2,
+        294,
+        { z: 31, size: 18, font: "mono", color: "#f4e8d0" }
+      );
+      game.ui.button({
+        id: "dark-place-retry",
+        anchor: "center",
+        y: 170,
+        z: 31,
+        h: 58,
+        text: "Try this dream again",
+        icon: "restart",
+        style: "good",
+        onClick: () => game.scenes.go("dream-start")
+      });
+      game.ui.button({
+        id: "dark-place-home",
+        anchor: "center",
+        y: 239,
+        z: 31,
+        h: 50,
+        text: "Wake up at home",
+        icon: "home",
+        style: "flat",
+        onClick: () => game.scenes.go("home")
+      });
+    }
+    game.step("dream-start", (dt) => {
+      if (stopped) return;
+      elapsed += dt;
+      const playerX = tokyo.data.x;
+      const nearestLight = lights.reduce((best, light) => deterministicMath.min(best, deterministicMath.abs(playerX - light.x)), Infinity);
+      const protectedNow = nearestLight <= SAFE_RADIUS;
+      aura.visible = protectedNow;
+      aura.x = playerX;
+      aura.y = tokyo.data.feet - 34;
+      aura.alpha = 0.65 + deterministicMath.sin(elapsed * 3) * 0.12;
+      if (nearestLight <= BUFFER_RADIUS && deterministicMath.abs(shadow.x - playerX) < BUFFER_RADIUS + 10) {
+        shadow.x = playerX < shadow.x ? playerX + BUFFER_RADIUS + 10 : playerX - BUFFER_RADIUS - 10;
+      } else {
+        shadow.x += (playerX < shadow.x ? -1 : 1) * ENTITY_SPEED * dt;
+      }
+      shadow.x = deterministicMath.max(40, deterministicMath.min(WIDTH3 - 40, shadow.x));
+      shadow.y = FLOOR - DREAM_SHADOW_FOOT_OFFSET + deterministicMath.sin(elapsed * 4) * 5;
+      shadow.sx = playerX < shadow.x ? -1 : 1;
+      shadow.setFrame(deterministicMath.floor(elapsed * 3) % 2);
+      const gap = deterministicMath.abs(shadow.x - playerX);
+      if (gap < 54 && !protectedNow) caught();
+      const nearPortal = playerX >= 1116;
+      objective.text = protectedNow ? "The patch of light protects Tokyo." : "Move from light to light. The shadow is roaming.";
+      prompt.text = nearPortal ? game.touch.visible ? "Enter the light portal" : "F  ENTER THE LIGHT PORTAL" : game.touch.visible ? "Move with the stick \xB7 Jump to dodge \xB7 Find Senny\u2019s light" : "\u2190 \u2192 MOVE   \xB7   SPACE JUMP   \xB7   SHIFT RUN   \xB7   F INTERACT";
+      if (nearPortal && game.controls.justPressed("interact")) {
+        journey.stage = 2;
+        journey.visitedCats = [];
+        journey.puzzleStep = 0;
+        game.scenes.go("journey");
+      }
+      voice.text = elapsed < 5 ? "\u201CTokyo? I\u2019m over here\u2026\u201D  \u2014  Senny" : "SENNY\u2019S VOICE  \u2192";
+      if (game.controls.justPressed("pause")) game.scenes.push("pause");
+    }, { after: "tokyo-visual" });
+  },
+  exit() {
+    game.touch.visible = false;
+  }
+};
+
+// game/scenes/Journey.ts
+var SCREEN_W = 1280;
+var FLOOR2 = 576;
+var LEVEL_FLOORS = {
+  2: 570,
+  3: 522,
+  4: 543,
+  5: 558,
+  6: 550,
+  7: 593,
+  8: 570,
+  9: 560
+};
+var FLOOR_HEIGHT = 48;
+var GRAVITY3 = 1500;
+var WALKING_START = 120;
+var EXIT_X = 1172;
+var EXIT_RANGE = 62;
+var CHAT_RANGE = 68;
+var LIGHTS = [204, 467, 730, 993, 1174];
+var LIGHT_SAFE_RADIUS = 116;
+var LIGHT_BUFFER_RADIUS = 128;
+var SHADOW_SPEED = 194;
+var SHADOW_TOUCH_DISTANCE = 54;
+var HAZARD_TOUCH_X = 48;
+var HAZARD_TOUCH_Y = 45;
+var FAMILY_SCALE = 1.48;
+var FAMILY = [
+  { id: "sandesh", name: "Sandesh", line: "Sandesh: \u201CYou found your way out!\u201D" },
+  { id: "sushil", name: "Sushil", line: "Sushil: \u201CI knew you would find me.\u201D" },
+  { id: "dad", name: "Dad", line: "Dad: \u201CThe forest could not hide you from us.\u201D" },
+  { id: "mom", name: "Mom", line: "Mom: \u201CI knew you would find your way.\u201D" },
+  { id: "reshika", name: "Reshika", line: "Reshika: \u201CCome on, Tokyo. Everyone is waiting.\u201D" },
+  { id: "senny", name: "Senny", line: "Senny: \u201CI have been calling you, little one.\u201D" }
+];
+var Journey = {
+  name: "journey",
+  enter() {
+    const stage = journey.stage;
+    const info = DREAM_LEVELS[stage - 1] ?? DREAM_LEVELS[1];
+    const floor3 = LEVEL_FLOORS[stage] ?? FLOOR2;
+    const saved = journey.rescued.slice();
+    let elapsed = 0;
+    let messageTime = 0;
+    let stopped = false;
+    let stumbleTime = 0;
+    let hazardCooldown = 0;
+    let doorOpen = stage !== 2;
+    let reunionActive = false;
+    let reunionTimer = 0;
+    let wakeReady = false;
+    const hazards = [];
+    const lights = [];
+    const targets = [];
+    if (stage === 1) {
+      game.scenes.go("dream-start");
+      return;
+    }
+    run.scene = "journey";
+    game.camera.snap(SCREEN_W / 2, 360, 1);
+    game.physics.gravity(0, GRAVITY3);
+    game.touch.visible = getTouchOverride() ?? isMobileView();
+    if (stage === 7) {
+      const { lamp, shade: shade2 } = spawnHomeRoom();
+      lamp.setTexture("home-pixel-lamp-off");
+      shade2.alpha = 0.28;
+    } else {
+      game.background.picture(info.background, "stretch");
+    }
+    game.touch.button({
+      code: "Touch:interact",
+      label: "INTERACT",
+      anchor: "bottom-right",
+      x: 320,
+      y: 152,
+      r: 40,
+      tint: "#f5df9a"
+    });
+    game.ui.pauseButton();
+    game.ui.muteButton();
+    for (const [id2, x, y, w, h] of [
+      ["floor", SCREEN_W / 2, floor3 + FLOOR_HEIGHT / 2, SCREEN_W, FLOOR_HEIGHT],
+      ["left-edge", 0, 360, 32, 720],
+      ["right-edge", SCREEN_W, 360, 32, 720]
+    ]) {
+      game.spawn({
+        id: "journey-" + id2,
+        x,
+        y,
+        width: w,
+        height: h,
+        visible: false,
+        layer: "world",
+        body: { type: "static", friction: 0 }
+      });
+    }
+    const tokyo = spawnTokyo(
+      WALKING_START,
+      floor3,
+      () => !stopped && stumbleTime <= 0,
+      stage === 2 ? 1.12 : 1.5
+    );
+    if (stage >= 8 && journey.plushie) tokyo.carry("plushie");
+    const glowSprites = lights;
+    if (stage < 9) {
+      for (let i = 0; i < LIGHTS.length; i++) {
+        const x = LIGHTS[i];
+        const glow = game.spawn({
+          id: "safe-light-" + (i + 1),
+          texture: "dream-light",
+          x,
+          y: floor3 - 42,
+          width: 170,
+          height: 170,
+          layer: "world",
+          z: 2,
+          frame: i % 4
+        });
+        glowSprites.push({ x, sprite: glow });
+      }
+    }
+    const aura = game.spawn({
+      id: "tokyo-light-shield",
+      texture: "dream-shield",
+      x: WALKING_START,
+      y: floor3 - 38,
+      width: 120,
+      layer: "world",
+      z: 9,
+      alpha: 0.84
+    });
+    aura.visible = false;
+    let entity = null;
+    if (stage < 9) {
+      entity = game.spawn({
+        id: "roaming-dream-shadow",
+        texture: "dream-entity",
+        x: 824,
+        y: floor3 - DREAM_SHADOW_FOOT_OFFSET,
+        width: DREAM_SHADOW_WIDTH,
+        layer: "world",
+        z: 8,
+        frame: 0
+      });
+    }
+    const portal = game.spawn({
+      id: "journey-exit-portal",
+      texture: "park-portal",
+      frame: 1,
+      x: EXIT_X,
+      y: floor3 - 83,
+      width: 112,
+      height: 142,
+      layer: "world",
+      z: 4
+    });
+    if (stage === 9) portal.visible = false;
+    const headline = game.text(
+      String(stage).padStart(2, "0") + " / 09     " + info.name.toUpperCase(),
+      SCREEN_W / 2,
+      37,
+      {
+        size: 20,
+        font: "mono-bold",
+        color: "#fff2c9",
+        shadow: { color: "#17202c", x: 2, y: 3 }
+      }
+    );
+    const objective = game.text(
+      info.title,
+      SCREEN_W / 2,
+      72,
+      { size: 15, font: "mono-bold", color: "#f2e9cb", shadow: { color: "#17202c", x: 1, y: 2 } }
+    );
+    const companions = game.text(
+      saved.length ? "FOUND: " + saved.map((id2) => id2.toUpperCase()).join("  \xB7  ") : "SENNY\u2019S VOICE IS FAR AWAY",
+      SCREEN_W / 2,
+      106,
+      { size: 13, font: "mono-bold", color: "#f4d88d", shadow: { color: "#17202c", x: 1, y: 2 } }
+    );
+    const message = game.text(
+      stage === 2 ? "Small paws. A long way home." : stage === 9 ? "Look\u2014your whole family is here!" : "Keep exploring. The warm light keeps Tokyo safe.",
+      SCREEN_W / 2,
+      614,
+      {
+        size: 18,
+        font: "mono-bold",
+        color: "#fff1cf",
+        shadow: { color: "#1c1825", x: 2, y: 2 }
+      }
+    );
+    const prompt = game.text(
+      "",
+      SCREEN_W / 2,
+      675,
+      { size: 14, font: "mono-bold", color: "#fff6dc", shadow: { color: "#171924", x: 1, y: 2 } }
+    );
+    if (stage === 2) {
+      const gate = game.spawn({
+        id: "kennel-front-gate",
+        texture: "dream-gate",
+        x: 647,
+        y: floor3 - 82,
+        scale: DREAM_GATE_SCALE,
+        layer: "world",
+        z: 6,
+        frame: 0
+      });
+      const gateWall = game.spawn({
+        id: "kennel-gate-collision",
+        x: 647,
+        y: floor3 - 81,
+        width: 54,
+        height: 165,
+        visible: false,
+        layer: "world",
+        body: { type: "static", friction: 0 }
+      });
+      game.spawn({
+        id: "kennel-gate-latch",
+        texture: "dream-latch",
+        x: 424,
+        y: floor3 - 28,
+        width: 54,
+        height: 58,
+        layer: "world",
+        z: 8
+      });
+      targets.push({ x: 424, label: "Free the kennel gate", act: () => {
+        if (doorOpen) return;
+        doorOpen = true;
+        gate.setFrame(1);
+        gateWall.destroy();
+        message.text = "The latch turns. Tokyo can leave the kennel.";
+        messageTime = 4.2;
+      } });
+    }
+    if (stage === 3) {
+      game.spawn({
+        id: "first-house-way-out",
+        texture: "dream-light",
+        x: 1066,
+        y: floor3 - 58,
+        width: 110,
+        height: 110,
+        layer: "world",
+        z: 2
+      });
+    }
+    if (stage === 4) {
+      const owl = game.spawn({
+        id: "forest-wild-owl",
+        texture: "dream-owl",
+        x: 625,
+        y: floor3 - 91,
+        width: 78,
+        height: 78,
+        layer: "world",
+        z: 7
+      });
+      hazards.push({ sprite: owl, frames: [0, 1], low: 433, high: 861, speed: 94, direction: 1 });
+      game.spawn({
+        id: "forest-lost-sign",
+        texture: "dream-star",
+        x: 368,
+        y: floor3 - 108,
+        width: 35,
+        height: 35,
+        layer: "world",
+        z: 6,
+        alpha: 0.8
+      });
+    }
+    if (stage === 5 || stage === 6) {
+      const dogs = stage === 5 ? [
+        { x: 538, low: 462, high: 632, speed: 94 },
+        { x: 847, low: 786, high: 961, speed: 120 }
+      ] : [{ x: 552, low: 500, high: 612, speed: 102 }];
+      for (let i = 0; i < dogs.length; i++) {
+        const dog = dogs[i];
+        const sprite = game.spawn({
+          id: "dream-stray-dog-" + (i + 1),
+          texture: "park-villain-dogs",
+          x: dog.x,
+          y: floor3 - 42,
+          width: 92,
+          height: 92,
+          layer: "world",
+          z: 7,
+          frame: i + 1
+        });
+        hazards.push({ sprite, frames: [i + 1, i + 5], low: dog.low, high: dog.high, speed: dog.speed, direction: i % 2 ? -1 : 1 });
+      }
+    }
+    if (stage === 6) {
+      for (const cat2 of [
+        { index: 0, x: 414, name: "Mikan" },
+        { index: 1, x: 796, name: "Sora" }
+      ]) {
+        const sprite = game.spawn({
+          id: "city-cat-" + cat2.index,
+          texture: "dream-cat",
+          frame: cat2.index * 2,
+          x: cat2.x,
+          y: floor3 - 29,
+          width: 76,
+          height: 68,
+          layer: "world",
+          z: 7
+        });
+        targets.push({
+          x: cat2.x,
+          label: "Say hello to " + cat2.name,
+          ready: () => !journey.visitedCats.includes(cat2.index),
+          act: () => {
+            if (!journey.visitedCats.includes(cat2.index)) journey.visitedCats.push(cat2.index);
+            sprite.setFrame(cat2.index * 2 + 1);
+            message.text = cat2.name + " gives Tokyo a friendly little meow.";
+            messageTime = 3.3;
+          }
+        });
+      }
+    }
+    if (stage === 7) {
+      const moonPad = game.spawn({
+        id: "puzzle-moon-pad",
+        texture: "dream-puzzle-pad",
+        x: 440,
+        y: floor3 - 31,
+        width: 68,
+        height: 68,
+        layer: "world",
+        z: 7
+      });
+      const moonMark = game.spawn({
+        id: "puzzle-moon-mark",
+        texture: "dream-moon",
+        x: 440,
+        y: floor3 - 31,
+        width: 40,
+        height: 40,
+        layer: "world",
+        z: 8
+      });
+      const starPad = game.spawn({
+        id: "puzzle-star-pad",
+        texture: "dream-puzzle-pad",
+        x: 708,
+        y: floor3 - 31,
+        width: 68,
+        height: 68,
+        layer: "world",
+        z: 7
+      });
+      const starMark = game.spawn({
+        id: "puzzle-star-mark",
+        texture: "dream-star",
+        x: 708,
+        y: floor3 - 31,
+        width: 40,
+        height: 40,
+        layer: "world",
+        z: 8
+      });
+      if (journey.puzzleStep > 0) moonPad.setFrame(1);
+      if (journey.puzzleStep > 1) starPad.setFrame(1);
+      void moonMark;
+      void starMark;
+      targets.push({ x: 440, label: "Press the moon stone first", act: () => {
+        if (journey.puzzleStep === 0) {
+          journey.puzzleStep = 1;
+          moonPad.setFrame(1);
+          message.text = "The moon stone glows. Now find the star.";
+        } else {
+          message.text = "Moon first, then the star. Follow the picture hint.";
+        }
+        messageTime = 3.2;
+      } });
+      targets.push({ x: 708, label: "Press the star stone second", act: () => {
+        if (journey.puzzleStep === 1) {
+          journey.puzzleStep = 2;
+          starPad.setFrame(1);
+          message.text = "The hidden door swings open!";
+        } else {
+          journey.puzzleStep = 0;
+          moonPad.setFrame(0);
+          starPad.setFrame(0);
+          message.text = "The stones reset. Look at the moon and star order.";
+        }
+        messageTime = 3.3;
+      } });
+    }
+    if (stage === 8) {
+      const favoriteToy = game.spawn({
+        id: "favorite-plushie-on-floor",
+        texture: "home-plushie",
+        x: 858,
+        y: floor3 - 29,
+        width: 66,
+        layer: "world",
+        z: 9,
+        visible: !journey.plushie
+      });
+      targets.push({
+        x: 858,
+        label: "Pick up your favourite plushie",
+        ready: () => !journey.plushie,
+        act: () => {
+          journey.plushie = true;
+          tokyo.carry("plushie");
+          favoriteToy.visible = false;
+          message.text = "There you are. Tokyo has her favourite plushie again.";
+          messageTime = 4;
+        }
+      });
+    }
+    let character = null;
+    if (info.family) {
+      const person = FAMILY.find((item) => item.id === info.family);
+      character = game.spawn({
+        id: "dream-family-" + person.id,
+        texture: "family-" + person.id,
+        x: 1060,
+        y: floor3 - FAMILY_GROUND_OFFSET * FAMILY_SCALE,
+        scale: FAMILY_SCALE,
+        layer: "world",
+        z: 7
+      });
+      game.text(
+        person.name,
+        1060,
+        floor3 - 126,
+        { size: 16, font: "mono-bold", color: "#fff2c9", shadow: { color: "#181923", x: 2, y: 2 } }
+      );
+      targets.push({ x: 1060, label: "Run to " + person.name, act: () => {
+        if (!journey.rescued.includes(person.id)) journey.rescued.push(person.id);
+        character?.setFrame(4);
+        companions.text = "FOUND: " + journey.rescued.map((id2) => id2.toUpperCase()).join("  \xB7  ");
+        message.text = person.line;
+        messageTime = 4.4;
+      } });
+    }
+    if (stage === 9) {
+      const groupX = [481, 593, 705, 817, 929, 1041];
+      for (let i = 0; i < FAMILY.length; i++) {
+        const person = FAMILY[i];
+        const personSprite = game.spawn({
+          id: "spring-reunion-" + person.id,
+          texture: "family-" + person.id,
+          x: groupX[i],
+          y: floor3 - FAMILY_GROUND_OFFSET * 1.27,
+          scale: 1.27,
+          layer: "world",
+          z: 7
+        });
+        void personSprite;
+        game.text(
+          person.name,
+          groupX[i],
+          floor3 - 117,
+          {
+            size: 12,
+            font: "mono-bold",
+            color: "#fff6de",
+            shadow: { color: "#354239", x: 1, y: 2 }
+          }
+        );
+      }
+      targets.push({ x: 758, label: "Hug everyone", act: () => {
+        reunionActive = true;
+        reunionTimer = 0;
+        message.text = "Everyone cheers as petals swirl around Tokyo!";
+        messageTime = 5;
+      } });
+    }
+    const familyGoalReady = () => {
+      if (stage === 2) return doorOpen && journey.rescued.includes("sandesh");
+      if (stage === 6) return journey.visitedCats.length >= 2 && journey.rescued.includes("reshika");
+      if (stage === 7) return journey.puzzleStep >= 2 && journey.rescued.includes("senny");
+      if (stage === 8) return journey.plushie;
+      if (info.family) return journey.rescued.includes(info.family);
+      return true;
+    };
+    if (stage !== 9) {
+      targets.push({
+        x: EXIT_X,
+        label: "Enter the glowing doorway",
+        ready: familyGoalReady,
+        act: () => {
+          if (!familyGoalReady()) {
+            if (stage === 2 && !doorOpen) message.text = "The kennel gate is still latched. Find the lever.";
+            else if (stage === 6 && journey.visitedCats.length < 2) message.text = "Two city cats still want to say hello.";
+            else if (stage === 7 && journey.puzzleStep < 2) message.text = "The pawprint stones need their moon-and-star order.";
+            else if (stage === 8 && !journey.plushie) message.text = "Your favourite plushie is still somewhere in the toy piles.";
+            else message.text = "There is still someone you need to find.";
+            messageTime = 3.6;
+            return;
+          }
+          completeDreamStage();
+        }
+      });
+    } else {
+      targets.push({
+        x: 1040,
+        label: "Wake up with your family",
+        ready: () => wakeReady,
+        act: () => completeDreamStage()
+      });
+    }
+    if (stage === 9) {
+      objective.text = "EVERYONE IS HERE. GIVE THEM A HUG!";
+      companions.text = "SANDESH  \xB7  SUSHIL  \xB7  DAD  \xB7  MOM  \xB7  RESHIKA  \xB7  SENNY  \xB7  PLUSHIE";
+    } else if (stage === 6) {
+      objective.text = "FIND MIKAN AND SORA. THEN FIND RESHIKA.";
+    } else if (stage === 7) {
+      objective.text = "PUZZLE: MOON FIRST, THEN STAR.";
+    } else if (stage === 8 && journey.plushie) {
+      objective.text = "YOUR PLUSHIE IS SAFE. FIND THE LIGHT AHEAD.";
+    }
+    function caught(reason = "THE SHADOW FOUND TOKYO") {
+      if (stopped) return;
+      stopped = true;
+      game.ui.panel({ anchor: "center", w: 608, h: 298, z: 30, safeArea: false, style: "dark" });
+      game.text(
+        reason,
+        SCREEN_W / 2,
+        237,
+        { z: 31, size: 32, font: "mono-bold", color: "#edbdd6" }
+      );
+      game.text(
+        "The warm light will protect her next time.",
+        SCREEN_W / 2,
+        294,
+        { z: 31, size: 18, font: "mono", color: "#f4e8d0" }
+      );
+      game.ui.button({
+        id: "shadow-retry",
+        anchor: "center",
+        y: 170,
+        z: 31,
+        h: 58,
+        text: "Try this level again",
+        icon: "restart",
+        style: "good",
+        onClick: () => game.scenes.go("journey")
+      });
+      game.ui.button({
+        id: "shadow-home",
+        anchor: "center",
+        y: 239,
+        z: 31,
+        h: 50,
+        text: "Wake up at home",
+        icon: "home",
+        style: "flat",
+        onClick: () => game.scenes.go("home")
+      });
+      message.text = "";
+      prompt.text = "";
+    }
+    game.step("journey-world", (dt) => {
+      if (stopped) return;
+      elapsed += dt;
+      if (messageTime > 0) messageTime = deterministicMath.max(0, messageTime - dt);
+      if (stumbleTime > 0) stumbleTime = deterministicMath.max(0, stumbleTime - dt);
+      if (hazardCooldown > 0) hazardCooldown = deterministicMath.max(0, hazardCooldown - dt);
+      const playerX = tokyo.data.x;
+      const lightDistance = glowSprites.reduce((best, light) => deterministicMath.min(best, deterministicMath.abs(playerX - light.x)), Infinity);
+      const protectedNow = stage < 9 && lightDistance <= LIGHT_SAFE_RADIUS;
+      aura.visible = protectedNow;
+      aura.x = playerX;
+      aura.y = tokyo.data.feet - 34;
+      aura.alpha = 0.62 + deterministicMath.sin(elapsed * 3) * 0.12;
+      if (entity && stage < 9) {
+        const gap = deterministicMath.abs(entity.x - playerX);
+        const bufferNearby = lightDistance <= LIGHT_BUFFER_RADIUS;
+        if (bufferNearby && gap < LIGHT_BUFFER_RADIUS + 10) {
+          if (playerX < entity.x) entity.x = playerX + LIGHT_BUFFER_RADIUS + 10;
+          else entity.x = playerX - LIGHT_BUFFER_RADIUS - 10;
+        } else {
+          const direction2 = playerX < entity.x ? -1 : 1;
+          entity.x += direction2 * SHADOW_SPEED * dt;
+        }
+        entity.x = deterministicMath.max(40, deterministicMath.min(SCREEN_W - 40, entity.x));
+        entity.y = floor3 - DREAM_SHADOW_FOOT_OFFSET + deterministicMath.sin(elapsed * 4) * 5;
+        entity.sx = playerX < entity.x ? -1 : 1;
+        entity.setFrame(deterministicMath.floor(elapsed * 3) % 2);
+        const distanceAfterMove = deterministicMath.abs(entity.x - playerX);
+        if (distanceAfterMove < SHADOW_TOUCH_DISTANCE && !protectedNow) caught();
+      }
+      for (const hazard of hazards) {
+        hazard.sprite.x += hazard.direction * hazard.speed * dt;
+        if (hazard.sprite.x <= hazard.low || hazard.sprite.x >= hazard.high) {
+          hazard.direction *= -1;
+          hazard.sprite.x = deterministicMath.max(hazard.low, deterministicMath.min(hazard.high, hazard.sprite.x));
+        }
+        hazard.sprite.sx = hazard.direction;
+        hazard.sprite.setFrame(hazard.frames[deterministicMath.floor(elapsed * 2.8) % 2]);
+        const dogHeight = tokyo.data.feet - floor3;
+        if (deterministicMath.abs(tokyo.data.x - hazard.sprite.x) < HAZARD_TOUCH_X && deterministicMath.abs(dogHeight) < HAZARD_TOUCH_Y && hazardCooldown <= 0) {
+          stumbleTime = 0.38;
+          hazardCooldown = 1;
+          message.text = stage === 4 ? "The owl flutters past. Follow the fireflies." : "The stray dog rushes past. Wait for a clear path.";
+          messageTime = 2.4;
+        }
+      }
+      if (stage === 9 && reunionActive) {
+        reunionTimer += dt;
+        if (reunionTimer > 2.8 && !wakeReady) {
+          wakeReady = true;
+          message.text = "Everyone is safe. Follow the morning light home.";
+          objective.text = "PRESS F TO WAKE UP";
+        }
+      }
+      const near = targets.filter((target) => !target.ready || target.ready()).map((target) => ({ target, distance: deterministicMath.abs(playerX - target.x) })).filter((entry) => entry.distance <= (entry.target.x === EXIT_X ? EXIT_RANGE : CHAT_RANGE)).sort((a, b) => a.distance - b.distance)[0]?.target;
+      prompt.text = near ? game.touch.visible ? near.label : "F  " + near.label : game.touch.visible ? "Move with the stick \xB7 Jump to dodge \xB7 Find the warm lights" : "\u2190 \u2192 MOVE   \xB7   SPACE JUMP   \xB7   SHIFT RUN   \xB7   F INTERACT";
+      if (messageTime <= 0) {
+        message.text = protectedNow ? "The patch of light protects Tokyo." : stage === 6 ? "The cats are friendly. Watch the dog\u2019s path." : stage === 7 ? "Press the moon stone, then the star stone." : stage === 8 && journey.plushie ? "Her favourite friend is beside her again." : "Keep exploring. Stay close to the warm lights.";
+      }
+      if (near && game.controls.justPressed("interact")) near.act();
+      if (game.controls.justPressed("pause")) game.scenes.push("pause");
+      void headline;
+    }, { after: "tokyo-visual" });
+  },
+  exit() {
+    game.touch.visible = false;
+  }
+};
+
+// game/scenes/Ending.ts
+var ROOM_WIDTH = 1280;
+var ROOM_HEIGHT = 720;
+var FAMILY_SCALE2 = 1.48;
+var GREETING_RANGE = 64;
+var ACTION_FRAME_TIME = 0.2;
+var TOY_REACH = 38;
+var Ending = {
+  name: "ending",
+  enter() {
+    let elapsed = 0;
+    let messageTime = 4.8;
+    const family = [];
+    const lines = {
+      sandesh: "Sandesh laughs as Tokyo rushes over.",
+      sushil: "Sushil gives Tokyo a gentle scratch.",
+      dad: "Dad scoops Tokyo into a happy hug.",
+      mom: "Mom gives Tokyo the warmest welcome.",
+      reshika: "Reshika smiles: \u201COur little dream explorer!\u201D",
+      senny: "Senny calls, \u201CTokyo! Let\u2019s play!\u201D"
+    };
+    run.scene = "journey";
+    game.camera.snap(ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 1);
+    game.physics.gravity(0, 1500);
+    game.touch.visible = getTouchOverride() ?? isMobileView();
+    game.touch.button({
+      code: "Touch:interact",
+      label: "PLAY",
+      anchor: "bottom-right",
+      x: 320,
+      y: 152,
+      r: 40,
+      tint: "#f5df9a"
+    });
+    const room = spawnHomeRoom();
+    room.shade.alpha = 0;
+    for (const [id2, x, y, w, h] of [
+      ["morning-floor", ROOM_WIDTH / 2, HOME_FLOOR + 24, ROOM_WIDTH, 48],
+      ["morning-left-wall", 0, ROOM_HEIGHT / 2, 28, ROOM_HEIGHT],
+      ["morning-right-wall", ROOM_WIDTH, ROOM_HEIGHT / 2, 28, ROOM_HEIGHT]
+    ]) {
+      game.spawn({
+        id: id2,
+        x,
+        y,
+        width: w,
+        height: h,
+        visible: false,
+        layer: "world",
+        body: { type: "static", friction: 0 }
+      });
+    }
+    const tokyo = spawnTokyo(HOME_START + 30, HOME_FLOOR, () => true);
+    const plushie = game.spawn({
+      id: "reunited-favourite-plushie",
+      texture: "home-plushie",
+      x: tokyo.x,
+      y: HOME_FLOOR,
+      width: 39,
+      layer: "world",
+      z: 11,
+      visible: false
+    });
+    const ball = game.spawn({
+      id: "morning-play-ball",
+      texture: "home-ball",
+      x: 498,
+      y: HOME_FLOOR - 19,
+      width: 30,
+      layer: "world",
+      z: 11
+    });
+    if (journey.plushie) tokyo.carry("plushie");
+    let flight = null;
+    for (const member of HOME_FAMILY) {
+      const sprite = game.spawn({
+        id: "morning-" + member.id,
+        texture: "family-" + member.id,
+        x: member.x,
+        y: HOME_FLOOR - FAMILY_GROUND_OFFSET * FAMILY_SCALE2,
+        scale: FAMILY_SCALE2,
+        layer: "world",
+        z: 7
+      });
+      family.push({ ...member, sprite, actionTime: 0 });
+    }
+    game.text(
+      "GOOD MORNING, TOKYO!",
+      ROOM_WIDTH / 2,
+      60,
+      { size: 28, font: "mono-bold", color: "#fff0c9", shadow: { color: "#283828", x: 2, y: 3 } }
+    );
+    game.text(
+      "Everyone\u2014and your favourite plushie\u2014are together again.",
+      ROOM_WIDTH / 2,
+      96,
+      { size: 15, font: "mono-bold", color: "#fff1d6", shadow: { color: "#283828", x: 1, y: 2 } }
+    );
+    game.ui.button({
+      id: "replay-dream",
+      anchor: "top-left",
+      x: 14,
+      y: 15,
+      h: 48,
+      text: "Dream again",
+      icon: "restart",
+      style: "flat",
+      onClick: beginDream
+    });
+    game.ui.pauseButton();
+    game.ui.muteButton();
+    const message = game.text(
+      "That was a big adventure. Go play with everyone!",
+      ROOM_WIDTH / 2,
+      630,
+      { size: 17, font: "mono-bold", color: "#fff3d8", shadow: { color: "#283828", x: 2, y: 2 } }
+    );
+    const prompt = game.text(
+      "\u2190 \u2192 MOVE   \xB7   F GREET OR PLAY   \xB7   SHIFT RUN",
+      ROOM_WIDTH / 2,
+      679,
+      {
+        size: 13,
+        font: "mono-bold",
+        color: "#fff1d0",
+        shadow: { color: "#283828", x: 1, y: 2 }
+      }
+    );
+    game.step("morning-reunion", (dt) => {
+      elapsed += dt;
+      if (messageTime > 0) messageTime = deterministicMath.max(0, messageTime - dt);
+      for (const member of family) {
+        if (member.actionTime > 0) {
+          member.actionTime = deterministicMath.max(0, member.actionTime - dt);
+          const phase = deterministicMath.floor((ACTION_FRAME_TIME * 5 - member.actionTime) / ACTION_FRAME_TIME);
+          member.sprite.setFrame(phase < 2 ? 4 + phase : deterministicMath.floor(elapsed * 2) % 2);
+        } else {
+          member.sprite.setFrame(deterministicMath.floor(elapsed * 2 + member.x / 110) % 2);
+        }
+      }
+      if (flight) {
+        flight.time += dt;
+        const t = deterministicMath.min(1, flight.time / 0.72);
+        ball.x = flight.from + (flight.to - flight.from) * t;
+        ball.y = HOME_FLOOR - 15 - deterministicMath.sin(deterministicMath.PI * t) * 88;
+        if (t >= 1) flight = null;
+      }
+      const playerX = tokyo.data.x;
+      let closest = null;
+      for (const member of family) {
+        const distance = deterministicMath.abs(playerX - member.x);
+        if (distance <= GREETING_RANGE && (!closest || distance < closest.distance)) {
+          closest = { label: "Greet " + member.name, distance, action: () => {
+            member.actionTime = ACTION_FRAME_TIME * 5;
+            message.text = lines[member.id];
+            messageTime = 3.6;
+          } };
+        }
+      }
+      const ballDistance = deterministicMath.abs(playerX - ball.x);
+      if (ball.visible && !flight && ballDistance <= GREETING_RANGE && (!closest || ballDistance < closest.distance)) {
+        closest = { label: "Pick up the ball", distance: ballDistance, action: () => {
+          if (tokyo.data.carrying === "plushie") {
+            plushie.x = playerX - tokyo.data.facing * TOY_REACH;
+            plushie.y = HOME_FLOOR - plushie.height / 2 + 2;
+            plushie.visible = true;
+          }
+          tokyo.carry("ball");
+          ball.visible = false;
+        } };
+      } else if (tokyo.data.carrying === "ball" && !flight) {
+        const receiver = family.find((member) => member.id === "senny");
+        const distance = deterministicMath.abs(playerX - receiver.x);
+        if (distance <= GREETING_RANGE && (!closest || distance < closest.distance)) {
+          closest = { label: "Play fetch with Senny", distance, action: () => {
+            tokyo.carry(null);
+            ball.x = playerX + tokyo.data.facing * TOY_REACH;
+            ball.y = HOME_FLOOR - 15;
+            ball.visible = true;
+            flight = { from: ball.x, to: receiver.x, time: 0 };
+            message.text = "Senny tosses the ball. Tokyo races to fetch it!";
+            messageTime = 3.6;
+          } };
+        }
+      }
+      const plushieDistance = deterministicMath.abs(playerX - plushie.x);
+      if (plushie.visible && tokyo.data.carrying === null && plushieDistance <= GREETING_RANGE && (!closest || plushieDistance < closest.distance)) {
+        closest = { label: "Pick up your plushie", distance: plushieDistance, action: () => {
+          plushie.visible = false;
+          tokyo.carry("plushie");
+        } };
+      }
+      if (closest) prompt.text = game.touch.visible ? closest.label : "F  " + closest.label;
+      else if (messageTime <= 0) {
+        message.text = "That was a big adventure. Go play with everyone!";
+        prompt.text = "\u2190 \u2192 MOVE   \xB7   F GREET OR PLAY   \xB7   SHIFT RUN";
+      }
+      if (closest && game.controls.justPressed("interact")) closest.action();
+      if (game.controls.justPressed("pause")) game.scenes.push("pause");
+    }, { after: "tokyo-visual" });
+  },
+  exit() {
+    game.touch.visible = false;
+  }
+};
+
 // game/main.ts
+var PIXEL_PARK_STRIPS = /* @__PURE__ */ new Set(["beds", "boxes", "food", "houses", "people", "portal", "rocks", "villain-dogs"]);
 paintArt();
 game.ui.theme = "block";
 game.controls.bind("jump", { keys: ["Space", "ArrowUp", "KeyW", "Touch:jump"], pad: ["a"] });
 game.controls.bind("run", { keys: ["ShiftLeft", "ShiftRight", "Touch:run"], pad: ["x"] });
 game.controls.bind("crouch", { keys: ["ArrowDown", "KeyS", "KeyC", "Touch:crouch", "Touch:down"], pad: ["lb"] });
 game.controls.bind("sit", { keys: ["KeyE", "Touch:sit"], pad: ["b"] });
-game.controls.bind("interact", { keys: ["KeyF"], pad: ["y"] });
+game.controls.bind("poop", { keys: ["KeyG", "Touch:poop"], pad: ["rb"] });
+game.controls.bind("interact", { keys: ["KeyF", "Touch:interact"], pad: ["y"] });
 game.controls.bind("pause", { keys: ["Escape", "KeyP", "Touch:pause"], pad: ["start"] });
 game.controls.bindMove({ left: ["ArrowLeft", "KeyA", "Touch:left"], right: ["ArrowRight", "KeyD", "Touch:right"], up: [], down: [] });
-await game.typography.prepare(["mono", "mono-bold"]);
-await game.assets.load([{ kind: "image", key: "tokyo", url: "assets/tokyo.png", w: 64, h: 64, cols: 8, rows: 6 }]);
-await game.assets.load([{ kind: "image", key: "tokyo-crouch", url: "assets/tokyo-crouch.png", w: 64, h: 64, cols: 8, rows: 2 }]);
+await game.typography.prepare(["mono", "mono-bold", "sans", "sans-bold", "serif-bold"]);
+await loadTokyoArt();
 await game.assets.load([
+  { kind: "image", key: "title-home-dusk", url: "assets/title-home-dusk.png" },
+  { kind: "image", key: "story-living-room", url: "assets/story-living-room.png" },
+  { kind: "image", key: "tokyo-poop", url: "assets/tokyo-poop.png" },
   { kind: "image", key: "grassland", url: "assets/grassland.png" },
   { kind: "image", key: "grass-ledge", url: "assets/grassland.png", w: 128, h: 24, cols: 1, rows: 1 },
   { kind: "image", key: "trees", url: "assets/trees.png", w: 128, h: 128, cols: 2, rows: 2 },
@@ -43723,7 +48212,8 @@ for (const [key, w, h, cols] of [
   ["treats", 48, 48, 4],
   ["clouds", 192, 128, 6]
 ]) {
-  await game.assets.load([{ kind: "image", key: `park-${key}`, url: `assets/park-${key}.png`, w, h, cols, rows: 1 }]);
+  const suffix = PIXEL_PARK_STRIPS.has(key) ? "-pixel" : "";
+  await game.assets.load([{ kind: "image", key: `park-${key}`, url: `assets/park-${key}${suffix}.png`, w, h, cols, rows: 1 }]);
 }
 await game.assets.load([
   { kind: "image", key: "sky-sun", url: "assets/sky-sun.png" },
@@ -43731,6 +48221,9 @@ await game.assets.load([
   { kind: "image", key: "sky-cloud", url: "assets/sky-cloud.png" },
   { kind: "image", key: "sky-star", url: "assets/sky-star.png" }
 ]);
+await loadHomeArt();
+paintHomeInterior();
+await loadJourneyArt();
 game.scenes.register(Title);
 game.scenes.register(Play);
 game.scenes.register(Pause);
@@ -43738,6 +48231,10 @@ game.scenes.register(Settings);
 game.scenes.register(Playground);
 game.scenes.register(ParkMap);
 game.scenes.register(Story);
+game.scenes.register(Home);
+game.scenes.register(DreamStart);
+game.scenes.register(Journey);
+game.scenes.register(Ending);
 game.scenes.register(Celebration);
 addDebugControls();
 await game.start();
@@ -43757,6 +48254,60 @@ game.assets.load(assets_default, { pack: "game" });
  * is preserved.
  */
 /*! Bundled license information:
+
+@phaser-ae/kernel/src/wrap.ts:
+@phaser-ae/kernel/src/maths3d.ts:
+@phaser-ae/kernel/src/curves.ts:
+@phaser-ae/kernel/src/controls3d.ts:
+@phaser-ae/kernel/src/roster.ts:
+@phaser-ae/kernel/src/clock.impl.ts:
+@phaser-ae/kernel/src/order.ts:
+@phaser-ae/kernel/src/hooks.impl.ts:
+@phaser-ae/kernel/src/color.ts:
+@phaser-ae/kernel/src/roster.impl.ts:
+@phaser-ae/kernel/src/signals.impl.ts:
+@phaser-ae/kernel/src/scheduler.impl.ts:
+@phaser-ae/kernel/src/rng.impl.ts:
+@phaser-ae/kernel/src/input.impl.ts:
+@phaser-ae/kernel/src/commands.impl.ts:
+@phaser-ae/kernel/src/registry.impl.ts:
+@phaser-ae/kernel/src/cheats.impl.ts:
+@phaser-ae/kernel/src/scene.impl.ts:
+@phaser-ae/kernel/src/camera.impl.ts:
+@phaser-ae/kernel/src/assets.impl.ts:
+@phaser-ae/kernel/src/workers.impl.ts:
+@phaser-ae/kernel/src/safe-area.impl.ts:
+@phaser-ae/kernel/src/verbs.impl.ts:
+@phaser-ae/kernel/src/inspect.impl.ts:
+@phaser-ae/kernel/src/game.impl.ts:
+@phaser-ae/kernel/src/history.impl.ts:
+@phaser-ae/kernel/src/webgl.ts:
+@phaser-ae/kernel/src/index.ts:
+@phaser-ae/kernel/src/world2d.ts:
+@phaser-ae/kernel/src/world3d.ts:
+@phaser-ae/kernel/src/internal.ts:
+@phaser-ae/kernel/src/verbs.ts:
+  (*!
+   * Phaser AE kernel (https://phaser.io)
+   * Required Notice: Copyright (c) 2026 Phaser Studio Inc. (https://phaser.io)
+   * Licensed under the PolyForm Shield License 1.0.0 (https://polyformproject.org/licenses/shield/1.0.0),
+   * with an additional permission to make and sell games: see LICENSE.md in the kernel's folder.
+   *)
+
+@phaser-ae/kernel/src/math.ts:
+  (*!
+   * Phaser AE kernel (https://phaser.io)
+   * Required Notice: Copyright (c) 2026 Phaser Studio Inc. (https://phaser.io)
+   * Licensed under the PolyForm Shield License 1.0.0 (https://polyformproject.org/licenses/shield/1.0.0),
+   * with an additional permission to make and sell games: see LICENSE.md in the kernel's folder.
+   *)
+  (*!
+   * The functions below are ported from fdlibm 5.3 (http://www.netlib.org/fdlibm):
+   * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+   * Developed at SunSoft, a Sun Microsystems, Inc. business.
+   * Permission to use, copy, modify, and distribute this software is freely granted, provided that this notice
+   * is preserved.
+   *)
 
 @phaser-ae/ui/dist/index.js:
   (*! The ui pack's icons are Phosphor Icons (https://phosphoricons.com), by Helena Zhang and Tobias Fried.

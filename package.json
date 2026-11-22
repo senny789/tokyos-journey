@@ -24,6 +24,8 @@
     "tools": "node phaser/cli/bin/phaser-ae.mjs tools",
     "credits": "node phaser/cli/bin/phaser-ae.mjs credits",
     "gdd": "node phaser/cli/bin/phaser-ae.mjs gdd",
-    "idea": "node phaser/cli/bin/phaser-ae.mjs idea"
+    "idea": "node phaser/cli/bin/phaser-ae.mjs idea",
+    "setup:phaser": "node scripts/setup-phaser.mjs",
+    "preview:local": "node scripts/preview-local.mjs"
   }
 }

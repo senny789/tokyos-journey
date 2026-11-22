@@ -41,7 +41,7 @@ export const Playground = {
         let interactRequested = false;
         const prompt = game.text('', 560, 645, { size: 18, font: 'mono-bold', color: '#f5e2a8' });
         const message = game.text('', 560, 678, { size: 15, font: 'mono', color: '#c6d6b6' });
-        const controls = game.text('A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   F interact   M map', 640, 112,
+        const controls = game.text('', 640, 112,
             { size: 15, font: 'mono-bold', color: '#354c42', shadow: { color: '#eff0cb', x: 1, y: 1 } });
         game.step('playground-hud', () => {
             if (game.controls.justPressed('pause')) { game.scenes.push('pause'); return; }
@@ -51,8 +51,8 @@ export const Playground = {
             if (getTouchOverride() === null) game.touch.visible = isMobileView();
             area.text = currentArea(tokyo.x);
             tally.text = `TREATS ${park.treats.length}/12  |  BADGES ${badges().filter(Boolean).length}/8`;
-            controls.text = game.touch.visible ? 'STICK move / down to crawl    JUMP / RUN / SIT    INTERACT to play    MAP for activities'
-                : 'A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   F interact   M map';
+            controls.text = game.touch.visible ? 'STICK move / down to crawl    JUMP / RUN / SIT / POOP    INTERACT to play    MAP for activities'
+                : 'A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   G poop   F interact   M map';
             prompt.text = game.touch.visible ? activities.prompt().replaceAll('F:', 'Interact:').replaceAll('E:', 'Sit:').replaceAll('DOWN +', 'Crouch +') : activities.prompt();
             message.text = park.messageTime > 0 ? park.message : 'No timer. No damage. Just a very good day for a dog.';
             shadow.x = tokyo.x;

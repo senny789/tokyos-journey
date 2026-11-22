@@ -1,70 +1,59 @@
-# Tokyo's Journey — Playground & Story Mode
+# Tokyo's Journey — Play & source guide
 
 ## How to test it
-- `npm run -s build`; `npm run -s smoke -- --seconds 30`; `npm run -s play -- "shot"`.
-- Scenes: `title`, `story`, `meadow` (chapter 1), `play` (playground), `parkmap`, `pause`, `settings`, `celebration`.
-- Title: Playground button (380,455), Story Mode (900,455); Enter/Space opens Playground, 2 opens Story.
-- Story: Begin chapter 1 (640,450) opens the existing ten-treat meadow; Choose a mode (640,540) returns.
-- Move: A/D or arrows; Shift runs; Space/W/Up jumps; Down/C/S crouches; E sits; F interacts.
-- Gamepad: left stick moves, A jumps, X runs, LB crouches, B sits, Y interacts, Start pauses.
-- Touch: stick bottom-left; Jump, Run, Crouch, Sit bottom-right; Interact button (1178,665).
-- M opens/closes the Park map; Esc/P pauses; R starts a fresh park day; N toggles day/night.
-- HUD: day/night (976,44), map (1042,44), fullscreen (1108,44), sound (1168,44), pause (1236,44).
-- Map destinations: x250/640/1030 at y185 and y310; Back to Tokyo at (640,667).
-- Map travel preserves discoveries and carried stick. Restart/new day resets playground progress.
-- Home x240..850: `home-cottage`, `tokyo-doghouse`, `park-bed-1/2`, `park-person-1`.
-- F at a bed/doghouse sits Tokyo; remain seated for 2 seconds for Cozy paws. E or movement gets up.
-- Fetch x1050..1700: `park-person-2`, `fetch-stick-1..6`, `neighborhood-house`.
-- F picks up/swaps sticks. Return to the carrier at x1050 and F for Fetch star. F in open space tosses.
-- Yard x1790..3000: `box-1..6`, `rock-1..3/5`, `park-low-tunnel`.
-- Box 2 x1930: crouch + F earns Hide & seek; box 6 x2980: F opens the mystery reward.
-- Jump onto the rock at x2290, then jump right onto the slate at x2420 for the highest treat.
-- Crawl right from x2740 through the tunnel; two treats sit at y535 beneath its y516 ceiling.
-- Garden x3250..3880: `sniff-bush-1..6`, `garden-insect-1..6`, remaining rock variants.
-- F at all six bushes earns Super sniffer. Butterflies/bee/dragonfly fly; beetles crawl; grasshopper hops.
-- Picnic x4060..4515: `picnic-food-1..6`; F samples all six for Picnic pal.
-- People x470/1050/4340/4870: F greets each for Hello, neighbor; `park-person-1..4`.
-- Cabin x4660: `park-cabin`; F switches day/night. All four house and bed variants appear.
-- Dog club x5100/5350/5600/5850: `park-dog-1..4` (Dash, Dumpling, Patch, Bruno).
-- Running close makes shy dogs back away. E to sit, then F to befriend; friends follow locally/play-bow.
-- F at each dog earns Dog whisperer. Both pose rows of all four dogs animate.
-- `park-treat-1..12`: collect by touching. Twelve treats earn Treat explorer.
-- `park-portal` x6210: F explains requirements; all eight badges awaken its four-state art and celebration.
-- Celebration: Keep playing (640,470); A new park day (640,555).
-- Pause: Resume, Settings, Fullscreen, Restart, Title. Settings: run/crouch hold/toggle, rotation, fullscreen, Back.
-- Inspect prefixes above identify objects; engine adds unique numeric suffixes. `inspect tokyo` shows motion.
-- Debug: `cheat park new|home|fetch|yard|garden|picnic|dogs|portal|<x>` visits any area.
-- Debug: `cheat park status` returns all activity/player state; `cheat park night` toggles sky.
-- Debug: `cheat park complete` grants badges and visits the portal; F uses its normal outcome path.
-- Debug: `cheat screen <scene>`, `cheat place start|jumps|tunnel|rest|flag` (story meadow).
-- Debug: `cheat treats all|status` (story), `cheat controls run|crouch hold|toggle`.
-- Debug: `cheat touch on|off|auto`, `cheat fullscreen on|off`, `cheat rotate on|off|toggle`.
-- Sky: `park-sun` / `park-moon` at screen (1060,174); `park-cloud-0..5` drift at y181..266.
-- `sky-star-0..14` twinkle at night, y139..329. N, HUD (976,44), or `cheat park night` toggles.
-- Check title → Enter → N; click the sky toggle; `cheat park garden` checks sky after camera travel.
+
+- Start the built preview with `npm run -s serve` and open `http://localhost:4173`. The source preview is also available with `npm run -s preview:local` at `http://127.0.0.1:4181` (Node.js 22.13+). Reload after edits. For PNG-only edits, stop and reopen the Phaser play session so it rebuilds the assets.
+- After cloning, run `npm run setup:phaser` to restore the CLI and engine for build, smoke, and play.
+- Scenes: `title`, `story`, `home`, `dream-start`, `journey`, `ending`, `play` (Movement Meadow), `meadow` (treat meadow), `playground`, `parkmap`, `pause`, `settings`, `celebration`.
+- On the title screen, Story Mode is at (201,378) and Playground is at (200,498). Tab focuses the choices and Enter or Space activates the focused button. With nothing focused, Enter or Space opens Playground. Press 2 for Story Mode.
+- Title settings and fullscreen are at (1172,44) and (1236,44). Escape closes Settings.
+- On the Story Mode screen, Start at Home is at (214,384), Movement Meadow is at (252,499), and Back to Menu is at (177,67). Tab focuses a choice and Enter or Space activates it. With nothing focused, Enter starts at home. Escape returns to the title.
+- Home: start in the living room. Approach each door and use F, gamepad Y, or tap **Open door**. Walk into the open doorway to enter the next room. Use the other room’s matching door to come back. The camera frames one room at a time.
+- Home controls: arrows/A-D to move, Shift to run, Space to jump, E to sit, C to crouch and crawl, and G to poop. Use F, gamepad Y, or tap a nearby action prompt. Greet someone or pick up the plushie to unlock treats. Eat from the bowl, then use the bed to enter the dream.
+- Approach a family member or toy to see `home-interact-biscuit`. The prompt shows an F keycap, a Y keycap for gamepad, or a paw when touch controls are active. Walk away or start an interaction to see it disappear.
+- Jump onto the four bedroom mattresses or Tokyo’s cushion with Space. Walk off the edge to come down. Inspect `home-bed-top-sandesh`, `home-bed-top-sushil`, `home-bed-top-parents`, `home-bed-top-senny-reshu`, and `home-bed-top-tokyo` for the landing surfaces.
+- Check Tokyo standing, lowering into the taller bent-leg crawl, and rising again with C. Try the 44-unit clearance under `park-low-tunnel` and `low-tunnel`. At the treat bowl, inspect `home-resting-tokyo` to see frames 48–55 as Tokyo lowers her head, eats, and lifts it again.
+- Home inspect: `tokyo` for the player and `home.room` in run state for the active room. The floor and door sills share y624. Living room has `home-light-switch` at x62 and `home-plushie` at x432. Inspect door faces as `home-door-<room>-to-<destination>`. Forward doors sit at x1320, x2728, x4136, and x5544.
+- Family inspect: `home-sandesh` x1924, `home-sushil` x3371, `home-mom` x4555, `home-dad` x5265, `home-reshika` x5862 and `home-senny` x6199. After greeting, check `state` and `away`. A character stays engaged while Tokyo is within 104 screen units and starts resuming after two seconds outside that range.
+- Inspect `home-pc-desk` in Senny and Reshu’s room to see the side-view workstation. Inspect `home-vanity` to see the mirror facing Reshu and the makeup within reach.
+- In Sushil’s room, inspect `home-music-keyboard` beside the guitar amp and `home-sushil-pc-desk` between his stool and bed.
+- Fetch: use Senny’s action, pick up `home-ball` and take it back to him. His PC activity resumes when Tokyo leaves even while the ball is on the floor. The shared bedroom has `home-bowl` x6752 and `home-bed` x6880.
+- Carrying toys: pick up the plushie or ball, then walk, turn, crouch, or sit to see the mouth grip follow each pose. Inspect `tokyo` for the carry texture and `carrying` state. F puts down the toy in Level 0. The favorite plushie in the dream and the toys in the morning reunion also use these poses.
+- Home debug: `cheat home-room living|sandesh|sushil|parents|senny-reshu [treats|bedtime]` starts in a room and optionally skips ahead to that phase. `cheat home-sofa <name>` previews that character seated on the living-room sofa.
+- Dream: ←/→ move, Shift run, Space jump, F interact. Stage 1 portal is at far right. Stages 2–9 use `journey-exit-portal` near x1172. The shadow can end a run; wildlife briefly slows Tokyo.
+- Stage goals: 2 open kennel latch x424 and find Sandesh; 3 find Sushil; 4 jump over the owl and find Dad; 5 jump past stray dogs and find Mom; 6 greet Mikan and Sora, then Reshika; 7 press moon then star, then find Senny; 8 pick up the plushie; 9 hug the family, wait for the morning cue, and wake near x1040.
+- Dream lights protect Tokyo from the roaming shadow. Interact at each family member, cat, puzzle stone, toy or portal when its prompt appears. A caught Tokyo can retry the current level or wake at home.
+- Dream inspect ids: `tokyo`, `roaming-dream-shadow` (stage 2–9), `dream-roaming-shadow` (stage 1), `safe-light-*`, `dream-family-*`, `kennel-front-gate`, `city-cat-*`, `puzzle-moon-pad`, `puzzle-star-pad`, `favorite-plushie-on-floor`, `spring-reunion-*`, `journey-exit-portal`.
+- Ending: greet the family, play fetch with Senny, or choose Dream Again.
+- Gamepad: left stick moves, A jumps, X runs, LB crouches, B sits, RB poops, Y interacts, Start pauses. Touch uses the stick and labeled action buttons.
+- Playground: M opens the map; Esc/P pauses; R starts a new day; N toggles day/night. Map destinations are x250/640/1030 at y185 and y310; Back to Tokyo is (640,667).
+- Playground interactions: F at beds for Cozy paws; pick up sticks, greet the carrier for Fetch star, crouch at box 2 to hide, jump rocks for treats, crawl the tunnel, F at six bushes and six picnic foods, greet four people, befriend four shy dogs by sitting first, collect 12 treats, then use the portal at x6210 after all eight badges.
+- Sky: `park-sun`/`park-moon` at (1060,174); clouds drift at y181–266; stars twinkle at night. HUD day/night (976,44), map (1042,44), fullscreen (1108,44), sound (1168,44), pause (1236,44).
+- Debug cheats: `screen <scene>`; `dream 1-9`; `dream-win`; `park new|home|fetch|yard|garden|picnic|dogs|portal|<x>|status|night|complete`; `place start|jumps|tunnel|rest|flag`; `treats all|status`; `controls run|crouch hold|toggle`; `touch on|off|auto`; `fullscreen on|off`; `rotate on|off|toggle`.
 
 ## Map
-- `main.ts`: loads original/trimmed atlases; binds inputs; registers all scenes.
-- `playground.ts`: visit state, areas, eight badges, messages and fresh-day reset.
-- `parkMap.ts`: 6400px map, buildings, real platform surfaces, tunnel and night landscape tint.
-- `sky.ts`: shared camera-pinned sun/moon, cloud drift and staggered star twinkles behind scenery.
-- `entities/ParkActivities.ts`: contextual interactions, fetch, beds, bushes, food, treats and portal.
-- `entities/ParkWildlife.ts`: dog patrol/trust/follow behaviors, six wildlife behaviors and sparkle effects.
-- `scenes/Playground.ts`, `ParkMap.ts`, `Story.ts`, `Celebration.ts`: new gameplay and mode screens.
-- `scenes/Title.ts`, `Pause.ts`, `Settings.ts`: navigation and ordered overlay menus.
-- `entities/Tokyo.ts`: existing physics/animation controller; `entities/Treats.ts`: story collectibles/flag.
-- `scenes/Play.ts`, `meadow.ts`: preserved Movement Meadow chapter.
-- `scenery.ts`, `art.ts`: shared landscape and existing painted props; `input.ts`: gesture helpers.
-- `settings.ts`, `mobile.ts`, `debug.ts`: saved control preferences, display/touch helpers, debug entry points.
-- `scripts/prepare-playground-assets.ps1`: Windows PowerShell atlas extraction; writes `park-art.json` bounds.
-- `assets/park-*.png`: existing sprite families trimmed into 13 runtime atlases.
-- `assets/sky-*.png`: four new transparent sprites; generated originals/prompts in `design/sky-sprites/`.
-- `scripts/prepare-sky-sprites.ps1`: trims/resizes generated art with nearest-neighbor sampling.
+
+- `dreamArt.ts`: pixel light effects, wildlife and shadow atlases, kennel gate, and puzzle tokens.
+- `main.ts`: engine setup, asset loading, input bindings, scene registration and boot.
+- `scenes/Title.ts`, `Story.ts`, `Home.ts`, `DreamStart.ts`, `Journey.ts`, `Ending.ts`: title, story mode, bedtime, dream stages and morning.
+- `menuStyles.ts` shares the main-menu and Story Mode button styles.
+- `journey.ts`: stage data, dream art loading, shared progress and stage transitions. `home.ts`: shared home art and state. `homeRooms.ts`: Level 0 room and station positions. `homeInterior.ts`: room backgrounds and furniture. `homeDoors.ts`: partitions, doors, and collisions.
+- `homePrompt.ts` draws and positions the biscuit-shaped interaction button.
+- `art.ts`, `scenery.ts`, `input.ts`: shared paint and gesture helpers; `entities/Tokyo.ts`, `entities/Treats.ts`, `entities/Droppings.ts`: player, treats and pile.
+- `playground.ts`, `parkMap.ts`, `sky.ts`, `entities/ParkActivities.ts`, `entities/ParkWildlife.ts`: playground world, sky and activities.
+- `scenes/Play.ts`, `meadow.ts`, `scenes/Playground.ts`, `ParkMap.ts`, `Celebration.ts`, `Pause.ts`, `Settings.ts`: legacy treat meadow, playground and menus.
+- `settings.ts`, `mobile.ts`, `debug.ts`: preferences, touch layout and debug controls.
+- `assets/dream/`: eight palette-reduced dream backgrounds; `assets/home/`, `assets/family/`: room and family art. `design/art/` catalogs the assets.
+- `tokyoArt.ts` loads the 52 × 52 Tokyo atlases. Regenerate the atlases from the art sources with `scripts/prepare-tokyo-style.py`.
+- `scripts/prepare-pixel-sprites.py`: packages the home props, selected park strips, and dream creatures.
+- `scripts/prepare-dream-art.py`, `scripts/prepare-sky-sprites.ps1`, `scripts/prepare-playground-assets.ps1`: art processing.
 
 ## Simplifications
-- Story Mode contains the existing first chapter; later chapters are not built yet.
-- Playground progress lasts for the current park day; only control preferences persist across reloads.
-- No damage, timer or forced ending. Throwing is playful animation; sticks reset to the fetch lawn.
-- Structures are scenery/context interactions; interiors are not separate levels. Dogs use two supplied poses.
-- Night changes sky, stars, moon and cloud tint; there is no dynamic lighting.
-- New sky art uses built-in image generation, without Phaser crew. Other art and sound are unchanged.
+
+- Level 0 family members stay in their rooms during regular play. The sofa cheat previews a seated visit.
+- Dream levels are single-screen side-view routes with keyboard/gamepad/touch movement and context interactions; no save/resume checkpoints between stages.
+- Stage 7 reuses the familiar living room; stage 8 uses one collectible plushie, and stage 9 has one reunion interaction before the morning ending.
+- The roaming shadow uses a simple follow-and-light-buffer behavior; the owl and stray dogs use horizontal patrols and briefly interrupt Tokyo on contact.
+- The morning ending is playable but short: family greetings, fetch, and Dream Again.
+- Playground discoveries last for one park day; control preferences persist. Buildings are scenery rather than interiors, sticks reset to the fetch lawn, and dogs use supplied poses.
+- Night changes the sky and tint, not dynamic lighting. Tokyo's sit frames are reused for pooping; droppings are decorative and clear on scene changes.

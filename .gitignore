@@ -2,4 +2,7 @@ node_modules/
 phaser/
 game/shots/
 game/play/
-.phaser/
+.phaser/*
+!.phaser/
+.phaser/*
+!.phaser/build.json

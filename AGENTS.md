@@ -3,8 +3,11 @@
 This folder holds one game and the engine it is built with. It was made by `phaser-ae` (the Phaser AE CLI), which
 is also how it publishes to phaser.io.
 
-**Watch it being built:** https://phaser.io/agent/watch/mpg8k2ki3tad is this game's build room on phaser.io. It plays your work in this folder live,
-as a pixel-art studio, and keeps working after each publish. **Give the person this link before you start building.**
+**Local testing is the default.** After changing the game, run `npm run -s build`, make the rebuilt game
+available in the local preview, and share its localhost URL. Publish to Phaser.io only when the person explicitly asks.
+
+- **Sprites:** Read the [sprite style guide](design/art/sprite-style.md) before creating, modifying, or adding a
+  character, prop, environment sprite, or animation frame. Use the guide's Sprite Cast workflow and verify the art in the local game.
 
 - **There is no design document.** Build what the person asks for. If they haven't said, ask them what game they want
   before you write code. When they've decided, put it on the game's design on phaser.io, where the crew reads it:
@@ -76,6 +79,7 @@ Run them from this folder.
 
 Give the game debug controls for every part that playing would take minutes to reach (jump to a level, give a power-up, infinite lives, win now)
 with `game.cheats.add`, in `game/debug.ts`, at boot, so they work from any screen.
+
 - Keep the run's state in one object a control can set, and register it for inspection: `game.inspect.state(() => run)`.
 - A jump starts the game as a player would find it there; an outcome goes through the game's own path.
 - Check each once with `cheat`, and list them in `game/NOTES.md`.
@@ -100,10 +104,10 @@ where things sit on screen and their `inspect` ids), a **Map** of each source fi
 
 ## Publishing
 
+When the person asks to publish, share the game's [Phaser build room](https://phaser.io/agent/watch/mpg8k2ki3tad).
 `npm run -s publish -- "<what changed, for the person>"` builds the game (nothing is published from a failing
 build), takes a title and a play shot, and puts it on phaser.io as the game's next version with its source. It prints
-the link to playtest it, then the link to play it. **Publish as soon as the game is done, without asking**: the first
-version too, since that is how the person plays it. Publish again after each round of changes.
+the link to playtest it, then the link to play it.
 
 **After each publish, ask the person: "Your game is ready! Do you want to playtest it?"** When they say yes:
 
@@ -111,33 +115,32 @@ version too, since that is how the person plays it. Publish again after each rou
    something should change, mark it up and send the changes.
 2. Then wait for those changes: run `npm run -s changes -- --wait` **in the background** (in Claude Code, as a
    background command), so you hear the moment they send them. It waits up to 30 minutes and ends by bringing them
-   down here (below). Then make them and publish, without being asked. If you can't run a command in the background,
-   tell the person to say "Bring down my Phaser changes and make them, then publish" once they've sent them; the Chief
-   gives them that line too.
+   down here (below). Make the changes and prepare the local build. If you can't run a command in the background,
+   ask the person to tell you when they've submitted their changes.
 
 After the first publish, also offer them the crew (below): "Would you like your crew on phaser.io to make a logo, a
-title theme, sound effects or sprites for it?"
+title theme, or sound effects for it?"
 
 ## Questions about the game on phaser.io
 
 When the person asks about their game on phaser.io, answer from these, never from memory. Each prints what it found
 with links to the site, the game already in them: give the person the links.
 
-| They ask | Run |
-|---|---|
-| What's my game like on phaser.io? Where is it? | `npm run -s status`: the game at a glance, with its links |
-| What tools are there? | `npm run -s tools`: every tool, each linked to this game (`-- <tool> --open` opens one in their browser) |
+| They ask                                                                                         | Run                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What's my game like on phaser.io? Where is it?                                                   | `npm run -s status`: the game at a glance, with its links                                                                                                                                                                                                                                                                           |
+| What tools are there?                                                                            | `npm run -s tools`: every tool, each linked to this game (`-- <tool> --open` opens one in their browser)                                                                                                                                                                                                                            |
 | Anything about one tool: "Show me the logo", "What sprites are there?", "Play me the jump sound" | `npm run -s tool -- <tool> "<their words>"` (`logo`, `sprites`, `music`, `sfx`, `images`, `title`…: `tools` lists them all): that tool's bot answers, as if they'd asked on the tool's own page, and what it shows lands in `design/shown/`. Look at the pictures before you describe them; `-- --open` opens them in their browser |
-| How many credits do I have? | `npm run -s credits` |
-| I want to buy credits | `npm run -s credits -- --buy`: opens the page to buy them |
-| Summarise the design | `npm run -s gdd`: writes `design/design.md`, the design document as it is on phaser.io now. Read it, then summarise |
-| Which bots are working on it? | `npm run -s crew` (no request): the crew, and what each is doing now |
+| How many credits do I have?                                                                      | `npm run -s credits`                                                                                                                                                                                                                                                                                                                |
+| I want to buy credits                                                                            | `npm run -s credits -- --buy`: opens the page to buy them                                                                                                                                                                                                                                                                           |
+| Summarise the design                                                                             | `npm run -s gdd`: writes `design/design.md`, the design document as it is on phaser.io now. Read it, then summarise                                                                                                                                                                                                                 |
+| Which bots are working on it?                                                                    | `npm run -s crew` (no request): the crew, and what each is doing now                                                                                                                                                                                                                                                                |
 
 ## Your crew on phaser.io
 
 This game has a crew on phaser.io: the Chief, and the bots who make a game's art and sound (a logo, music and a title
-theme, sound effects, sprites, pictures, an animated title screen). When the person asks for any of those, ask the
-crew rather than drawing or synthesizing it in code:
+theme, sound effects, pictures, an animated title screen). Use the sprite workflow above for sprite requests.
+For the other listed assets, use the crew:
 
 - `npm run -s crew -- "<the request, in the person's words>"` sends it to the Chief, then follows the crew: it prints
   what they do as they do it, and ends when they're done, when the Chief asks something, or after a minute and a half.
@@ -189,10 +192,42 @@ and sends the changes. `npm run -s changes` brings them down into `design/change
 change numbered, with the person's words, where in the game it was and the game's state, and each has two pictures
 (`<n>-marked.png` with the person's marks, `<n>-game.png` without). Read both pictures.
 
-Make each change, check it with `play` where it was seen, then publish with one line per change in the notes, so the
-review page shows which were made:
+Make each change, check it with `play` where it was seen, and build for local testing. When publishing by request,
+include one line per change in the notes so the review page shows which were made:
 
 ```
 npm run -s publish -- "Change 1: done — the jump is higher and lands sooner
 Change 2: not done — the level select needs a design for the locked levels"
 ```
+
+## Phaser game development rules
+
+You are developing a production-quality 2D Phaser game.
+
+### Asset creation
+
+- Follow `assets/style-guide.md` for art style, palette, dimensions, and perspective.
+- Use the available sprite generation skill or MCP rather than manually drawing complex characters with Phaser Graphics.
+- Keep every animation frame consistent in size, scale, proportions and pivot position.
+- Export transparent PNG spritesheets with animation metadata.
+- Generate a preview showing all animation frames before integrating assets.
+- Do not replace approved game assets without permission.
+
+### Gameplay implementation
+
+- Check the installed Phaser version before using APIs or examples.
+- Prefer existing Phaser examples and documented engine patterns.
+- Separate gameplay state from rendering and animation.
+- Implement explicit character states such as idle, walk, jump, attack, hurt and dead.
+- Include collision handling, animation transitions and cleanup.
+
+### Validation
+
+- Run TypeScript, lint and relevant tests.
+- Launch the game in a browser.
+- Use Playwright to simulate gameplay and capture screenshots.
+- Inspect screenshots for broken textures, incorrect scaling and visual artifacts.
+- Verify animation, input, physics and game-state behavior.
+- Fix discovered issues and rerun validation before considering a feature complete.
+
+Never mark a gameplay feature complete based solely on successful compilation.

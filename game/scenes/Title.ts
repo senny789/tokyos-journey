@@ -1,36 +1,76 @@
 import { game } from '../engine.js';
-import { spawnScenery } from '../scenery.js';
 import { startPlayground } from '../playground.js';
-import { addFullscreenButton } from '../mobile.js';
+import { MENU_BUTTON_HEIGHT, menuButtonStyles } from '../menuStyles.js';
+import { addFullscreenButton, isMobileView } from '../mobile.js';
+
+const MENU_LEFT = 88;
+const STORY_BUTTON_Y = 346;
+const PLAYGROUND_BUTTON_Y = 466;
+const TOKYO_X = 878;
+const TOKYO_FEET_Y = 581;
+const TOKYO_SCALE = 4;
+const SEATED_FOOT_OFFSET = 21 * TOKYO_SCALE;
+const SEATED_FIRST_FRAME = 42;
+const SEATED_FRAME_COUNT = 4;
+
+function openStory(): void {
+    game.scenes.go('story');
+}
 
 export const Title = {
     name: 'title',
     enter(): void {
-        game.touch.visible = false; spawnScenery(true);
-        addFullscreenButton({ anchor: 'top-right', x: -16, y: 16 });
+        game.touch.visible = false;
+        game.camera.snap(game.screen.width / 2, game.screen.height / 2, 1);
+        game.background.picture('title-home-dusk', 'stretch');
+
+        game.text('Tokyo’s', MENU_LEFT, 140, {
+            size: 102, font: 'serif-bold', color: '#fff4d9', align: 'left',
+            shadow: { color: '#131d1a', x: 3, y: 4 },
+        });
+        game.text('Journey', MENU_LEFT, 240, {
+            size: 112, font: 'serif-bold', color: '#f3c37e', align: 'left',
+            shadow: { color: '#131d1a', x: 3, y: 4 },
+        });
+
+        game.ui.button({
+            id: 'choose-story', anchor: 'top-left', x: MENU_LEFT, y: STORY_BUTTON_Y,
+            h: MENU_BUTTON_HEIGHT, text: 'Story Mode', icon: 'book', iconSize: 29, onClick: openStory,
+            style: menuButtonStyles.primary,
+        });
+        game.text('Start at home and follow Tokyo into her dream.', MENU_LEFT, 435,
+            { size: 19, font: 'sans', color: '#f2e5cd', align: 'left' });
+
+        game.ui.button({
+            id: 'choose-playground', anchor: 'top-left', x: MENU_LEFT, y: PLAYGROUND_BUTTON_Y,
+            h: MENU_BUTTON_HEIGHT, text: 'Playground', icon: 'paw', iconSize: 29, onClick: startPlayground,
+            style: menuButtonStyles.secondary,
+        });
+        game.text('Explore the park at your own pace.', MENU_LEFT, 555,
+            { size: 19, font: 'sans', color: '#f2e5cd', align: 'left' });
+        if (!isMobileView()) {
+            game.text('2  Story Mode     Enter  Playground', MENU_LEFT, 637,
+                { size: 16, font: 'mono', color: '#d8dac1', align: 'left' });
+        }
+
         game.ui.button({ id: 'settings-btn', anchor: 'top-right', x: -80, y: 16, h: 56,
             style: 'icon', icon: 'settings', accessibleLabel: 'Settings', onClick: () => game.scenes.push('settings') });
-        game.text('A LITTLE DOG. A WORLD OF POSSIBILITIES.', 640, 112, { size: 18, font: 'mono-bold', color: '#566952' });
-        game.text("TOKYO'S JOURNEY", 640, 173, { size: 62, font: 'mono-bold', color: '#33483d',
-            shadow: { color: '#eff0cb', x: 4, y: 4 } });
-        game.text('What kind of day shall we have?', 640, 236, { size: 22, font: 'mono', color: '#566952' });
-        const tokyo = game.spawn({ id: 'title-tokyo', texture: 'tokyo', x: 640, y: 334, scale: 2.3, layer: 'world' });
-        game.spawn({ id: 'title-butterfly', texture: 'park-insects', frame: 0, x: 536, y: 304, width: 38, layer: 'world' });
-        game.spawn({ id: 'title-stick', texture: 'park-sticks', frame: 0, x: 751, y: 371, width: 46, layer: 'world' });
-        game.ui.button({ id: 'choose-playground', anchor: 'center', x: -260, y: 95, h: 76,
-            text: 'Playground', style: 'good', icon: 'paw', onClick: startPlayground });
-        game.ui.button({ id: 'choose-story', anchor: 'center', x: 260, y: 95, h: 76,
-            text: 'Story Mode', style: 'blue', icon: 'book', onClick: () => game.scenes.go('story') });
-        game.text('FREE PLAY / A park full of discoveries', 380, 522, { size: 16, font: 'mono-bold', color: '#33483d' });
-        game.text('CHAPTER 01 / The Movement Meadow', 900, 522, { size: 16, font: 'mono-bold', color: '#33483d' });
-        game.text('Fetch. Sniff. Make friends. Find your own adventure.', 640, 610,
-            { size: 19, font: 'mono', color: '#f7efcf', shadow: { color: '#253c36', x: 2, y: 2 } });
-        game.text('ENTER: PLAYGROUND     /     2: STORY MODE', 640, 665, { size: 16, font: 'mono-bold', color: '#e7dfb8' });
+        addFullscreenButton({ anchor: 'top-right', x: -16, y: 16 });
+
+        game.spawn({ id: 'title-tokyo-shadow', texture: 'shadow', x: TOKYO_X, y: TOKYO_FEET_Y,
+            width: 148, layer: 'world', alpha: 0.52 });
+        const tokyo = game.spawn({ id: 'title-tokyo', texture: 'tokyo', frame: SEATED_FIRST_FRAME,
+            x: TOKYO_X, y: TOKYO_FEET_Y - SEATED_FOOT_OFFSET, scale: TOKYO_SCALE, layer: 'world', z: 1 });
         let elapsed = 0;
         game.step('title', dt => {
-            elapsed += dt; tokyo.setFrame(Math.floor(elapsed * 5) % 8);
-            if (game.input.keyPressed('Enter') || game.input.keyPressed('Space')) startPlayground();
-            if (game.input.keyPressed('Digit2')) game.scenes.go('story');
+            elapsed += dt;
+            tokyo.setFrame(SEATED_FIRST_FRAME + Math.floor(elapsed * 2.5) % SEATED_FRAME_COUNT);
+            if (game.touch.visible) game.touch.visible = false;
+            if (game.input.keyPressed('Digit2')) {
+                openStory();
+            } else if (!game.ui.focus && (game.input.keyPressed('Enter') || game.input.keyPressed('Space'))) {
+                startPlayground();
+            }
         });
     },
 };

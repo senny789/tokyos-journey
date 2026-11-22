@@ -2,7 +2,7 @@
 
 **Start with [make-a-2d-game.md](make-a-2d-game.md), and read it whole:** the whole surface in one page. The other pages are reference: look a thing up there when the page sends you, or for a pack you added.
 
-This game composes `core-2d`, which brings `render-auto`, `world-side`, `world-screen`, `rig-follow`, `controls-2d`, `maths`, `color`, `audio`, `tween`, `backdrops`, `backdrop-sky`, `backdrop-stars`, `render-texture`, `particle-textures`, `particles-2d`, `feel`, `pointer`; and `typography`, `ui`, `save`, `collision`, `ui-skins`, `physics-2d`, `ui-skin-block`, `controls-touch`.
+This game composes `core-2d`, which brings `render-auto`, `world-side`, `world-screen`, `rig-follow`, `controls-2d`, `maths`, `color`, `audio`, `tween`, `particle-textures`, `particles-2d`, `feel`, `pointer`; and `typography`, `backdrops`, `backdrop-sky`, `backdrop-stars`, `render-texture`, `ui`, `save`, `collision`, `ui-skins`, `physics-2d`, `ui-skin-block`, `controls-touch`.
 Nothing else exists. Import `game` from `./engine.js`.
 
 - [make-a-2d-game.md](make-a-2d-game.md)
@@ -12,18 +12,18 @@ Nothing else exists. Import `game` from `./engine.js`.
 - [03-world-side.md](03-world-side.md)
 - [04-world-screen.md](04-world-screen.md)
 - [05-rig-follow.md](05-rig-follow.md)
-- [06-controls-2d.md](06-controls-2d.md)
-- [07-maths.md](07-maths.md)
-- [08-color.md](08-color.md)
-- [09-typography.md](09-typography.md)
-- [10-audio.md](10-audio.md)
-- [11-ui.md](11-ui.md)
-- [12-tween.md](12-tween.md)
-- [13-save.md](13-save.md)
-- [14-backdrops.md](14-backdrops.md)
-- [15-backdrop-sky.md](15-backdrop-sky.md)
-- [16-backdrop-stars.md](16-backdrop-stars.md)
-- [17-render-texture.md](17-render-texture.md)
+- [06-typography.md](06-typography.md)
+- [07-backdrops.md](07-backdrops.md)
+- [08-backdrop-sky.md](08-backdrop-sky.md)
+- [09-backdrop-stars.md](09-backdrop-stars.md)
+- [10-render-texture.md](10-render-texture.md)
+- [11-controls-2d.md](11-controls-2d.md)
+- [12-maths.md](12-maths.md)
+- [13-color.md](13-color.md)
+- [14-audio.md](14-audio.md)
+- [15-ui.md](15-ui.md)
+- [16-tween.md](16-tween.md)
+- [17-save.md](17-save.md)
 - [18-particle-textures.md](18-particle-textures.md)
 - [19-particles-2d.md](19-particles-2d.md)
 - [20-feel.md](20-feel.md)

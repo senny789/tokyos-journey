@@ -4,10 +4,15 @@ import { isMobileView, setTouchOverride, rotateToHorizontal, isForcedHorizontal 
 import { currentTreats, cheatCollectAllTreats } from './entities/Treats.js';
 import { getSettings, updateSettings } from './settings.js';
 import { PARK_AREAS, badges, park, startPlayground, visitArea } from './playground.js';
+import { HOME_FAMILY, home, homePreview } from './home.js';
+import { HOME_ROOMS } from './homeRooms.js';
+import { completeDreamStage, journey, prepareDreamStage } from './journey.js';
 
 export function addDebugControls(): void {
     game.inspect.state(() => ({
         ...run,
+        home,
+        journey: { ...journey },
         playground: { ...park, badges: badges() },
         mobileView: isMobileView(),
         touchVisible: game.touch?.visible ?? false,
@@ -24,13 +29,59 @@ export function addDebugControls(): void {
 
     game.cheats.add({
         name: 'screen',
-        does: 'Open title, play, meadow, story, parkmap, celebration, pause, or settings',
+        does: 'Open title, play, meadow, story, home, dream-start, parkmap, celebration, pause, or settings',
         args: 'name',
         run: name => {
-            const target = ['settings', 'play', 'pause', 'story', 'meadow', 'parkmap', 'celebration'].includes(name ?? '') ? name! : 'title';
+            const target = ['settings', 'play', 'pause', 'story', 'home', 'dream-start', 'journey', 'ending', 'meadow', 'parkmap', 'celebration'].includes(name ?? '') ? name! : 'title';
             game.scenes.go(target);
             return `Switched to screen: ${target}`;
         }
+    });
+
+    game.cheats.add({
+        name: 'home-room',
+        does: 'Start in a Level 0 room, optionally at treat time or bedtime',
+        args: 'living|sandesh|sushil|parents|senny-reshu [treats|bedtime]',
+        run: (name, phase) => {
+            const room = HOME_ROOMS.find(candidate => candidate.id === name);
+            if (!room) return 'Choose living, sandesh, sushil, parents, or senny-reshu.';
+            homePreview.room = room.id;
+            homePreview.phase = phase === 'treats' || phase === 'bedtime' ? phase : 'play';
+            game.scenes.go('home');
+            return `Opened ${room.name}.`;
+        },
+    });
+
+    game.cheats.add({
+        name: 'home-sofa',
+        does: 'Open Level 0 with a family member sitting on the sofa',
+        args: 'name',
+        run: name => {
+            const guest = HOME_FAMILY.find(member => member.id === name?.toLowerCase());
+            if (!guest) return 'Choose Sandesh, Sushil, Reshika, Senny, Dad, or Mom.';
+            homePreview.sofa = guest.id;
+            game.scenes.go('home');
+            return `${guest.name} has the sofa seat.`;
+        },
+    });
+
+    game.cheats.add({
+        name: 'dream',
+        does: 'Jump into any story level, with the progress earned before it',
+        args: '1-9',
+        run: level => {
+            const stage = Math.max(1, Math.min(9, Number(level) || 1));
+            prepareDreamStage(stage);
+            return 'Started dream level ' + stage;
+        },
+    });
+    game.cheats.add({
+        name: 'dream-win',
+        does: 'Complete the current dream level through its normal exit',
+        run: () => {
+            completeDreamStage();
+            return 'Completed the current dream level';
+        },
     });
 
     game.cheats.add({ name: 'park', args: 'area|x|new|complete|night',
