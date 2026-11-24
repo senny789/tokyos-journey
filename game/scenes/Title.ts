@@ -1,7 +1,7 @@
 import { game } from '../engine.js';
 import { startPlayground } from '../playground.js';
 import { MENU_BUTTON_HEIGHT, menuButtonStyles } from '../menuStyles.js';
-import { addFullscreenButton, isMobileView } from '../mobile.js';
+import { addFullscreenButton, isMobileView, isPortrait, prepareMobileDisplay } from '../mobile.js';
 
 const MENU_LEFT = 88;
 const STORY_BUTTON_Y = 346;
@@ -14,7 +14,13 @@ const SEATED_FIRST_FRAME = 42;
 const SEATED_FRAME_COUNT = 4;
 
 function openStory(): void {
+    prepareMobileDisplay();
     game.scenes.go('story');
+}
+
+function openPlayground(): void {
+    prepareMobileDisplay();
+    startPlayground();
 }
 
 export const Title = {
@@ -43,7 +49,7 @@ export const Title = {
 
         game.ui.button({
             id: 'choose-playground', anchor: 'top-left', x: MENU_LEFT, y: PLAYGROUND_BUTTON_Y,
-            h: MENU_BUTTON_HEIGHT, text: 'Playground', icon: 'paw', iconSize: 29, onClick: startPlayground,
+            h: MENU_BUTTON_HEIGHT, text: 'Playground', icon: 'paw', iconSize: 29, onClick: openPlayground,
             style: menuButtonStyles.secondary,
         });
         game.text('Explore the park at your own pace.', MENU_LEFT, 555,
@@ -52,6 +58,8 @@ export const Title = {
             game.text('2  Story Mode     Enter  Playground', MENU_LEFT, 637,
                 { size: 16, font: 'mono', color: '#d8dac1', align: 'left' });
         }
+        const rotateHint = isMobileView() ? game.text('Turn your phone sideways for the best view', MENU_LEFT, 680,
+            { size: 18, font: 'sans-bold', color: '#fff4d9', align: 'left' }) : null;
 
         game.ui.button({ id: 'settings-btn', anchor: 'top-right', x: -80, y: 16, h: 56,
             style: 'icon', icon: 'settings', accessibleLabel: 'Settings', onClick: () => game.scenes.push('settings') });
@@ -64,12 +72,13 @@ export const Title = {
         let elapsed = 0;
         game.step('title', dt => {
             elapsed += dt;
+            if (rotateHint) rotateHint.visible = isPortrait();
             tokyo.setFrame(SEATED_FIRST_FRAME + Math.floor(elapsed * 2.5) % SEATED_FRAME_COUNT);
             if (game.touch.visible) game.touch.visible = false;
             if (game.input.keyPressed('Digit2')) {
                 openStory();
             } else if (!game.ui.focus && (game.input.keyPressed('Enter') || game.input.keyPressed('Space'))) {
-                startPlayground();
+                openPlayground();
             }
         });
     },

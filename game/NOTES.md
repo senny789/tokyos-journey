@@ -6,6 +6,7 @@
 - After cloning, run `npm run setup:phaser` to restore the CLI and engine for build, smoke, and play.
 - Scenes: `title`, `story`, `home`, `dream-start`, `journey`, `ending`, `play` (Movement Meadow), `meadow` (treat meadow), `playground`, `parkmap`, `pause`, `settings`, `celebration`.
 - On the title screen, Story Mode is at (201,378) and Playground is at (200,498). Tab focuses the choices and Enter or Space activates the focused button. With nothing focused, Enter or Space opens Playground. Press 2 for Story Mode.
+- On mobile, choosing Story Mode or Playground requests fullscreen and landscape once per page load. If the phone cannot lock orientation, turn it sideways. Exiting fullscreen does not automatically reopen it; use the fullscreen button to enter it again.
 - Title settings and fullscreen are at (1172,44) and (1236,44). Escape closes Settings.
 - On the Story Mode screen, Start at Home is at (214,384), Movement Meadow is at (252,499), and Back to Menu is at (177,67). Tab focuses a choice and Enter or Space activates it. With nothing focused, Enter starts at home. Escape returns to the title.
 - Home: start in the living room. Approach each door and use F, gamepad Y, or tap **Open door**. Walk into the open doorway to enter the next room. Use the other room’s matching door to come back. The camera frames one room at a time.

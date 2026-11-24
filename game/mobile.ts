@@ -2,6 +2,14 @@ import { game } from './engine.js';
 
 let touchOverride: boolean | null = null;
 let forceHorizontal = false;
+let mobileDisplayRequested = false;
+
+/** Ask once when a mobile player starts the game, rather than after they exit fullscreen. */
+export function prepareMobileDisplay(): void {
+    if (mobileDisplayRequested || !isMobileView()) return;
+    mobileDisplayRequested = true;
+    void rotateToHorizontal(true);
+}
 
 /**
  * Checks whether the player is on a mobile/touch device or in mobile view (e.g. touch device or ?mobile / ?touch query param).
