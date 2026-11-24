@@ -75,6 +75,9 @@ export const Settings = {
         // Screen & Display Section
         game.ui.label({ parent: menu, text: 'DISPLAY & ROTATION', style: 'heading' });
 
+        game.ui.button({ parent: menu, h: 56, text: 'Customize touch buttons', icon: 'sliders',
+            onClick: () => game.scenes.push('touch-settings') });
+
         game.ui.button({
             parent: menu,
             h: 56,

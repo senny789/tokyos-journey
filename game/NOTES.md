@@ -27,6 +27,7 @@
 - Dream inspect ids: `tokyo`, `roaming-dream-shadow` (stage 2–9), `dream-roaming-shadow` (stage 1), `safe-light-*`, `dream-family-*`, `kennel-front-gate`, `city-cat-*`, `puzzle-moon-pad`, `puzzle-star-pad`, `favorite-plushie-on-floor`, `spring-reunion-*`, `journey-exit-portal`.
 - Ending: greet the family, play fetch with Senny, or choose Dream Again.
 - Gamepad: left stick moves, A jumps, X runs, LB crouches, B sits, RB poops, Y interacts, Start pauses. Touch uses left/right arrows to move, down to crouch, up to stand, and labeled Jump, Run, Sit, Poop and Interact buttons. The arrows are at the lower left; actions are at the lower right.
+- Settings → Customize touch buttons opens `touch-settings`. Previous/Next selects one of nine controls; sliders change horizontal position, height, size and opacity. Side switches the anchor, Color cycles six colors, Reset all restores defaults, and Done saves. Changes persist on this device and apply when play resumes. Inspect `touch-x`, `touch-y`, `touch-r`, and `touch-opacity`.
 - Playground: M opens the map; Esc/P pauses; R starts a new day; N toggles day/night. Map destinations are x250/640/1030 at y185 and y310; Back to Tokyo is (640,667).
 - Playground interactions: F at beds for Cozy paws; pick up sticks, greet the carrier for Fetch star, crouch at box 2 to hide, jump rocks for treats, crawl the tunnel, F at six bushes and six picnic foods, greet four people, befriend four shy dogs by sitting first, collect 12 treats, then use the portal at x6210 after all eight badges.
 - Sky: `park-sun`/`park-moon` at (1060,174); clouds drift at y181–266; stars twinkle at night. HUD day/night (976,44), map (1042,44), fullscreen (1108,44), sound (1168,44), pause (1236,44).
@@ -43,7 +44,7 @@
 - `art.ts`, `scenery.ts`, `input.ts`: shared paint and gesture helpers; `entities/Tokyo.ts`, `entities/Treats.ts`, `entities/Droppings.ts`: player, treats and pile.
 - `playground.ts`, `parkMap.ts`, `sky.ts`, `entities/ParkActivities.ts`, `entities/ParkWildlife.ts`: playground world, sky and activities.
 - `scenes/Play.ts`, `meadow.ts`, `scenes/Playground.ts`, `ParkMap.ts`, `Celebration.ts`, `Pause.ts`, `Settings.ts`: legacy treat meadow, playground and menus.
-- `settings.ts`, `mobile.ts`, `debug.ts`: preferences, touch layout and debug controls.
+- `settings.ts`, `mobile.ts`, `touchLayout.ts`, `scenes/TouchSettings.ts`, `debug.ts`: preferences, saved touch layout, its editor and debug controls.
 - `assets/dream/`: eight palette-reduced dream backgrounds; `assets/home/`, `assets/family/`: room and family art. `design/art/` catalogs the assets.
 - `tokyoArt.ts` loads the 52 × 52 Tokyo atlases. Regenerate the atlases from the art sources with `scripts/prepare-tokyo-style.py`.
 - `scripts/prepare-pixel-sprites.py`: packages the home props, selected park strips, and dream creatures.
@@ -58,3 +59,4 @@
 - The morning ending is playable but short: family greetings, fetch, and Dream Again.
 - Playground discoveries last for one park day; control preferences persist. Buildings are scenery rather than interiors, sticks reset to the fetch lawn, and dogs use supplied poses.
 - Night changes the sky and tint, not dynamic lighting. Tokyo's sit frames are reused for pooping; droppings are decorative and clear on scene changes.
+- The game keeps its 16:9 screen in fullscreen, so wider phones have side bars. Touch-button colors use a six-color palette, and opacity affects the button disc; labels remain readable.

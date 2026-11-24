@@ -2,6 +2,7 @@ import { game } from '../engine.js';
 import { getSettings } from '../settings.js';
 import { TOKYO_ART_SCALE, TOKYO_CARRY_CROUCH_START, type TokyoToy } from '../tokyoArt.js';
 import { spawnDroppings } from './Droppings.js';
+import { spawnTouchLayout } from '../touchLayout.js';
 
 const WALK_SPEED = 160, RUN_SPEED = 300, CROUCH_SPEED = 70;
 const ACCELERATION = 1500, BRAKING = 2200;
@@ -15,7 +16,6 @@ const WALK_STRIDE = 144, RUN_STRIDE = 172, CRAWL_STRIDE = 80;
 const MOTION_EPSILON = 0.01;
 const POOP_DURATION = 0.85, POOP_DROP_TIME = 0.42, POOP_COOLDOWN = 1.15;
 const FOOT_PROBE_OFFSET = BODY_WIDTH / 2 - 4;
-const POOP_TOUCH_X = 315, POOP_TOUCH_Y = 265, POOP_TOUCH_RADIUS = 36;
 export const UPWARD_PLATFORM_TAG = 'one-way-up';
 
 export type TokyoState = 'idle' | 'walking' | 'running' | 'jumping' | 'crouching' | 'sitting' | 'pooping';
@@ -95,8 +95,7 @@ export function spawnTokyo(
             sprite.setTexture(crouching ? 'tokyo-crouch' : 'tokyo', d.frame);
         }
     }
-    game.touch.button({ code: 'Touch:poop', label: 'POOP', anchor: 'bottom-right',
-        x: POOP_TOUCH_X, y: POOP_TOUCH_Y, r: POOP_TOUCH_RADIUS, tint: '#e7dfb8' });
+    spawnTouchLayout();
     const floorAt = (x: number) => {
         const feetY = body.y + height / 2;
         const hit = game.physics.raycast(x, feetY - 4, 0, 1, 8, h => h.id !== body.id);

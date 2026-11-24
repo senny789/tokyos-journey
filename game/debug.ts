@@ -32,7 +32,7 @@ export function addDebugControls(): void {
         does: 'Open title, play, meadow, story, home, dream-start, parkmap, celebration, pause, or settings',
         args: 'name',
         run: name => {
-            const target = ['settings', 'play', 'pause', 'story', 'home', 'dream-start', 'journey', 'ending', 'meadow', 'parkmap', 'celebration'].includes(name ?? '') ? name! : 'title';
+            const target = ['touch-settings', 'settings', 'play', 'pause', 'story', 'home', 'dream-start', 'journey', 'ending', 'meadow', 'parkmap', 'celebration'].includes(name ?? '') ? name! : 'title';
             game.scenes.go(target);
             return `Switched to screen: ${target}`;
         }

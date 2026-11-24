@@ -53,7 +53,7 @@ export const composed = createGame({"width":1280,"height":720,"fit":"letterbox",
     .use(uiSkins())
     .use(physics2d())
     .use(uiSkinBlock({"color":"#dbbb72","surface":"#33483d","radius":0,"depth":4}))
-    .use(controlsTouch({"buttons":[{"code":"Touch:left","label":"<","anchor":"bottom-left","x":55,"y":110,"r":38,"tint":"#f4d888"},{"code":"Touch:right","label":">","anchor":"bottom-left","x":175,"y":110,"r":38,"tint":"#f4d888"},{"code":"Touch:up","label":"^","anchor":"bottom-left","x":115,"y":170,"r":38,"tint":"#f4d888"},{"code":"Touch:down","label":"v","anchor":"bottom-left","x":115,"y":50,"r":38,"tint":"#f4d888"},{"code":"Touch:interact","label":"INTERACT","anchor":"bottom-right","x":320,"y":152,"r":40,"tint":"#f5df9a"},{"code":"Touch:jump","label":"JUMP","anchor":"bottom-right","x":110,"y":160,"r":46,"tint":"#f4d888"},{"code":"Touch:run","label":"RUN","anchor":"bottom-right","x":215,"y":160,"r":36,"tint":"#e7dfb8"},{"code":"Touch:sit","label":"SIT","anchor":"bottom-right","x":215,"y":265,"r":36,"tint":"#a8c0a0"}],"touchOnly":true,"alpha":0.45}));
+    .use(controlsTouch({"buttons":[],"touchOnly":true,"alpha":0.45}));
 
 /** The whole visible API. A capability not listed above does not exist. */
 export const game = composed.game;

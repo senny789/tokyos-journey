@@ -1954,11 +1954,11 @@ var KernelRoster = class {
   }
   // ---- columns -----------------------------------------------------------
   /** Kernel use, at compose: allocate a pack's columns under `key`. A key declared twice throws. */
-  declareColumns(pack3, key, decl, defaults = {}, methods = {}) {
+  declareColumns(pack3, key, decl, defaults2 = {}, methods = {}) {
     if (this.packCols.has(key)) throw new Error(`roster: pack key "${key}" declared twice`);
     const arrays = {};
     for (const [name, type] of Object.entries(decl)) arrays[name] = alloc(type, this.capacity);
-    this.packCols.set(key, { key, pack: pack3, decl, arrays, defaults, methods });
+    this.packCols.set(key, { key, pack: pack3, decl, arrays, defaults: defaults2, methods });
   }
   columns(packOrKey) {
     const bc = [...this.packCols.values()].find((b) => b.pack === packOrKey || b.key === packOrKey);
@@ -5190,12 +5190,12 @@ var KernelWorkerPool = class {
 // phaser/engine/kernel/src/safe-area.impl.ts
 function safeInsets(canvas, viewport, env, logical) {
   const sx = logical.width / deterministicMath.max(1, canvas.width), sy = logical.height / deterministicMath.max(1, canvas.height);
-  const clamp2 = (n, max) => deterministicMath.max(0, deterministicMath.min(n, max));
+  const clamp3 = (n, max) => deterministicMath.max(0, deterministicMath.min(n, max));
   return {
-    left: clamp2((viewport.left + env.left - canvas.left) * sx, logical.width),
-    right: clamp2((canvas.left + canvas.width - viewport.left - viewport.width + env.right) * sx, logical.width),
-    top: clamp2((viewport.top + env.top - canvas.top) * sy, logical.height),
-    bottom: clamp2((canvas.top + canvas.height - viewport.top - viewport.height + env.bottom) * sy, logical.height)
+    left: clamp3((viewport.left + env.left - canvas.left) * sx, logical.width),
+    right: clamp3((canvas.left + canvas.width - viewport.left - viewport.width + env.right) * sx, logical.width),
+    top: clamp3((viewport.top + env.top - canvas.top) * sy, logical.height),
+    bottom: clamp3((canvas.top + canvas.height - viewport.top - viewport.height + env.bottom) * sy, logical.height)
   };
 }
 
@@ -6713,13 +6713,13 @@ function minTimeProgress(real, elapsed, minTime) {
   return minTime <= 0 ? r : deterministicMath.min(r, elapsed / minTime);
 }
 var installed = /* @__PURE__ */ new WeakMap();
-function installPreloader(k, defaults = {}) {
+function installPreloader(k, defaults2 = {}) {
   const existing = installed.get(k.assets);
   if (existing) {
-    existing.configure(defaults);
+    existing.configure(defaults2);
     return existing;
   }
-  let config = { ...k.screen.background ? { background: k.screen.background } : {}, ...defaults }, options = config;
+  let config = { ...k.screen.background ? { background: k.screen.background } : {}, ...defaults2 }, options = config;
   let shown = 0, disposed = false, timer;
   let view = null;
   let started = 0, previous = 0, fading = -1;
@@ -7020,13 +7020,13 @@ function installWebGpu(k, prepared, deferRegistration = false) {
     for (const m of mods) void m.getCompilationInfo().then((info) => {
       for (const x of info.messages) if (x.type === "error") console.error(`render-webgpu WGSL ${x.lineNum}:${x.linePos} ${x.message}`);
     });
-    const layout = device.createPipelineLayout({ bindGroupLayouts: [device.createBindGroupLayout({ entries: [
+    const layout2 = device.createPipelineLayout({ bindGroupLayouts: [device.createBindGroupLayout({ entries: [
       { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } },
       { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: {} },
       { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: {} }
     ] })] });
     const make = (blend2, grid) => device.createRenderPipeline({
-      layout,
+      layout: layout2,
       vertex: { module: mods[grid ? 1 : 0], entryPoint: "vs", buffers: [{ arrayStride: STRIDE, stepMode: "instance", attributes: [
         { shaderLocation: 0, offset: 0, format: "float32x2" },
         { shaderLocation: 1, offset: 8, format: "float32x3" },
@@ -7164,8 +7164,8 @@ function installWebGpu(k, prepared, deferRegistration = false) {
         device.queue.copyExternalImageToTexture({ source: c }, { texture, mipLevel: m, premultipliedAlpha: true }, [w, h]);
         level = c;
       }
-      const view = texture.createView(), layout = pipeline.getBindGroupLayout(0), sampled = ownSampler;
-      const group = (buffer) => device.createBindGroup({ layout, entries: [{ binding: 0, resource: { buffer } }, { binding: 1, resource: view }, { binding: 2, resource: sampled }] });
+      const view = texture.createView(), layout2 = pipeline.getBindGroupLayout(0), sampled = ownSampler;
+      const group = (buffer) => device.createBindGroup({ layout: layout2, entries: [{ binding: 0, resource: { buffer } }, { binding: 1, resource: view }, { binding: 2, resource: sampled }] });
       own.set(t.id, { texture, view, bind: group(uni), bindScreen: group(uniScreen), bytes: deterministicMath.round(t.width * t.height * (t.live ? 4 : 16 / 3)) });
     }
   };
@@ -15006,9 +15006,9 @@ function createFace(api, source, size) {
       const probe = api.write({ font, text: text2, style: { fontSize: size * scale2, letterSpacing: spacing * scale2, lineHeight: 1.3 } });
       let width;
       try {
-        const layout = probe.glyphs();
+        const layout2 = probe.glyphs();
         width = probe.measure().width;
-        for (let i = 0; i < layout.glyphCount; i++) width = deterministicMath.max(width, layout.x[i] + layout.glyphAdvances[i]);
+        for (let i = 0; i < layout2.glyphCount; i++) width = deterministicMath.max(width, layout2.x[i] + layout2.glyphAdvances[i]);
       } finally {
         probe.dispose();
       }
@@ -19659,34 +19659,34 @@ function alignSpansToClusters(text2, spans) {
 }
 init_typography_error();
 var glyphFlags = textShaperAbi.engine.glyphFlags;
-function copyGlyphLayoutInspection(layout) {
+function copyGlyphLayoutInspection(layout2) {
   return Object.freeze({
-    ...layout,
-    fontHandles: layout.fontHandles.slice(),
-    glyphStableIds: layout.glyphStableIds.slice(),
-    glyphFontSlots: layout.glyphFontSlots.slice(),
-    glyphIds: layout.glyphIds.slice(),
-    clusters: layout.clusters.slice(),
-    glyphBidiLevels: layout.glyphBidiLevels.slice(),
-    glyphFontSizes: layout.glyphFontSizes.slice(),
-    x: layout.x.slice(),
-    y: layout.y.slice(),
-    glyphAdvances: layout.glyphAdvances.slice(),
-    glyphInkX: layout.glyphInkX.slice(),
-    glyphInkY: layout.glyphInkY.slice(),
-    glyphInkWidths: layout.glyphInkWidths.slice(),
-    glyphInkHeights: layout.glyphInkHeights.slice(),
-    glyphFlags: layout.glyphFlags.slice(),
-    lineTextStarts: layout.lineTextStarts.slice(),
-    lineTextEnds: layout.lineTextEnds.slice(),
-    lineGlyphStarts: layout.lineGlyphStarts.slice(),
-    lineGlyphCounts: layout.lineGlyphCounts.slice(),
-    lineBaselines: layout.lineBaselines.slice(),
-    lineAdvances: layout.lineAdvances.slice()
+    ...layout2,
+    fontHandles: layout2.fontHandles.slice(),
+    glyphStableIds: layout2.glyphStableIds.slice(),
+    glyphFontSlots: layout2.glyphFontSlots.slice(),
+    glyphIds: layout2.glyphIds.slice(),
+    clusters: layout2.clusters.slice(),
+    glyphBidiLevels: layout2.glyphBidiLevels.slice(),
+    glyphFontSizes: layout2.glyphFontSizes.slice(),
+    x: layout2.x.slice(),
+    y: layout2.y.slice(),
+    glyphAdvances: layout2.glyphAdvances.slice(),
+    glyphInkX: layout2.glyphInkX.slice(),
+    glyphInkY: layout2.glyphInkY.slice(),
+    glyphInkWidths: layout2.glyphInkWidths.slice(),
+    glyphInkHeights: layout2.glyphInkHeights.slice(),
+    glyphFlags: layout2.glyphFlags.slice(),
+    lineTextStarts: layout2.lineTextStarts.slice(),
+    lineTextEnds: layout2.lineTextEnds.slice(),
+    lineGlyphStarts: layout2.lineGlyphStarts.slice(),
+    lineGlyphCounts: layout2.lineGlyphCounts.slice(),
+    lineBaselines: layout2.lineBaselines.slice(),
+    lineAdvances: layout2.lineAdvances.slice()
   });
 }
-function normalizedColumns(layout, constraints) {
-  const columns = layout?.columns;
+function normalizedColumns(layout2, constraints) {
+  const columns = layout2?.columns;
   if (columns === void 0) return { count: 1, gap: 0 };
   const gap = columns.gap ?? 0;
   if (!Number.isSafeInteger(columns.count) || columns.count < 1 || columns.count > 16) {
@@ -19703,14 +19703,14 @@ function normalizedColumns(layout, constraints) {
   }
   return { count: columns.count, gap };
 }
-function compileEngineGeometry(id2, paragraphId, transformIndex, geometryRevision, layout, constraints, regionStart) {
+function compileEngineGeometry(id2, paragraphId, transformIndex, geometryRevision, layout2, constraints, regionStart) {
   const width = axis(constraints?.width);
   const height = axis(constraints?.height);
-  const columns = normalizedColumns(layout, constraints);
+  const columns = normalizedColumns(layout2, constraints);
   const inlineEnd = width.mode === "unconstrained" ? 16777216 : width.size;
   const blockEnd = height.mode === "unconstrained" ? 16777216 : height.size;
-  const maxLines = layout?.maxLines ?? 0;
-  const dropCap = layout?.dropCap;
+  const maxLines = layout2?.maxLines ?? 0;
+  const dropCap = layout2?.dropCap;
   const encodedDropCap = (() => {
     if (dropCap === void 0) return void 0;
     const { contour, ...values } = dropCap;
@@ -19740,15 +19740,15 @@ function compileEngineGeometry(id2, paragraphId, transformIndex, geometryRevisio
       resumeRegion: 0,
       widthMode: width.mode,
       heightMode: height.mode,
-      wrap: layout?.wrap ?? "word",
-      align: layout?.align ?? "start",
-      overflow: layout?.overflow ?? "visible",
+      wrap: layout2?.wrap ?? "word",
+      align: layout2?.align ?? "start",
+      overflow: layout2?.overflow ?? "visible",
       blockAlign: "start",
-      ...layout?.firstLineIndent === void 0 ? {} : { firstLineIndent: layout.firstLineIndent },
-      ...layout?.spaceBefore === void 0 ? {} : { spaceBefore: layout.spaceBefore },
-      ...layout?.spaceAfter === void 0 ? {} : { spaceAfter: layout.spaceAfter },
-      ...layout?.justify === void 0 ? {} : { justify: layout.justify },
-      ...layout?.lastLine === void 0 ? {} : { lastLine: layout.lastLine },
+      ...layout2?.firstLineIndent === void 0 ? {} : { firstLineIndent: layout2.firstLineIndent },
+      ...layout2?.spaceBefore === void 0 ? {} : { spaceBefore: layout2.spaceBefore },
+      ...layout2?.spaceAfter === void 0 ? {} : { spaceAfter: layout2.spaceAfter },
+      ...layout2?.justify === void 0 ? {} : { justify: layout2.justify },
+      ...layout2?.lastLine === void 0 ? {} : { lastLine: layout2.lastLine },
       ...encodedDropCap === void 0 ? {} : { dropCap: encodedDropCap }
     },
     regions: Array.from({ length: columns.count }, (_, column) => {
@@ -20006,10 +20006,10 @@ function compilePlannerFrameUpdate(frame) {
   return bytes;
 }
 function writeHeader(view, frame, byteLength, offsets) {
-  const layout = textShaperAbi.layouts.engineUpdateRequest;
+  const layout2 = textShaperAbi.layouts.engineUpdateRequest;
   const limits = frame.limits;
   view.setUint32(
-    layout.flags,
+    layout2.flags,
     frame.compositingIndependent === true ? textShaperAbi.engine.frameFlags.compositingIndependent : 0,
     true
   );
@@ -20053,126 +20053,126 @@ function writeHeader(view, frame, byteLength, offsets) {
     ["codecParametersOffset", 0],
     ["codecParametersLength", 0]
   ]) {
-    view.setUint32(layout[field], u323(value, field), true);
+    view.setUint32(layout2[field], u323(value, field), true);
   }
 }
 function writeParagraphMutations(view, tableOffset, mutations) {
-  const layout = textShaperAbi.layouts.engineParagraphMutation;
+  const layout2 = textShaperAbi.layouts.engineParagraphMutation;
   const opcodes = textShaperAbi.engine.paragraphMutationOpcodes;
   for (const [index, mutation] of mutations.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setUint8(offset + layout.opcode, enumValue(opcodes, mutation.opcode, "paragraph mutation opcode"));
-    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
+    const offset = tableOffset + index * layout2.size;
+    view.setUint8(offset + layout2.opcode, enumValue(opcodes, mutation.opcode, "paragraph mutation opcode"));
+    view.setUint32(offset + layout2.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
     if (mutation.opcode === "upsert") {
-      view.setUint32(offset + layout.order, u323(mutation.order, "paragraph order"), true);
+      view.setUint32(offset + layout2.order, u323(mutation.order, "paragraph order"), true);
     }
   }
 }
 function writeParagraphOrderMutations(view, tableOffset, mutations) {
-  const layout = textShaperAbi.layouts.engineParagraphOrderMutation;
+  const layout2 = textShaperAbi.layouts.engineParagraphOrderMutation;
   for (const [index, mutation] of mutations.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
-    view.setUint32(offset + layout.orderScope, u323(mutation.orderScope, "paragraph order scope"), true);
+    const offset = tableOffset + index * layout2.size;
+    view.setUint32(offset + layout2.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout2.orderScope, u323(mutation.orderScope, "paragraph order scope"), true);
     if (!Number.isFinite(mutation.orderRank)) throw new RangeError("paragraph order rank must be finite");
-    view.setFloat64(offset + layout.orderRank, mutation.orderRank, true);
+    view.setFloat64(offset + layout2.orderRank, mutation.orderRank, true);
   }
 }
 function writeTextMutations(view, tableOffset, mutations, payloadOffsets) {
-  const layout = textShaperAbi.layouts.engineTextMutation;
+  const layout2 = textShaperAbi.layouts.engineTextMutation;
   for (const [index, mutation] of mutations.entries()) {
-    const offset = tableOffset + index * layout.size;
+    const offset = tableOffset + index * layout2.size;
     const payloadOffset = payloadOffsets[index];
-    view.setUint8(offset + layout.opcode, textShaperAbi.engine.textMutationOpcodes.replaceUtf16);
-    view.setUint8(offset + layout.encoding, textShaperAbi.engine.textEncodings.utf16Le);
-    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
-    view.setUint32(offset + layout.textStart, u323(mutation.start, "text mutation start"), true);
-    view.setUint32(offset + layout.deleteCount, u323(mutation.deleteCount, "text mutation delete count"), true);
-    view.setUint32(offset + layout.insertOffset, payloadOffset, true);
-    view.setUint32(offset + layout.insertCount, u323(mutation.insert.length, "text mutation insert count"), true);
+    view.setUint8(offset + layout2.opcode, textShaperAbi.engine.textMutationOpcodes.replaceUtf16);
+    view.setUint8(offset + layout2.encoding, textShaperAbi.engine.textEncodings.utf16Le);
+    view.setUint32(offset + layout2.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout2.textStart, u323(mutation.start, "text mutation start"), true);
+    view.setUint32(offset + layout2.deleteCount, u323(mutation.deleteCount, "text mutation delete count"), true);
+    view.setUint32(offset + layout2.insertOffset, payloadOffset, true);
+    view.setUint32(offset + layout2.insertCount, u323(mutation.insert.length, "text mutation insert count"), true);
     for (let unit = 0; unit < mutation.insert.length; unit += 1) {
       view.setUint16(payloadOffset + unit * 2, mutation.insert.charCodeAt(unit), true);
     }
   }
 }
 function writeStyleMutations(view, bytes, tableOffset, mutations, languages, languageOffsets, featureOffsets) {
-  const layout = textShaperAbi.layouts.engineStyleMutation;
+  const layout2 = textShaperAbi.layouts.engineStyleMutation;
   for (const [index, mutation] of mutations.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, mutation.paragraphId, true);
-    view.setUint32(offset + layout.styleId, mutation.styleId, true);
+    const offset = tableOffset + index * layout2.size;
+    view.setUint32(offset + layout2.paragraphId, mutation.paragraphId, true);
+    view.setUint32(offset + layout2.styleId, mutation.styleId, true);
     if (mutation.opcode === "remove") {
-      view.setUint8(offset + layout.opcode, textShaperAbi.engine.styleMutationOpcodes.remove);
+      view.setUint8(offset + layout2.opcode, textShaperAbi.engine.styleMutationOpcodes.remove);
       continue;
     }
     const value = mutation.value;
     const fields = textShaperAbi.engine.styleFields;
     const fieldMask = present(value.fontStackHandle, fields.fontStack) | present(value.materialId, fields.material) | present(value.language, fields.language) | present(value.features, fields.features) | present(value.fontSize, fields.fontSize) | present(value.lineHeight, fields.lineHeight) | present(value.letterSpacing, fields.letterSpacing) | present(value.wordSpacing, fields.wordSpacing) | present(value.baselineShift, fields.baselineShift) | present(value.rasterPixelRatio, fields.rasterPixelRatio) | present(value.direction, fields.direction) | present(value.foregroundRgba, fields.foreground) | present(value.opacity, fields.opacity) | present(value.outline, fields.outline) | present(value.shadow, fields.shadow) | present(value.decoration, fields.decoration);
-    view.setUint8(offset + layout.opcode, textShaperAbi.engine.styleMutationOpcodes.upsert);
-    view.setUint8(offset + layout.direction, direction(value.direction));
-    view.setUint8(offset + layout.flags, mutation.root === true ? textShaperAbi.engine.styleFlags.root : 0);
-    view.setUint32(offset + layout.cascadeOrder, mutation.cascadeOrder, true);
-    view.setUint32(offset + layout.fieldMask, fieldMask, true);
-    view.setUint32(offset + layout.textStart, mutation.start, true);
-    view.setUint32(offset + layout.textEnd, mutation.end, true);
-    writeOptionalU32(view, offset + layout.fontStackHandle, value.fontStackHandle);
-    writeOptionalU32(view, offset + layout.materialId, value.materialId);
+    view.setUint8(offset + layout2.opcode, textShaperAbi.engine.styleMutationOpcodes.upsert);
+    view.setUint8(offset + layout2.direction, direction(value.direction));
+    view.setUint8(offset + layout2.flags, mutation.root === true ? textShaperAbi.engine.styleFlags.root : 0);
+    view.setUint32(offset + layout2.cascadeOrder, mutation.cascadeOrder, true);
+    view.setUint32(offset + layout2.fieldMask, fieldMask, true);
+    view.setUint32(offset + layout2.textStart, mutation.start, true);
+    view.setUint32(offset + layout2.textEnd, mutation.end, true);
+    writeOptionalU32(view, offset + layout2.fontStackHandle, value.fontStackHandle);
+    writeOptionalU32(view, offset + layout2.materialId, value.materialId);
     const language = languages[index];
-    view.setUint32(offset + layout.languageOffset, languageOffsets[index], true);
-    view.setUint16(offset + layout.languageLength, u162(language.length, "language byte length"), true);
+    view.setUint32(offset + layout2.languageOffset, languageOffsets[index], true);
+    view.setUint16(offset + layout2.languageLength, u162(language.length, "language byte length"), true);
     bytes.set(language, languageOffsets[index]);
     const features = value.features ?? [];
     const featureOffset = featureOffsets[index];
-    view.setUint16(offset + layout.featureCount, u162(features.length, "feature count"), true);
-    view.setUint32(offset + layout.featuresOffset, featureOffset, true);
+    view.setUint16(offset + layout2.featureCount, u162(features.length, "feature count"), true);
+    view.setUint32(offset + layout2.featuresOffset, featureOffset, true);
     writeFeatures(view, featureOffset, features);
-    writeOptionalF32(view, offset + layout.fontSize, value.fontSize);
-    writeOptionalF32(view, offset + layout.lineHeight, value.lineHeight);
-    writeOptionalF32(view, offset + layout.letterSpacing, value.letterSpacing);
-    writeOptionalF32(view, offset + layout.wordSpacing, value.wordSpacing);
-    writeOptionalF32(view, offset + layout.baselineShift, value.baselineShift);
-    writeOptionalF32(view, offset + layout.rasterPixelRatio, value.rasterPixelRatio);
-    writeOptionalU32(view, offset + layout.foregroundRgba, value.foregroundRgba);
-    writeOptionalF32(view, offset + layout.opacity, value.opacity);
-    writeOptionalU32(view, offset + layout.outlineRgba, value.outline?.rgba);
-    writeOptionalF32(view, offset + layout.outlineWidth, value.outline?.width);
-    writeOptionalU32(view, offset + layout.shadowRgba, value.shadow?.rgba);
-    writeOptionalF32(view, offset + layout.shadowOffsetX, value.shadow?.offsetX);
-    writeOptionalF32(view, offset + layout.shadowOffsetY, value.shadow?.offsetY);
+    writeOptionalF32(view, offset + layout2.fontSize, value.fontSize);
+    writeOptionalF32(view, offset + layout2.lineHeight, value.lineHeight);
+    writeOptionalF32(view, offset + layout2.letterSpacing, value.letterSpacing);
+    writeOptionalF32(view, offset + layout2.wordSpacing, value.wordSpacing);
+    writeOptionalF32(view, offset + layout2.baselineShift, value.baselineShift);
+    writeOptionalF32(view, offset + layout2.rasterPixelRatio, value.rasterPixelRatio);
+    writeOptionalU32(view, offset + layout2.foregroundRgba, value.foregroundRgba);
+    writeOptionalF32(view, offset + layout2.opacity, value.opacity);
+    writeOptionalU32(view, offset + layout2.outlineRgba, value.outline?.rgba);
+    writeOptionalF32(view, offset + layout2.outlineWidth, value.outline?.width);
+    writeOptionalU32(view, offset + layout2.shadowRgba, value.shadow?.rgba);
+    writeOptionalF32(view, offset + layout2.shadowOffsetX, value.shadow?.offsetX);
+    writeOptionalF32(view, offset + layout2.shadowOffsetY, value.shadow?.offsetY);
     writeDecoration(view, offset, value.decoration);
   }
 }
 function writeFeatures(view, tableOffset, features) {
-  const layout = textShaperAbi.layouts.feature;
+  const layout2 = textShaperAbi.layouts.feature;
   for (const [index, feature] of features.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.tag, packTag(feature.tag), true);
-    view.setUint32(offset + layout.value, feature.value, true);
-    view.setUint32(offset + layout.start, feature.start, true);
-    view.setUint32(offset + layout.end, feature.end, true);
+    const offset = tableOffset + index * layout2.size;
+    view.setUint32(offset + layout2.tag, packTag(feature.tag), true);
+    view.setUint32(offset + layout2.value, feature.value, true);
+    view.setUint32(offset + layout2.start, feature.start, true);
+    view.setUint32(offset + layout2.end, feature.end, true);
   }
 }
 function writeDecoration(view, offset, decoration) {
   if (decoration === void 0) return;
-  const layout = textShaperAbi.layouts.engineStyleMutation;
+  const layout2 = textShaperAbi.layouts.engineStyleMutation;
   const styles = textShaperAbi.engine.decorationStyles;
   const flags = textShaperAbi.engine.decorationFlags;
-  view.setUint8(offset + layout.decorationStyle, styles[decoration.style]);
-  view.setUint32(offset + layout.decorationRgba, decoration.rgba, true);
+  view.setUint8(offset + layout2.decorationStyle, styles[decoration.style]);
+  view.setUint32(offset + layout2.decorationRgba, decoration.rgba, true);
   view.setUint32(
-    offset + layout.decorationFlags,
+    offset + layout2.decorationFlags,
     (decoration.underline === true ? flags.underline : 0) | (decoration.overline === true ? flags.overline : 0) | (decoration.lineThrough === true ? flags.lineThrough : 0) | (decoration.skipInk === true ? flags.skipInk : 0),
     true
   );
-  view.setFloat32(offset + layout.decorationThickness, decoration.thickness, true);
-  view.setFloat32(offset + layout.decorationOffset, decoration.offset, true);
+  view.setFloat32(offset + layout2.decorationThickness, decoration.thickness, true);
+  view.setFloat32(offset + layout2.decorationOffset, decoration.offset, true);
 }
 function writeConstraints(view, tableOffset, constraints, dropCapVertexOffsets) {
-  const layout = textShaperAbi.layouts.engineConstraint;
+  const layout2 = textShaperAbi.layouts.engineConstraint;
   const engine = textShaperAbi.engine;
   for (const [index, value] of constraints.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u323(value.paragraphId, "paragraph ID"), true);
+    const offset = tableOffset + index * layout2.size;
+    view.setUint32(offset + layout2.paragraphId, u323(value.paragraphId, "paragraph ID"), true);
     for (const [field, number] of [
       ["flowThreadId", value.flowThreadId],
       ["geometryRevision", value.geometryRevision],
@@ -20180,10 +20180,10 @@ function writeConstraints(view, tableOffset, constraints, dropCapVertexOffsets) 
       ["regionStart", value.regionStart],
       ["resumeCluster", value.resumeCluster]
     ]) {
-      view.setUint32(offset + layout[field], u323(number, field), true);
+      view.setUint32(offset + layout2[field], u323(number, field), true);
     }
-    view.setUint16(offset + layout.regionCount, u162(value.regionCount, "constraint region count"), true);
-    view.setUint16(offset + layout.resumeRegion, u162(value.resumeRegion, "constraint resume region"), true);
+    view.setUint16(offset + layout2.regionCount, u162(value.regionCount, "constraint region count"), true);
+    view.setUint16(offset + layout2.resumeRegion, u162(value.resumeRegion, "constraint resume region"), true);
     for (const [field, number] of [
       ["width", value.width],
       ["height", value.height],
@@ -20191,15 +20191,15 @@ function writeConstraints(view, tableOffset, constraints, dropCapVertexOffsets) 
       ["viewportBlockEnd", value.viewportBlockEnd],
       ["resumeBlockOffset", value.resumeBlockOffset]
     ]) {
-      view.setFloat32(offset + layout[field], finite(number, field), true);
+      view.setFloat32(offset + layout2[field], finite(number, field), true);
     }
-    view.setUint8(offset + layout.widthMode, axisMode(value.widthMode));
-    view.setUint8(offset + layout.heightMode, axisMode(value.heightMode));
-    view.setUint8(offset + layout.wrap, enumValue(engine.wrapModes, value.wrap, "constraint wrap"));
-    view.setUint8(offset + layout.align, enumValue(engine.inlineAlignments, value.align, "constraint align"));
-    view.setUint8(offset + layout.overflow, enumValue(engine.overflowModes, value.overflow, "constraint overflow"));
+    view.setUint8(offset + layout2.widthMode, axisMode(value.widthMode));
+    view.setUint8(offset + layout2.heightMode, axisMode(value.heightMode));
+    view.setUint8(offset + layout2.wrap, enumValue(engine.wrapModes, value.wrap, "constraint wrap"));
+    view.setUint8(offset + layout2.align, enumValue(engine.inlineAlignments, value.align, "constraint align"));
+    view.setUint8(offset + layout2.overflow, enumValue(engine.overflowModes, value.overflow, "constraint overflow"));
     view.setUint8(
-      offset + layout.blockAlign,
+      offset + layout2.blockAlign,
       enumValue(engine.blockAlignments, value.blockAlign, "constraint blockAlign")
     );
     for (const [field, number] of [
@@ -20210,100 +20210,100 @@ function writeConstraints(view, tableOffset, constraints, dropCapVertexOffsets) 
       ["justifyMaxWordSpaceRatio", value.justify?.maxWordSpaceRatio ?? 0],
       ["justifyLetterSpaceExpansion", value.justify?.letterSpaceExpansion ?? 0]
     ]) {
-      view.setFloat32(offset + layout[field], finite(number, field), true);
+      view.setFloat32(offset + layout2[field], finite(number, field), true);
     }
     view.setUint8(
-      offset + layout.lastLine,
+      offset + layout2.lastLine,
       enumValue(engine.lastLinePolicies, value.lastLine ?? "auto", "constraint lastLine")
     );
-    view.setUint8(offset + layout.dropCapLines, u82(value.dropCap?.lines ?? 0, "constraint dropCap lines"));
+    view.setUint8(offset + layout2.dropCapLines, u82(value.dropCap?.lines ?? 0, "constraint dropCap lines"));
     view.setUint8(
-      offset + layout.dropCapAlignment,
+      offset + layout2.dropCapAlignment,
       value.dropCap === void 0 ? 0 : dropCapAlignment(value.dropCap.align ?? "text-top")
     );
     view.setUint8(
-      offset + layout.dropCapSide,
+      offset + layout2.dropCapSide,
       value.dropCap === void 0 ? 0 : dropCapSide(value.dropCap.side ?? "inline-start")
     );
     view.setFloat32(
-      offset + layout.dropCapMarginInline,
+      offset + layout2.dropCapMarginInline,
       finite(value.dropCap?.marginInline ?? 0, "constraint dropCap inline margin"),
       true
     );
     view.setFloat32(
-      offset + layout.dropCapMarginBlock,
+      offset + layout2.dropCapMarginBlock,
       finite(value.dropCap?.marginBlock ?? 0, "constraint dropCap block margin"),
       true
     );
     const contour = value.dropCap?.contour ?? [];
-    view.setUint32(offset + layout.dropCapVerticesOffset, dropCapVertexOffsets[index], true);
-    view.setUint16(offset + layout.dropCapVertexCount, u162(contour.length, "constraint dropCap vertex count"), true);
-    view.setUint16(offset + layout.dropCapReserved, 0, true);
+    view.setUint32(offset + layout2.dropCapVerticesOffset, dropCapVertexOffsets[index], true);
+    view.setUint16(offset + layout2.dropCapVertexCount, u162(contour.length, "constraint dropCap vertex count"), true);
+    view.setUint16(offset + layout2.dropCapReserved, 0, true);
     writeVertices(view, dropCapVertexOffsets[index], contour);
   }
 }
 function writeRegions(view, tableOffset, regions, vertexOffsets) {
-  const layout = textShaperAbi.layouts.engineRegion;
+  const layout2 = textShaperAbi.layouts.engineRegion;
   for (const [index, value] of regions.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.id, u323(value.id, "region ID"), true);
-    view.setUint32(offset + layout.geometryRevision, u323(value.geometryRevision, "region geometry revision"), true);
-    view.setUint32(offset + layout.transformIndex, u323(value.transformIndex, "region transform index"), true);
-    view.setUint32(offset + layout.verticesOffset, vertexOffsets[index], true);
-    view.setUint16(offset + layout.vertexCount, u162(value.vertices?.length ?? 0, "region vertex count"), true);
-    view.setUint16(offset + layout.exclusionStart, u162(value.exclusionStart, "region exclusion start"), true);
-    view.setUint16(offset + layout.exclusionCount, u162(value.exclusionCount, "region exclusion count"), true);
-    view.setUint8(offset + layout.shape, enumValue(textShaperAbi.engine.flowShapeKinds, value.shape, "region shape"));
-    view.setUint8(offset + layout.writingMode, writingMode(value.writingMode));
-    view.setUint8(offset + layout.textOrientation, textOrientation(value.textOrientation));
-    writeBounds(view, offset, layout, value);
+    const offset = tableOffset + index * layout2.size;
+    view.setUint32(offset + layout2.id, u323(value.id, "region ID"), true);
+    view.setUint32(offset + layout2.geometryRevision, u323(value.geometryRevision, "region geometry revision"), true);
+    view.setUint32(offset + layout2.transformIndex, u323(value.transformIndex, "region transform index"), true);
+    view.setUint32(offset + layout2.verticesOffset, vertexOffsets[index], true);
+    view.setUint16(offset + layout2.vertexCount, u162(value.vertices?.length ?? 0, "region vertex count"), true);
+    view.setUint16(offset + layout2.exclusionStart, u162(value.exclusionStart, "region exclusion start"), true);
+    view.setUint16(offset + layout2.exclusionCount, u162(value.exclusionCount, "region exclusion count"), true);
+    view.setUint8(offset + layout2.shape, enumValue(textShaperAbi.engine.flowShapeKinds, value.shape, "region shape"));
+    view.setUint8(offset + layout2.writingMode, writingMode(value.writingMode));
+    view.setUint8(offset + layout2.textOrientation, textOrientation(value.textOrientation));
+    writeBounds(view, offset, layout2, value);
     writeVertices(view, vertexOffsets[index], value.vertices ?? []);
   }
 }
 function writeExclusions(view, tableOffset, exclusions, vertexOffsets) {
-  const layout = textShaperAbi.layouts.engineExclusion;
+  const layout2 = textShaperAbi.layouts.engineExclusion;
   for (const [index, value] of exclusions.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.id, u323(value.id, "exclusion ID"), true);
-    view.setUint32(offset + layout.regionId, u323(value.regionId, "exclusion region ID"), true);
-    view.setUint32(offset + layout.geometryRevision, u323(value.geometryRevision, "exclusion geometry revision"), true);
-    view.setUint32(offset + layout.verticesOffset, vertexOffsets[index], true);
-    view.setUint16(offset + layout.vertexCount, u162(value.vertices?.length ?? 0, "exclusion vertex count"), true);
+    const offset = tableOffset + index * layout2.size;
+    view.setUint32(offset + layout2.id, u323(value.id, "exclusion ID"), true);
+    view.setUint32(offset + layout2.regionId, u323(value.regionId, "exclusion region ID"), true);
+    view.setUint32(offset + layout2.geometryRevision, u323(value.geometryRevision, "exclusion geometry revision"), true);
+    view.setUint32(offset + layout2.verticesOffset, vertexOffsets[index], true);
+    view.setUint16(offset + layout2.vertexCount, u162(value.vertices?.length ?? 0, "exclusion vertex count"), true);
     view.setUint8(
-      offset + layout.shape,
+      offset + layout2.shape,
       enumValue(textShaperAbi.engine.flowShapeKinds, value.shape, "exclusion shape")
     );
-    view.setUint8(offset + layout.wrapSide, exclusionWrap(value.wrapSide));
-    writeBounds(view, offset, layout, value);
-    view.setFloat32(offset + layout.marginInline, finite(value.marginInline, "exclusion inline margin"), true);
-    view.setFloat32(offset + layout.marginBlock, finite(value.marginBlock, "exclusion block margin"), true);
+    view.setUint8(offset + layout2.wrapSide, exclusionWrap(value.wrapSide));
+    writeBounds(view, offset, layout2, value);
+    view.setFloat32(offset + layout2.marginInline, finite(value.marginInline, "exclusion inline margin"), true);
+    view.setFloat32(offset + layout2.marginBlock, finite(value.marginBlock, "exclusion block margin"), true);
     writeVertices(view, vertexOffsets[index], value.vertices ?? []);
   }
 }
-function writeBounds(view, offset, layout, value) {
+function writeBounds(view, offset, layout2, value) {
   for (const field of ["inlineStart", "blockStart", "inlineEnd", "blockEnd"]) {
-    view.setFloat32(offset + layout[field], finite(value[field], field), true);
+    view.setFloat32(offset + layout2[field], finite(value[field], field), true);
   }
   if ("clipInlineStart" in value) {
-    view.setFloat32(offset + layout.clipInlineStart, finite(value.clipInlineStart, "clipInlineStart"), true);
-    view.setFloat32(offset + layout.clipBlockStart, finite(value.clipBlockStart, "clipBlockStart"), true);
-    view.setFloat32(offset + layout.clipInlineEnd, finite(value.clipInlineEnd, "clipInlineEnd"), true);
-    view.setFloat32(offset + layout.clipBlockEnd, finite(value.clipBlockEnd, "clipBlockEnd"), true);
+    view.setFloat32(offset + layout2.clipInlineStart, finite(value.clipInlineStart, "clipInlineStart"), true);
+    view.setFloat32(offset + layout2.clipBlockStart, finite(value.clipBlockStart, "clipBlockStart"), true);
+    view.setFloat32(offset + layout2.clipInlineEnd, finite(value.clipInlineEnd, "clipInlineEnd"), true);
+    view.setFloat32(offset + layout2.clipBlockEnd, finite(value.clipBlockEnd, "clipBlockEnd"), true);
   }
 }
 function writeVertices(view, tableOffset, vertices) {
-  const layout = textShaperAbi.layouts.engineFlowVertex;
+  const layout2 = textShaperAbi.layouts.engineFlowVertex;
   for (const [index, vertex] of vertices.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setFloat32(offset + layout.inline, finite(vertex.inline, "vertex inline"), true);
-    view.setFloat32(offset + layout.block, finite(vertex.block, "vertex block"), true);
+    const offset = tableOffset + index * layout2.size;
+    view.setFloat32(offset + layout2.inline, finite(vertex.inline, "vertex inline"), true);
+    view.setFloat32(offset + layout2.block, finite(vertex.block, "vertex block"), true);
   }
 }
 function writeInlineObjects(view, tableOffset, objects) {
-  const layout = textShaperAbi.layouts.engineInlineObject;
+  const layout2 = textShaperAbi.layouts.engineInlineObject;
   for (const [index, value] of objects.entries()) {
-    const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u323(value.paragraphId, "paragraph ID"), true);
+    const offset = tableOffset + index * layout2.size;
+    view.setUint32(offset + layout2.paragraphId, u323(value.paragraphId, "paragraph ID"), true);
     for (const [field, number] of [
       ["id", value.id],
       ["contentRevision", value.contentRevision],
@@ -20312,7 +20312,7 @@ function writeInlineObjects(view, tableOffset, objects) {
       ["resourceId", value.resourceId],
       ["resourceGeneration", value.resourceGeneration]
     ]) {
-      view.setUint32(offset + layout[field], u323(number, `inline object ${field}`), true);
+      view.setUint32(offset + layout2[field], u323(number, `inline object ${field}`), true);
     }
     for (const [field, number] of [
       ["inlineExtent", value.inlineExtent],
@@ -20323,9 +20323,9 @@ function writeInlineObjects(view, tableOffset, objects) {
       ["marginBlockStart", value.marginBlockStart],
       ["marginBlockEnd", value.marginBlockEnd]
     ]) {
-      view.setFloat32(offset + layout[field], finite(number, `inline object ${field}`), true);
+      view.setFloat32(offset + layout2[field], finite(number, `inline object ${field}`), true);
     }
-    view.setUint8(offset + layout.baselineAlignment, inlineBaseline(value.baselineAlignment));
+    view.setUint8(offset + layout2.baselineAlignment, inlineBaseline(value.baselineAlignment));
   }
 }
 function present(value, bit) {
@@ -20500,11 +20500,11 @@ var RenderPlanView = class {
 };
 function readTables(view, baseOffset) {
   const table2 = (name) => {
-    const layout = tableLayouts[name];
+    const layout2 = tableLayouts[name];
     return {
-      offset: view.getUint32(baseOffset + layout.offset, true),
-      count: view.getUint32(baseOffset + layout.count, true),
-      stride: layout.record.size
+      offset: view.getUint32(baseOffset + layout2.offset, true),
+      count: view.getUint32(baseOffset + layout2.count, true),
+      stride: layout2.record.size
     };
   };
   return {
@@ -20519,12 +20519,12 @@ function readTables(view, baseOffset) {
 }
 function inkBoundsOf(view, record2, measured) {
   if (!measured) return void 0;
-  const layout = textShaperAbi.layouts.engineSemanticView;
+  const layout2 = textShaperAbi.layouts.engineSemanticView;
   return Object.freeze({
-    x: view.f32(record2 + layout.inkInlineStart),
-    y: view.f32(record2 + layout.inkBlockStart),
-    width: view.f32(record2 + layout.inkInlineExtent),
-    height: view.f32(record2 + layout.inkBlockExtent)
+    x: view.f32(record2 + layout2.inkInlineStart),
+    y: view.f32(record2 + layout2.inkBlockStart),
+    width: view.f32(record2 + layout2.inkInlineExtent),
+    height: view.f32(record2 + layout2.inkBlockExtent)
   });
 }
 function readPlannerMeasurements(publication) {
@@ -20603,25 +20603,25 @@ function readPlannerMeasurements(publication) {
   }
   return measurements;
 }
-function measurementFromLayoutInspection(layout) {
+function measurementFromLayoutInspection(layout2) {
   return Object.freeze({
-    width: layout.width,
-    height: layout.height,
-    contentWidth: layout.contentWidth,
-    contentHeight: layout.contentHeight,
-    firstBaseline: layout.firstBaseline,
-    lastBaseline: layout.lastBaseline,
-    ascent: layout.ascent,
-    descent: layout.descent,
-    lineHeight: layout.lineHeight,
-    inkBounds: layout.inkBounds,
-    overflowed: layout.overflowed,
-    minContentWidth: layout.minContentWidth,
-    maxContentWidth: layout.maxContentWidth,
-    glyphCount: layout.glyphCount,
-    lineCount: layout.lineCount,
-    missingGlyphCount: layout.missingGlyphCount,
-    lines: layout.lines
+    width: layout2.width,
+    height: layout2.height,
+    contentWidth: layout2.contentWidth,
+    contentHeight: layout2.contentHeight,
+    firstBaseline: layout2.firstBaseline,
+    lastBaseline: layout2.lastBaseline,
+    ascent: layout2.ascent,
+    descent: layout2.descent,
+    lineHeight: layout2.lineHeight,
+    inkBounds: layout2.inkBounds,
+    overflowed: layout2.overflowed,
+    minContentWidth: layout2.minContentWidth,
+    maxContentWidth: layout2.maxContentWidth,
+    glyphCount: layout2.glyphCount,
+    lineCount: layout2.lineCount,
+    missingGlyphCount: layout2.missingGlyphCount,
+    lines: layout2.lines
   });
 }
 function readPlannerLayouts(publication) {
@@ -20860,25 +20860,25 @@ var BorrowedGlyphLayoutView = class {
   glyphAt(index) {
     this.#assertActive();
     const pointer2 = this.#transport.borrowParagraphGlyph(this.#publication, index);
-    const layout = textShaperAbi.layouts.borrowedGlyph;
-    const view = new DataView(this.#publication.memoryBuffer, pointer2, layout.size);
-    const bidiLevel = view.getUint8(layout.bidiLevel);
+    const layout2 = textShaperAbi.layouts.borrowedGlyph;
+    const view = new DataView(this.#publication.memoryBuffer, pointer2, layout2.size);
+    const bidiLevel = view.getUint8(layout2.bidiLevel);
     if (bidiLevel > 125) throw new RangeError("borrowed layout glyph has an invalid bidi level");
     return Object.freeze({
-      stableId: view.getUint32(layout.stableId, true),
-      fontHandle: view.getUint32(layout.fontHandle, true),
-      glyphId: view.getUint16(layout.glyphId, true),
-      cluster: view.getUint32(layout.cluster, true),
+      stableId: view.getUint32(layout2.stableId, true),
+      fontHandle: view.getUint32(layout2.fontHandle, true),
+      glyphId: view.getUint16(layout2.glyphId, true),
+      cluster: view.getUint32(layout2.cluster, true),
       bidiLevel,
-      fontSize: view.getFloat32(layout.fontSize, true),
-      x: view.getFloat32(layout.inlineOrigin, true),
-      y: view.getFloat32(layout.blockOrigin, true),
-      advance: view.getFloat32(layout.inlineAdvance, true),
-      inkX: view.getFloat32(layout.inkInlineStart, true),
-      inkY: view.getFloat32(layout.inkBlockStart, true),
-      inkWidth: view.getFloat32(layout.inkInlineExtent, true),
-      inkHeight: view.getFloat32(layout.inkBlockExtent, true),
-      flags: view.getUint16(layout.flags, true)
+      fontSize: view.getFloat32(layout2.fontSize, true),
+      x: view.getFloat32(layout2.inlineOrigin, true),
+      y: view.getFloat32(layout2.blockOrigin, true),
+      advance: view.getFloat32(layout2.inlineAdvance, true),
+      inkX: view.getFloat32(layout2.inkInlineStart, true),
+      inkY: view.getFloat32(layout2.inkBlockStart, true),
+      inkWidth: view.getFloat32(layout2.inkInlineExtent, true),
+      inkHeight: view.getFloat32(layout2.inkBlockExtent, true),
+      flags: view.getUint16(layout2.flags, true)
     });
   }
 };
@@ -20895,26 +20895,26 @@ var InspectionBorrowedGlyphLayoutView = class {
   }
   glyphAt(index) {
     this.#assertActive();
-    const layout = this.#inspection;
-    assertGlyphIndex(index, layout.glyphCount);
-    const fontSlot = layout.glyphFontSlots[index];
-    const fontHandle = layout.fontHandles[fontSlot];
+    const layout2 = this.#inspection;
+    assertGlyphIndex(index, layout2.glyphCount);
+    const fontSlot = layout2.glyphFontSlots[index];
+    const fontHandle = layout2.fontHandles[fontSlot];
     if (fontHandle === void 0) throw new RangeError("borrowed layout glyph references a missing font slot");
     return Object.freeze({
-      stableId: layout.glyphStableIds[index],
+      stableId: layout2.glyphStableIds[index],
       fontHandle,
-      glyphId: layout.glyphIds[index],
-      cluster: layout.clusters[index],
-      bidiLevel: layout.glyphBidiLevels[index],
-      fontSize: layout.glyphFontSizes[index],
-      x: layout.x[index],
-      y: layout.y[index],
-      advance: layout.glyphAdvances[index],
-      inkX: layout.glyphInkX[index],
-      inkY: layout.glyphInkY[index],
-      inkWidth: layout.glyphInkWidths[index],
-      inkHeight: layout.glyphInkHeights[index],
-      flags: layout.glyphFlags[index]
+      glyphId: layout2.glyphIds[index],
+      cluster: layout2.clusters[index],
+      bidiLevel: layout2.glyphBidiLevels[index],
+      fontSize: layout2.glyphFontSizes[index],
+      x: layout2.x[index],
+      y: layout2.y[index],
+      advance: layout2.glyphAdvances[index],
+      inkX: layout2.glyphInkX[index],
+      inkY: layout2.glyphInkY[index],
+      inkWidth: layout2.glyphInkWidths[index],
+      inkHeight: layout2.glyphInkHeights[index],
+      flags: layout2.glyphFlags[index]
     });
   }
 };
@@ -21444,10 +21444,10 @@ var RenderPlannerImpl = class {
     if ((semanticViewMask & masks.layoutInspection) !== 0) {
       const layouts = readPlannerLayouts(publication);
       for (const state of this.#texts) {
-        const layout = layouts.get(state.paragraphId);
-        if (layout === void 0) continue;
-        state.measurement = measurementFromLayoutInspection(layout);
-        state.inspection = layout;
+        const layout2 = layouts.get(state.paragraphId);
+        if (layout2 === void 0) continue;
+        state.measurement = measurementFromLayoutInspection(layout2);
+        state.inspection = layout2;
       }
       return;
     }
@@ -21474,12 +21474,12 @@ var RenderPlannerImpl = class {
   #queryInspection(state) {
     this.#assertTextQueryable(state);
     const publication = this.#queryTextPublication(state, textShaperAbi.engine.semanticViewMasks.layoutInspection);
-    const layout = readPlannerLayouts(publication).get(state.paragraphId);
-    if (layout === void 0) throw new Error("text engine returned no layout inspection for retained text");
+    const layout2 = readPlannerLayouts(publication).get(state.paragraphId);
+    if (layout2 === void 0) throw new Error("text engine returned no layout inspection for retained text");
     this.#adoptMeasuredBindings(state);
-    state.measurement = measurementFromLayoutInspection(layout);
-    state.inspection = layout;
-    return layout;
+    state.measurement = measurementFromLayoutInspection(layout2);
+    state.inspection = layout2;
+    return layout2;
   }
   #queryTextPublication(state, semanticViewMask) {
     const request = this.#queryTextRequest(state, semanticViewMask);
@@ -21990,13 +21990,13 @@ function resolveTextOptions(handleState, value) {
   const formattedText = normalizeTextInput(value.text);
   validateInlineObjects(value.inlineObjects, formattedText.text.length);
   const style = value.style ?? {};
-  const layout = value.layout ?? {};
+  const layout2 = value.layout ?? {};
   const constraints = value.constraints ?? {};
   assertTextStyle(style, "text style");
   assertTextStyleFeatureRanges(style, 0, formattedText.text.length, "text style");
-  assertParagraphLayout(layout, "text layout");
+  assertParagraphLayout(layout2, "text layout");
   assertConstraints(constraints, "text constraints");
-  normalizedColumns(layout, constraints);
+  normalizedColumns(layout2, constraints);
   const font = handleState._retainFontStackBinding(value.font);
   const leases = [font];
   try {
@@ -22573,9 +22573,9 @@ function engineStatusError(operation, status, requiredRequestCapacity = 0, requi
   return error;
 }
 function headerFault(header) {
-  const layout = textShaperAbi.layouts.engineResult;
-  const paragraphId = header.getUint32(layout.faultParagraphId, true);
-  const styleId = header.getUint32(layout.faultStyleId, true);
+  const layout2 = textShaperAbi.layouts.engineResult;
+  const paragraphId = header.getUint32(layout2.faultParagraphId, true);
+  const styleId = header.getUint32(layout2.faultStyleId, true);
   return paragraphId === 0 && styleId === 0 ? NO_FAULT2 : Object.freeze({ paragraphId, styleId });
 }
 var handleCodecs = /* @__PURE__ */ new WeakMap();
@@ -23458,18 +23458,18 @@ var PlanTransport = class {
     if (resultPointer === 0) {
       throw engineStatusError("publish text update", textShaperAbi.status.resultTooLarge);
     }
-    const layout = textShaperAbi.layouts.engineResult;
-    if (resultPointer + layout.size > memoryBuffer.byteLength) {
+    const layout2 = textShaperAbi.layouts.engineResult;
+    if (resultPointer + layout2.size > memoryBuffer.byteLength) {
       throw new RangeError("text engine returned an out-of-bounds result header");
     }
-    const header = new DataView(memoryBuffer, resultPointer, layout.size);
-    const status = header.getUint32(layout.status, true);
+    const header = new DataView(memoryBuffer, resultPointer, layout2.size);
+    const status = header.getUint32(layout2.status, true);
     if (status !== textShaperAbi.status.ok) {
       throw engineStatusError(
         "publish text update",
         status,
-        header.getUint32(layout.requiredRequestCapacity, true),
-        header.getUint32(layout.requiredResultCapacity, true),
+        header.getUint32(layout2.requiredRequestCapacity, true),
+        header.getUint32(layout2.requiredResultCapacity, true),
         headerFault(header)
       );
     }
@@ -23503,14 +23503,14 @@ var PlanTransport = class {
       const resultPointer = this.#exports.measureParagraph(this.#handle, requestPointer, requestLength, paragraphId);
       const memoryBuffer = this.#exports.memory.buffer;
       if (resultPointer === 0) throw engineStatusError("measure paragraph", textShaperAbi.status.resultTooLarge);
-      const layout = textShaperAbi.layouts.engineResult;
-      if (resultPointer + layout.size > memoryBuffer.byteLength) {
+      const layout2 = textShaperAbi.layouts.engineResult;
+      if (resultPointer + layout2.size > memoryBuffer.byteLength) {
         throw new RangeError("text engine returned an out-of-bounds result header");
       }
-      const header = new DataView(memoryBuffer, resultPointer, layout.size);
-      const status = header.getUint32(layout.status, true);
-      const requiredResultCapacity = header.getUint32(layout.requiredResultCapacity, true);
-      const availableResultCapacity = header.getUint32(layout.resultCapacity, true);
+      const header = new DataView(memoryBuffer, resultPointer, layout2.size);
+      const status = header.getUint32(layout2.status, true);
+      const requiredResultCapacity = header.getUint32(layout2.requiredResultCapacity, true);
+      const availableResultCapacity = header.getUint32(layout2.resultCapacity, true);
       if (status === textShaperAbi.status.resultTooLarge && canRepairResultCapacity && requiredResultCapacity <= maxOutputBytes && requiredResultCapacity > availableResultCapacity) {
         canRepairResultCapacity = false;
         this.reserve(requestLength, requiredResultCapacity);
@@ -23520,7 +23520,7 @@ var PlanTransport = class {
         throw engineStatusError(
           "measure paragraph",
           status,
-          header.getUint32(layout.requiredRequestCapacity, true),
+          header.getUint32(layout2.requiredRequestCapacity, true),
           requiredResultCapacity,
           headerFault(header)
         );
@@ -23536,11 +23536,11 @@ var PlanTransport = class {
     }
     const pointer2 = this.#exports.borrowParagraphLayout(this.#handle, paragraphId);
     const memoryBuffer = this.#exports.memory.buffer;
-    const layout = textShaperAbi.layouts.borrowedLayoutDescriptor;
-    this.#assertBorrowedRange(pointer2, layout.size, layout.alignment, memoryBuffer, "borrowed layout descriptor");
-    const view = new DataView(memoryBuffer, pointer2, layout.size);
-    const rootId = view.getUint32(layout.rootId, true);
-    const describedParagraph = view.getUint32(layout.paragraphId, true);
+    const layout2 = textShaperAbi.layouts.borrowedLayoutDescriptor;
+    this.#assertBorrowedRange(pointer2, layout2.size, layout2.alignment, memoryBuffer, "borrowed layout descriptor");
+    const view = new DataView(memoryBuffer, pointer2, layout2.size);
+    const rootId = view.getUint32(layout2.rootId, true);
+    const describedParagraph = view.getUint32(layout2.paragraphId, true);
     if (rootId !== this.#handle || describedParagraph !== paragraphId) {
       throw new TypeError("borrowed layout descriptor identifies a different paragraph");
     }
@@ -23549,13 +23549,13 @@ var PlanTransport = class {
       memoryBuffer,
       rootId,
       paragraphId: describedParagraph,
-      generation: uint32Handle(view.getUint32(layout.generation, true), "borrowed layout generation"),
-      glyphCount: view.getUint32(layout.glyphCount, true)
+      generation: uint32Handle(view.getUint32(layout2.generation, true), "borrowed layout generation"),
+      glyphCount: view.getUint32(layout2.glyphCount, true)
     });
   }
   /** @internal Returns one fixed scratch glyph record during an active layout borrow. */
-  borrowParagraphGlyph(layout, index) {
-    return this.#borrowParagraphRecord(layout, index);
+  borrowParagraphGlyph(layout2, index) {
+    return this.#borrowParagraphRecord(layout2, index);
   }
   /** @internal Copies selected committed glyph records into a complete query checkpoint. */
   copyGlyphs(paragraphId, stableIds, codecHandle, capabilitySet, maxOutputBytes) {
@@ -23614,31 +23614,31 @@ var PlanTransport = class {
   #decodeStatusPointer(resultPointer, initialMemoryBuffer, operation) {
     if (resultPointer === 0) throw engineStatusError(operation, textShaperAbi.status.resultTooLarge);
     const memoryBuffer = this.#exports.memory.buffer;
-    const layout = textShaperAbi.layouts.engineResult;
-    if (resultPointer + layout.size > memoryBuffer.byteLength) {
+    const layout2 = textShaperAbi.layouts.engineResult;
+    if (resultPointer + layout2.size > memoryBuffer.byteLength) {
       throw new RangeError(`${operation} returned an out-of-bounds result header`);
     }
-    const header = new DataView(memoryBuffer, resultPointer, layout.size);
-    const status = header.getUint32(layout.status, true);
+    const header = new DataView(memoryBuffer, resultPointer, layout2.size);
+    const status = header.getUint32(layout2.status, true);
     if (status !== textShaperAbi.status.ok) {
       throw engineStatusError(
         operation,
         status,
-        header.getUint32(layout.requiredRequestCapacity, true),
-        header.getUint32(layout.requiredResultCapacity, true),
+        header.getUint32(layout2.requiredRequestCapacity, true),
+        header.getUint32(layout2.requiredResultCapacity, true),
         headerFault(header)
       );
     }
     return this.#decodeResult(header, resultPointer, memoryBuffer, initialMemoryBuffer);
   }
-  #borrowParagraphRecord(layout, index) {
-    if (layout.rootId !== this.#handle || this.isExpired(layout.publication)) {
+  #borrowParagraphRecord(layout2, index) {
+    if (layout2.rootId !== this.#handle || this.isExpired(layout2.publication)) {
       throw new Error("borrowed glyph layout has expired");
     }
-    if (!Number.isSafeInteger(index) || index < 0 || index >= layout.glyphCount) {
+    if (!Number.isSafeInteger(index) || index < 0 || index >= layout2.glyphCount) {
       throw new RangeError("borrowed layout glyph index is outside its range");
     }
-    const pointer2 = this.#exports.borrowParagraphGlyph(this.#handle, layout.paragraphId, layout.generation, index);
+    const pointer2 = this.#exports.borrowParagraphGlyph(this.#handle, layout2.paragraphId, layout2.generation, index);
     const memoryBuffer = this.#exports.memory.buffer;
     const record2 = textShaperAbi.layouts.borrowedGlyph;
     this.#assertBorrowedRange(pointer2, record2.size, record2.alignment, memoryBuffer, "borrowed glyph record");
@@ -23650,28 +23650,28 @@ var PlanTransport = class {
     }
   }
   #decodeResult(header, resultPointer, memoryBuffer, initialMemoryBuffer) {
-    const layout = textShaperAbi.layouts.engineResult;
-    const byteLength = header.getUint32(layout.byteLength, true);
-    if (byteLength < layout.size || resultPointer + byteLength > memoryBuffer.byteLength) {
+    const layout2 = textShaperAbi.layouts.engineResult;
+    const byteLength = header.getUint32(layout2.byteLength, true);
+    if (byteLength < layout2.size || resultPointer + byteLength > memoryBuffer.byteLength) {
       throw new RangeError("text engine returned an out-of-bounds publication");
     }
-    this.#requestCapacity = header.getUint32(layout.requestCapacity, true);
-    this.#resultCapacity = header.getUint32(layout.resultCapacity, true);
+    this.#requestCapacity = header.getUint32(layout2.requestCapacity, true);
+    this.#resultCapacity = header.getUint32(layout2.resultCapacity, true);
     const publication = {
       bytes: new Uint8Array(memoryBuffer, resultPointer, byteLength),
       memoryBuffer,
       memoryGrew: memoryBuffer !== initialMemoryBuffer,
-      engineRevision: header.getUint32(layout.engineRevision, true),
-      revision: header.getUint32(layout.revision, true),
-      requiredBaseRevision: header.getUint32(layout.requiredBaseRevision, true),
-      publicationGeneration: header.getUint32(layout.publicationGeneration, true),
-      flags: header.getUint32(layout.flags, true),
-      codecHandle: uint324(header.getUint32(layout.codecHandle, true), "result codec handle"),
-      capabilitySet: header.getUint32(layout.capabilitySet, true),
-      semanticViewCount: header.getUint32(layout.semanticViewCount, true),
-      primitiveCount: header.getUint32(layout.primitiveCount, true),
-      patchCount: header.getUint32(layout.patchCount, true),
-      drawCount: header.getUint32(layout.drawCount, true)
+      engineRevision: header.getUint32(layout2.engineRevision, true),
+      revision: header.getUint32(layout2.revision, true),
+      requiredBaseRevision: header.getUint32(layout2.requiredBaseRevision, true),
+      publicationGeneration: header.getUint32(layout2.publicationGeneration, true),
+      flags: header.getUint32(layout2.flags, true),
+      codecHandle: uint324(header.getUint32(layout2.codecHandle, true), "result codec handle"),
+      capabilitySet: header.getUint32(layout2.capabilitySet, true),
+      semanticViewCount: header.getUint32(layout2.semanticViewCount, true),
+      primitiveCount: header.getUint32(layout2.primitiveCount, true),
+      patchCount: header.getUint32(layout2.patchCount, true),
+      drawCount: header.getUint32(layout2.drawCount, true)
     };
     this.#issued.set(publication, this.#epoch);
     this.#latestGeneration = deterministicMath.max(this.#latestGeneration, publication.publicationGeneration);
@@ -24001,19 +24001,19 @@ var TypographyEngineImpl = class {
     const pointer2 = exports.updateBatchPointer();
     if (pointer2 === 0)
       throw new TypographyEngineStatusError("resolve Typography shape batch", textShaperAbi.status.resultTooLarge);
-    const layout = textShaperAbi.layouts.engineUpdateBatchEntry;
-    const byteLength = count * layout.size;
+    const layout2 = textShaperAbi.layouts.engineUpdateBatchEntry;
+    const byteLength = count * layout2.size;
     if (pointer2 + byteLength > exports.memory.buffer.byteLength) {
       throw new RangeError("Typography shape batch descriptor arena is out of bounds");
     }
     let view = new DataView(exports.memory.buffer, pointer2, byteLength);
     for (let index = 0; index < count; index += 1) {
       const planner = staged[index];
-      const offset = index * layout.size;
-      view.setUint32(offset + layout.rootId, planner.rootId, true);
-      view.setUint32(offset + layout.requestLength, planner.requestLength, true);
-      view.setUint32(offset + layout.resultPointer, 0, true);
-      view.setUint32(offset + layout.status, 0, true);
+      const offset = index * layout2.size;
+      view.setUint32(offset + layout2.rootId, planner.rootId, true);
+      view.setUint32(offset + layout2.requestLength, planner.requestLength, true);
+      view.setUint32(offset + layout2.resultPointer, 0, true);
+      view.setUint32(offset + layout2.status, 0, true);
     }
     requireEngineStatus(exports.textUpdateBatch(pointer2, count), "publish Typography shape batch");
     const finalMemory = exports.memory.buffer;
@@ -24021,9 +24021,9 @@ var TypographyEngineImpl = class {
     for (let stagedIndex = 0; stagedIndex < staged.length; stagedIndex += 1) {
       const registrationIndex = stagedRegistrationIndices[stagedIndex];
       const planner = staged[stagedIndex];
-      const offset = stagedIndex * layout.size;
-      const status = view.getUint32(offset + layout.status, true);
-      const resultPointer = view.getUint32(offset + layout.resultPointer, true);
+      const offset = stagedIndex * layout2.size;
+      const status = view.getUint32(offset + layout2.status, true);
+      const resultPointer = view.getUint32(offset + layout2.resultPointer, true);
       try {
         if (resultPointer === 0) requireEngineStatus(status, "publish Typography root");
         planner.adopt(resultPointer, finalMemory);
@@ -27388,35 +27388,35 @@ function unionBox(left, right) {
     deterministicMath.max(left.y + left.height, right.y + right.height) - y
   );
 }
-function createTypographyPlacements(layout, text2, displayedX, displayedY, incomplete) {
-  const glyphCount = layout.glyphCount;
+function createTypographyPlacements(layout2, text2, displayedX, displayedY, incomplete) {
+  const glyphCount = layout2.glyphCount;
   if (displayedX.length !== glyphCount || displayedY.length !== glyphCount) {
     throw new RangeError("drawn glyph origins do not match the inspected glyph count");
   }
   const lineOfGlyph = new Uint32Array(glyphCount);
-  for (let lineIndex = 0; lineIndex < layout.lineCount; lineIndex += 1) {
-    const start = layout.lineGlyphStarts[lineIndex];
-    const end = start + layout.lineGlyphCounts[lineIndex];
+  for (let lineIndex = 0; lineIndex < layout2.lineCount; lineIndex += 1) {
+    const start = layout2.lineGlyphStarts[lineIndex];
+    const end = start + layout2.lineGlyphCounts[lineIndex];
     for (let index = start; index < end && index < glyphCount; index += 1) lineOfGlyph[index] = lineIndex;
   }
-  const clusterEnds = clusterEndsOf(layout, text2.length);
+  const clusterEnds = clusterEndsOf(layout2, text2.length);
   const wordOfGlyph = new Int32Array(glyphCount).fill(-1);
-  const wordSpans = wordsOf(layout, text2, lineOfGlyph, wordOfGlyph, clusterEnds);
+  const wordSpans = wordsOf(layout2, text2, lineOfGlyph, wordOfGlyph, clusterEnds);
   const glyphs = [];
   const keyCounts = /* @__PURE__ */ new Map();
   for (let index = 0; index < glyphCount; index += 1) {
-    const fontHandle = layout.fontHandles[layout.glyphFontSlots[index]];
-    const cluster = layout.clusters[index];
-    const base = `${fontHandle}:${layout.glyphIds[index]}:${cluster}`;
+    const fontHandle = layout2.fontHandles[layout2.glyphFontSlots[index]];
+    const cluster = layout2.clusters[index];
+    const base = `${fontHandle}:${layout2.glyphIds[index]}:${cluster}`;
     const occurrence = keyCounts.get(base) ?? 0;
     keyCounts.set(base, occurrence + 1);
     glyphs.push(
       glyphPlacement(
-        layout,
+        layout2,
         index,
         `${base}:${occurrence}`,
         cluster,
-        layout.glyphBidiLevels[index],
+        layout2.glyphBidiLevels[index],
         lineOfGlyph[index],
         wordOfGlyph[index],
         displayedX[index],
@@ -27424,7 +27424,7 @@ function createTypographyPlacements(layout, text2, displayedX, displayedY, incom
       )
     );
   }
-  const lines = layout.lines.map(
+  const lines = layout2.lines.map(
     (metrics) => glyphRun(
       "line",
       metrics.index,
@@ -27446,7 +27446,7 @@ function createTypographyPlacements(layout, text2, displayedX, displayedY, incom
   );
   const placements = {
     space: "paragraph",
-    layout,
+    layout: layout2,
     glyphs: Object.freeze(glyphs),
     words: Object.freeze(words2),
     lines: Object.freeze(lines),
@@ -27456,15 +27456,15 @@ function createTypographyPlacements(layout, text2, displayedX, displayedY, incom
   };
   return Object.freeze(placements);
 }
-function glyphPlacement(layout, index, key, cluster, bidiLevel, line, word, drawnX, drawnY) {
-  const shapedX = layout.x[index];
-  const shapedY = layout.y[index];
-  const advance = layout.glyphAdvances[index];
-  const inkOffsetX = layout.glyphInkX[index] - shapedX;
-  const inkOffsetY = layout.glyphInkY[index] - shapedY;
-  const inkWidth = layout.glyphInkWidths[index];
-  const inkHeight = layout.glyphInkHeights[index];
-  const metrics = layout.lines[line];
+function glyphPlacement(layout2, index, key, cluster, bidiLevel, line, word, drawnX, drawnY) {
+  const shapedX = layout2.x[index];
+  const shapedY = layout2.y[index];
+  const advance = layout2.glyphAdvances[index];
+  const inkOffsetX = layout2.glyphInkX[index] - shapedX;
+  const inkOffsetY = layout2.glyphInkY[index] - shapedY;
+  const inkWidth = layout2.glyphInkWidths[index];
+  const inkHeight = layout2.glyphInkHeights[index];
+  const metrics = layout2.lines[line];
   const ascent = metrics?.ascent ?? 0;
   const lineHeight = metrics?.lineHeight ?? 0;
   return {
@@ -27474,7 +27474,7 @@ function glyphPlacement(layout, index, key, cluster, bidiLevel, line, word, draw
     bidiLevel,
     line,
     word,
-    fontSize: layout.glyphFontSizes[index],
+    fontSize: layout2.glyphFontSizes[index],
     advance,
     shapedX,
     shapedY,
@@ -27511,10 +27511,10 @@ function glyphRun(kind, index, glyphStart, glyphCount, textStart, textEnd, all, 
   };
   return lineMetrics === void 0 ? run2 : Object.assign(run2, lineMetrics);
 }
-function clusterEndsOf(layout, textLength) {
+function clusterEndsOf(layout2, textLength) {
   const boundaries = /* @__PURE__ */ new Set([0, textLength]);
-  for (const cluster of layout.clusters) boundaries.add(cluster);
-  for (const line of layout.lines) {
+  for (const cluster of layout2.clusters) boundaries.add(cluster);
+  for (const line of layout2.lines) {
     boundaries.add(line.textStart);
     boundaries.add(line.textEnd);
   }
@@ -27526,7 +27526,7 @@ function clusterEndsOf(layout, textLength) {
   }
   return ends;
 }
-function wordsOf(layout, text2, lineOfGlyph, wordOfGlyph, clusterEnds) {
+function wordsOf(layout2, text2, lineOfGlyph, wordOfGlyph, clusterEnds) {
   const spans = [];
   let start = -1;
   let textStart = 0;
@@ -27537,8 +27537,8 @@ function wordsOf(layout, text2, lineOfGlyph, wordOfGlyph, clusterEnds) {
     spans.push({ glyphStart: start, glyphCount: end - start, textStart, textEnd });
     start = -1;
   };
-  for (let index = 0; index < layout.glyphCount; index += 1) {
-    const cluster = layout.clusters[index];
+  for (let index = 0; index < layout2.glyphCount; index += 1) {
+    const cluster = layout2.clusters[index];
     const separator = isWordSeparator(text2.charCodeAt(cluster));
     const brokeLine = start >= 0 && lineOfGlyph[index] !== lineOfGlyph[start];
     if (separator || brokeLine) close(index);
@@ -27551,7 +27551,7 @@ function wordsOf(layout, text2, lineOfGlyph, wordOfGlyph, clusterEnds) {
     textStart = deterministicMath.min(textStart, cluster);
     textEnd = deterministicMath.max(textEnd, clusterEnds.get(cluster) ?? cluster);
   }
-  close(layout.glyphCount);
+  close(layout2.glyphCount);
   return spans;
 }
 function lineAt(lines, y) {
@@ -28834,8 +28834,8 @@ function typography2(options = {}) {
             },
             placements() {
               active();
-              const layout = controller ? controller.inspect() : unshaped();
-              return createTypographyPlacements(layout, controller ? current.text : "", layout.x, layout.y, []);
+              const layout2 = controller ? controller.inspect() : unshaped();
+              return createTypographyPlacements(layout2, controller ? current.text : "", layout2.x, layout2.y, []);
             },
             detach(indices) {
               return copy("glyphs", indices);
@@ -29575,7 +29575,7 @@ function backdrops() {
         return key;
       };
       const pipelines = /* @__PURE__ */ new Map();
-      let layout = null;
+      let layout2 = null;
       const unis = [];
       let blitPipe = null, blitUni = null, blank = null;
       let bgKey = null, bgFit = "cover";
@@ -29673,7 +29673,7 @@ function backdrops() {
       k.hooks.on("boot.contextLost", () => {
         pipelines.clear();
         broken.clear();
-        layout = null;
+        layout2 = null;
         unis.length = 0;
         blitPipe = null;
         blitUni = null;
@@ -29805,7 +29805,7 @@ function backdrops() {
         const key = keyOf(def);
         let p = pipelines.get(key);
         if (p) return p;
-        if (!layout) layout = bag.device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }, { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} }, { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: {} }] });
+        if (!layout2) layout2 = bag.device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } }, { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} }, { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: {} }] });
         const mod = bag.device.createShaderModule({ code: backdropWGSL(def.code, Object.keys(def.params)) });
         void mod.getCompilationInfo().then((inf) => {
           for (const m of inf.messages) if (m.type === "error") {
@@ -29814,7 +29814,7 @@ function backdrops() {
             console.error(`backdrops: "${def.name}" ${why}`);
           }
         });
-        p = bag.device.createRenderPipeline({ layout: bag.device.createPipelineLayout({ bindGroupLayouts: [layout] }), vertex: { module: mod, entryPoint: "vs" }, fragment: { module: mod, entryPoint: "fs", targets: [{ format: bag.format, blend: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" } } }] }, primitive: { topology: "triangle-list" } });
+        p = bag.device.createRenderPipeline({ layout: bag.device.createPipelineLayout({ bindGroupLayouts: [layout2] }), vertex: { module: mod, entryPoint: "vs" }, fragment: { module: mod, entryPoint: "fs", targets: [{ format: bag.format, blend: { color: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" } } }] }, primitive: { topology: "triangle-list" } });
         pipelines.set(key, p);
         return p;
       };
@@ -29907,7 +29907,7 @@ ${DITHER}
           data.set(pointer2, 44);
           data[56] = live.fade;
           bag.device.queue.writeBuffer(uni, 0, data);
-          const bind = bag.device.createBindGroup({ layout: layout ?? (pipelineFor(bag, live.def), layout), entries: [{ binding: 0, resource: { buffer: uni } }, { binding: 1, resource: bgView }, { binding: 2, resource: bag.sampler }] });
+          const bind = bag.device.createBindGroup({ layout: layout2 ?? (pipelineFor(bag, live.def), layout2), entries: [{ binding: 0, resource: { buffer: uni } }, { binding: 1, resource: bgView }, { binding: 2, resource: bag.sampler }] });
           const pass = bag.encoder.beginRenderPass({ colorAttachments: [{ view: bag.view, loadOp: "load", storeOp: "store" }] });
           pass.setPipeline(pipelineFor(bag, live.def));
           pass.setBindGroup(0, bind);
@@ -32414,9 +32414,9 @@ function createUiFont(api, font) {
       if (width === void 0) {
         const probe = api.write({ font, text: text2, style: { fontSize: size, lineHeight: 1.3, ...spacing ? { letterSpacing: spacing } : {} } });
         try {
-          const layout = probe.glyphs();
+          const layout2 = probe.glyphs();
           width = probe.measure().width;
-          for (let i = 0; i < layout.glyphCount; i++) width = deterministicMath.max(width, layout.x[i] + layout.glyphAdvances[i]);
+          for (let i = 0; i < layout2.glyphCount; i++) width = deterministicMath.max(width, layout2.x[i] + layout2.glyphAdvances[i]);
         } finally {
           probe.dispose();
         }
@@ -38435,8 +38435,8 @@ function buildUiSkin(material, options = {}) {
     groove: fromHsl(h, deterministicMath.min(0.55, s * 0.6), 0.13),
     font: (scale2) => fontAt(o, scale2)
   };
-  const defaults = surfaces({ ...ctx, defaults: {} });
-  Object.assign(styles, defaults, material.surfaces?.({ ...ctx, defaults }) ?? {});
+  const defaults2 = surfaces({ ...ctx, defaults: {} });
+  Object.assign(styles, defaults2, material.surfaces?.({ ...ctx, defaults: defaults2 }) ?? {});
   styles["heading"] = { designHeight: options.designHeight ?? 64, ...styles["heading"] };
   return { name: options.name ?? material.name, description: `${material.name}: ${material.look}`, font: fontAt(o, 0.72), fonts: [material.font], styles, dialogue: skinDialogue(styles, ctx.accent) };
 }
@@ -41092,7 +41092,7 @@ function controlsTouch(opts = {}) {
 }
 
 // game/engine.ts
-var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(typography2()).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(controls2d()).use(maths()).use(color()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "buttons": [{ "code": "Touch:left", "label": "<", "anchor": "bottom-left", "x": 55, "y": 110, "r": 38, "tint": "#f4d888" }, { "code": "Touch:right", "label": ">", "anchor": "bottom-left", "x": 175, "y": 110, "r": 38, "tint": "#f4d888" }, { "code": "Touch:up", "label": "^", "anchor": "bottom-left", "x": 115, "y": 170, "r": 38, "tint": "#f4d888" }, { "code": "Touch:down", "label": "v", "anchor": "bottom-left", "x": 115, "y": 50, "r": 38, "tint": "#f4d888" }, { "code": "Touch:interact", "label": "INTERACT", "anchor": "bottom-right", "x": 320, "y": 152, "r": 40, "tint": "#f5df9a" }, { "code": "Touch:jump", "label": "JUMP", "anchor": "bottom-right", "x": 110, "y": 160, "r": 46, "tint": "#f4d888" }, { "code": "Touch:run", "label": "RUN", "anchor": "bottom-right", "x": 215, "y": 160, "r": 36, "tint": "#e7dfb8" }, { "code": "Touch:sit", "label": "SIT", "anchor": "bottom-right", "x": 215, "y": 265, "r": 36, "tint": "#a8c0a0" }], "touchOnly": true, "alpha": 0.45 }));
+var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(typography2()).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(controls2d()).use(maths()).use(color()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "buttons": [], "touchOnly": true, "alpha": 0.45 }));
 var game = composed.game;
 var signals = composed.signals;
 
@@ -41315,16 +41315,16 @@ function getDefaultSettings() {
 }
 function getSettings() {
   if (activeSettings) return activeSettings;
-  const defaults = getDefaultSettings();
+  const defaults2 = getDefaultSettings();
   try {
     const saved = game.save.read("controls-settings", null);
     if (saved && typeof saved === "object" && (saved.runBehavior === "hold" || saved.runBehavior === "toggle") && (saved.crouchBehavior === "hold" || saved.crouchBehavior === "toggle")) {
-      activeSettings = { ...defaults, ...saved };
+      activeSettings = { ...defaults2, ...saved };
       return activeSettings;
     }
   } catch {
   }
-  activeSettings = { ...defaults };
+  activeSettings = { ...defaults2 };
   return activeSettings;
 }
 function updateSettings(partial) {
@@ -41395,6 +41395,66 @@ function spawnDroppings(x, feet) {
   });
 }
 
+// game/touchLayout.ts
+var MIN_X = 40;
+var MAX_X = 600;
+var MIN_Y = 40;
+var MAX_Y = 600;
+var MIN_RADIUS = 26;
+var MAX_RADIUS = 90;
+var MIN_OPACITY = 0.15;
+var MAX_OPACITY = 1;
+var TOUCH_COLORS = ["#f4d888", "#ffffff", "#a8c0a0", "#8fd7ed", "#ef9eae", "#b6a7e9"];
+var defaults = [
+  { code: "Touch:left", label: "<", anchor: "bottom-left", x: 55, y: 180, r: 38, tint: "#f4d888", opacity: 0.45 },
+  { code: "Touch:right", label: ">", anchor: "bottom-left", x: 175, y: 180, r: 38, tint: "#f4d888", opacity: 0.45 },
+  { code: "Touch:up", label: "^", anchor: "bottom-left", x: 115, y: 240, r: 38, tint: "#f4d888", opacity: 0.45 },
+  { code: "Touch:down", label: "v", anchor: "bottom-left", x: 115, y: 120, r: 38, tint: "#f4d888", opacity: 0.45 },
+  { code: "Touch:interact", label: "INTERACT", anchor: "bottom-right", x: 320, y: 152, r: 40, tint: "#f4d888", opacity: 0.45 },
+  { code: "Touch:jump", label: "JUMP", anchor: "bottom-right", x: 110, y: 160, r: 46, tint: "#f4d888", opacity: 0.45 },
+  { code: "Touch:run", label: "RUN", anchor: "bottom-right", x: 215, y: 160, r: 36, tint: "#ffffff", opacity: 0.45 },
+  { code: "Touch:sit", label: "SIT", anchor: "bottom-right", x: 215, y: 265, r: 36, tint: "#a8c0a0", opacity: 0.45 },
+  { code: "Touch:poop", label: "POOP", anchor: "bottom-right", x: 315, y: 265, r: 36, tint: "#ffffff", opacity: 0.45 }
+];
+var clamp2 = (value, fallback, min, max) => typeof value === "number" && Number.isFinite(value) ? deterministicMath.max(min, deterministicMath.min(max, value)) : fallback;
+var layout = null;
+function touchLayout() {
+  if (layout) return layout;
+  const saved = game.save.read("touch-layout", []);
+  layout = defaults.map((base, i) => {
+    const item = Array.isArray(saved) ? saved.find((entry) => entry && entry.code === base.code) : void 0;
+    return {
+      ...base,
+      x: clamp2(item?.x, base.x, MIN_X, MAX_X),
+      y: clamp2(item?.y, base.y, MIN_Y, MAX_Y),
+      r: clamp2(item?.r, base.r, MIN_RADIUS, MAX_RADIUS),
+      opacity: clamp2(item?.opacity, base.opacity, MIN_OPACITY, MAX_OPACITY),
+      tint: TOUCH_COLORS.find((color2) => color2 === item?.tint) ?? base.tint,
+      anchor: item?.anchor === "bottom-left" || item?.anchor === "bottom-right" ? item.anchor : base.anchor
+    };
+  });
+  return layout;
+}
+function saveTouchLayout() {
+  game.save.write("touch-layout", touchLayout());
+}
+function resetTouchLayout() {
+  touchLayout().forEach((button, i) => Object.assign(button, defaults[i]));
+  saveTouchLayout();
+}
+function spawnTouchLayout() {
+  const buttons = touchLayout().map((spec) => {
+    game.touch.button(spec);
+    return { spec, handle: [...game.roster.tagged("touch-control")].at(-1) };
+  });
+  game.step("touch-opacity", () => {
+    for (const { spec, handle } of buttons) if (handle.alive) {
+      handle.alpha = deterministicMath.min(1, spec.opacity * (game.touch.held.includes(spec.code) ? 2.2 : 1));
+      handle.tint = spec.tint;
+    }
+  }, { after: "controls-touch" });
+}
+
 // game/entities/Tokyo.ts
 var WALK_SPEED = 160;
 var RUN_SPEED = 300;
@@ -41420,9 +41480,6 @@ var POOP_DURATION = 0.85;
 var POOP_DROP_TIME = 0.42;
 var POOP_COOLDOWN = 1.15;
 var FOOT_PROBE_OFFSET = BODY_WIDTH / 2 - 4;
-var POOP_TOUCH_X = 315;
-var POOP_TOUCH_Y = 265;
-var POOP_TOUCH_RADIUS = 36;
 var UPWARD_PLATFORM_TAG = "one-way-up";
 var run = { spawnX: 220, tokyo: null, scene: "play" };
 function makeBody(x, feet, height, vx = 0, vy = 0) {
@@ -41538,15 +41595,7 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
       sprite.setTexture(crouching ? "tokyo-crouch" : "tokyo", d.frame);
     }
   }
-  game.touch.button({
-    code: "Touch:poop",
-    label: "POOP",
-    anchor: "bottom-right",
-    x: POOP_TOUCH_X,
-    y: POOP_TOUCH_Y,
-    r: POOP_TOUCH_RADIUS,
-    tint: "#e7dfb8"
-  });
+  spawnTouchLayout();
   const floorAt = (x2) => {
     const feetY = body.y + height / 2;
     const hit = game.physics.raycast(x2, feetY - 4, 0, 1, 8, (h) => h.id !== body.id);
@@ -42689,7 +42738,7 @@ function addDebugControls() {
     does: "Open title, play, meadow, story, home, dream-start, parkmap, celebration, pause, or settings",
     args: "name",
     run: (name) => {
-      const target = ["settings", "play", "pause", "story", "home", "dream-start", "journey", "ending", "meadow", "parkmap", "celebration"].includes(name ?? "") ? name : "title";
+      const target = ["touch-settings", "settings", "play", "pause", "story", "home", "dream-start", "journey", "ending", "meadow", "parkmap", "celebration"].includes(name ?? "") ? name : "title";
       game.scenes.go(target);
       return `Switched to screen: ${target}`;
     }
@@ -43224,6 +43273,13 @@ var Settings = {
       style: { textColor: "#c3d1b2", font: "14px mono" }
     });
     game.ui.label({ parent: menu, text: "DISPLAY & ROTATION", style: "heading" });
+    game.ui.button({
+      parent: menu,
+      h: 56,
+      text: "Customize touch buttons",
+      icon: "sliders",
+      onClick: () => game.scenes.push("touch-settings")
+    });
     game.ui.button({
       parent: menu,
       h: 56,
@@ -46731,6 +46787,159 @@ var Ending = {
   }
 };
 
+// game/scenes/TouchSettings.ts
+var LEFT = 90;
+var SLIDER_X = 375;
+var SLIDER_WIDTH = 380;
+var ROW_HEIGHT = 76;
+var TOP = 170;
+var TouchSettings = {
+  name: "touch-settings",
+  enter() {
+    game.touch.visible = false;
+    const layout2 = touchLayout();
+    let selected = 0;
+    game.ui.panel({ anchor: "center", w: game.screen.width, h: game.screen.height, z: 60, safeArea: false, style: "dark" });
+    game.ui.label({
+      anchor: "top-left",
+      x: LEFT,
+      y: 26,
+      w: 800,
+      h: 54,
+      z: 61,
+      text: "Customize touch buttons",
+      style: "heading"
+    });
+    const name = game.ui.label({ anchor: "top-left", x: 290, y: 92, w: 400, h: 52, z: 61, text: "" });
+    const preview = game.ui.button({ anchor: "top-left", x: 870, y: 210, h: 90, z: 61, text: "Preview", style: "good" });
+    const values = [
+      { label: "Horizontal position", key: "x", min: 40, max: 600, step: 10 },
+      { label: "Distance from bottom", key: "y", min: 40, max: 600, step: 10 },
+      { label: "Size", key: "r", min: 26, max: 90, step: 2 },
+      { label: "Opacity", key: "opacity", min: 0.15, max: 1, step: 0.05 }
+    ];
+    const sliders = values.map((field, i) => {
+      const y = TOP + i * ROW_HEIGHT;
+      game.ui.label({ anchor: "top-left", x: LEFT, y, w: 270, h: 45, z: 61, text: field.label });
+      return game.ui.slider({
+        id: `touch-${field.key}`,
+        anchor: "top-left",
+        x: SLIDER_X,
+        y: y + 8,
+        w: SLIDER_WIDTH,
+        h: 32,
+        z: 61,
+        min: field.min,
+        max: field.max,
+        step: field.step,
+        value: layout2[0][field.key],
+        onChange: (value) => {
+          layout2[selected][field.key] = value;
+          saveTouchLayout();
+          refresh();
+        }
+      });
+    });
+    const side2 = game.ui.button({
+      anchor: "top-left",
+      x: 870,
+      y: 340,
+      h: 55,
+      z: 61,
+      text: "",
+      onClick: () => {
+        const b = layout2[selected];
+        b.anchor = b.anchor === "bottom-left" ? "bottom-right" : "bottom-left";
+        saveTouchLayout();
+        refresh();
+      }
+    });
+    const color2 = game.ui.button({
+      anchor: "top-left",
+      x: 870,
+      y: 410,
+      h: 55,
+      z: 61,
+      text: "Change color",
+      onClick: () => {
+        const b = layout2[selected];
+        b.tint = TOUCH_COLORS[(TOUCH_COLORS.indexOf(b.tint) + 1) % TOUCH_COLORS.length];
+        saveTouchLayout();
+        refresh();
+      }
+    });
+    function refresh() {
+      const b = layout2[selected];
+      name.ui.text = `${selected + 1}/${layout2.length}: ${b.code.slice(6).toUpperCase()}`;
+      side2.ui.text = b.anchor === "bottom-left" ? "Side: LEFT" : "Side: RIGHT";
+      preview.ui.text = b.label;
+      preview.ui.style = { fill: b.tint, radius: 24, textColor: "#263b30" };
+      preview.ui.restyle();
+      preview.alpha = b.opacity;
+      color2.ui.text = `Color: ${b.tint}`;
+      values.forEach((field, i) => {
+        sliders[i].ui.value = b[field.key];
+      });
+    }
+    game.ui.button({
+      anchor: "top-left",
+      x: LEFT,
+      y: 94,
+      h: 48,
+      z: 61,
+      text: "Previous",
+      onClick: () => {
+        selected = (selected + layout2.length - 1) % layout2.length;
+        refresh();
+      }
+    });
+    game.ui.button({
+      anchor: "top-left",
+      x: 655,
+      y: 94,
+      h: 48,
+      z: 61,
+      text: "Next",
+      onClick: () => {
+        selected = (selected + 1) % layout2.length;
+        refresh();
+      }
+    });
+    game.ui.button({
+      anchor: "top-left",
+      x: LEFT,
+      y: 540,
+      h: 56,
+      z: 61,
+      text: "Reset all",
+      onClick: () => {
+        resetTouchLayout();
+        refresh();
+      }
+    });
+    game.ui.button({
+      anchor: "top-left",
+      x: 450,
+      y: 540,
+      h: 56,
+      z: 61,
+      text: "Done",
+      style: "good",
+      onClick: () => game.scenes.pop()
+    });
+    game.text(
+      "Positions measure inward from the chosen side.",
+      LEFT,
+      640,
+      { size: 18, font: "sans", align: "left", color: "#fff4d9" }
+    );
+    game.step("touch-settings", () => {
+      if (game.input.keyPressed("Escape")) game.scenes.pop();
+    });
+    refresh();
+  }
+};
+
 // game/main.ts
 var PIXEL_PARK_STRIPS = /* @__PURE__ */ new Set(["beds", "boxes", "food", "houses", "people", "portal", "rocks", "villain-dogs"]);
 paintArt();
@@ -46790,6 +46999,7 @@ game.scenes.register(Title);
 game.scenes.register(Play);
 game.scenes.register(Pause);
 game.scenes.register(Settings);
+game.scenes.register(TouchSettings);
 game.scenes.register(Playground);
 game.scenes.register(ParkMap);
 game.scenes.register(Story);

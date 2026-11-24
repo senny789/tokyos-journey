@@ -22,6 +22,7 @@ import { loadHomeArt } from './home.js';
 import { paintHomeInterior } from './homeInterior.js';
 import { loadJourneyArt } from './journey.js';
 import { loadTokyoArt } from './tokyoArt.js';
+import { TouchSettings } from './scenes/TouchSettings.js';
 
 const PIXEL_PARK_STRIPS = new Set(['beds', 'boxes', 'food', 'houses', 'people', 'portal', 'rocks', 'villain-dogs']);
 
@@ -78,6 +79,7 @@ game.scenes.register(Title);
 game.scenes.register(Play);
 game.scenes.register(Pause);
 game.scenes.register(Settings);
+game.scenes.register(TouchSettings);
 game.scenes.register(Playground);
 game.scenes.register(ParkMap);
 game.scenes.register(Story);
