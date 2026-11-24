@@ -1,6 +1,6 @@
 {
   "name": "Tokyo's Journey",
-  "sourceIdentity": "07f63114506b7911548af8b7baa51823681aa30e7a5f12b8610cea5c36a98fed",
+  "sourceIdentity": "c4c481d68ce0593012d66fe947765b2ccf8006a712b4b20a631a41950485220c",
   "sources": {
     "game/art.ts": "d503b0f94c6e10459832c7aabb655e5db473ae27cec3efa52de5e8087778951c",
     "game/assets.json": "8288acf964862b28b2ec685a185dbec20b1890258bdfb1b2b622ff3f0ac1dd3e",
@@ -10,7 +10,7 @@
     "game/entities/Droppings.ts": "f1fe77ba9f053a5754b128a7ff5fb70f84e117f30b3b4175e2e17c50e9579f9e",
     "game/entities/ParkActivities.ts": "7b3f9537c3ad0502c8b52283df11768704a4fdf6cd6455ec77b444c173f23d76",
     "game/entities/ParkWildlife.ts": "aa155b0d20316a0114c3b28cb5fe307833c87bff7b1020be9744fbc45eaf7d24",
-    "game/entities/Tokyo.ts": "983da7f44788da116b707856db0f7cdd21c3240ac882215c5cd9473070702c54",
+    "game/entities/Tokyo.ts": "3d4834f8197db12744ec00c944b05c6e44dcd6823a5be019b83fe3ba223024b1",
     "game/entities/Treats.ts": "ec062a806af37590603ae083ec463339a001a7572d8d523093e5a45445523b2b",
     "game/home.ts": "9dba0117d3f15b82337ace09e0b45d0108fd34ad938d1b89967dab6ef7b0c2fe",
     "game/homeDoors.ts": "81cfeed6eabf50893a47f66401bedc1e85c45e4feeaef6edd5db14d531199971",
@@ -21,7 +21,7 @@
     "game/main.ts": "b021ad88c33f66c69b1f32e491d71f7b94738461a426cf25de172ab9abeae78a",
     "game/meadow.ts": "1c8b5ebd42c64e2f527ddc485a2f4a42cd54358771848ce943f9003e543b3630",
     "game/menuStyles.ts": "d65ed5282eb129af1dd79c9449956f037c59606a43ecd7562d4cf87557c6a96a",
-    "game/mobile.ts": "88ebd5d2166300fb893b9660d1d2962dc7561a53de5839fad20bfb823026aebd",
+    "game/mobile.ts": "8d3816cd8ebb3e5174810285cf845c5136880e4d1153dee086f9970a1076b823",
     "game/node_modules/@phaser-ae/audio/dist/index.js": "33ab609df32e1669322e4593ad9cc047a46379271c0e01e7441138bc022cfed0",
     "game/node_modules/@phaser-ae/backdrop-sky/dist/index.js": "7c88a8cb75b47c2aad9f61f4c381a75e980f8662b679f804d4d54f1b5e4229eb",
     "game/node_modules/@phaser-ae/backdrop-stars/dist/index.js": "3a590503ca1876f78bb1a2f8b0cadc819010ced5911aa63cd4c85f480bf72158",
@@ -69,7 +69,7 @@
     "game/scenes/Playground.ts": "99e7107ca3d076c35e19d8c0c052c4fd009a985488ce6cb62cd1a39d1c106842",
     "game/scenes/Settings.ts": "291b88cbf097ac83507d59af29145c58301d42a8e641c39aa83e2f03f5fa53c2",
     "game/scenes/Story.ts": "8aa308934a1140022fa6f99c5afbc29dd14d6157f636714e5675393c599208f8",
-    "game/scenes/Title.ts": "84478176a7500268a5198a734e829eb5bb5b1a8ce5e972d61098938fa761e0bf",
+    "game/scenes/Title.ts": "5ecc3f95005ab10ef89b2241853a61115f22613886d1594c3364aedf0226d82b",
     "game/settings.ts": "db40e2adff57e23e580427b85a9764a576d113d1be8f84d39beb7a0dd8854f96",
     "game/sky.ts": "8cb57961bb139c61f0d3f45c321b608c4bd9e0ae8b66eb2f7370cc2144c4866e",
     "game/tokyoArt.ts": "b641bb9ff61afcb3406b5d81c5fe7f6b56b0f95bcf3c011f133aa6bb9643343f",
@@ -279,7 +279,7 @@
     "assets/treats.png": "ea062af459436d6b2e95d7e50b9335f2dbb9469a6fec4f798eb8ad2907885b9d",
     "assets/trees.png": "8f03aeabfb126c441be0b98c272579a1b2ef2eb5aef2917d85a868bd2835cd6f",
     "assets/villain-dogs.png": "8fb9dc3e3c5171a46592df0a7b78ba27e6161cefb22d9e15c0381d1561089ce8",
-    "game.js": "1d20e15b67cf455f2e583b40ff01ffc779fd5994c6cadbbdfe452cd1afb75ab1",
+    "game.js": "7194065c7d4a72f07380a945f33280626e536edb1d2e7296262cc0c39d8312c5",
     "index.html": "e6000fc5f397ce749ff1f1242da947e94b4cade79cef46e95c9d9e72f221b4bb",
     "text-shaper.wasm": "67cf5be0116894e5b38038ddbd4fc9b0bf979317b3ecdbd0ece2d67edc960f7d"
   },

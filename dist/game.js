@@ -41204,6 +41204,12 @@ function paintArt() {
 // game/mobile.ts
 var touchOverride = null;
 var forceHorizontal = false;
+var mobileDisplayRequested = false;
+function prepareMobileDisplay() {
+  if (mobileDisplayRequested || !isMobileView()) return;
+  mobileDisplayRequested = true;
+  void rotateToHorizontal(true);
+}
 function isMobileView() {
   if (touchOverride !== null) return touchOverride;
   if (typeof window !== "undefined") {
@@ -41212,6 +41218,12 @@ function isMobileView() {
     if (params.get("desktop") === "true" || params.has("nomobile")) return false;
   }
   return Boolean(game.input.touchDevice || game.touch?.touchDevice);
+}
+function isPortrait() {
+  if (typeof screen === "undefined") return false;
+  const type = screen.orientation?.type;
+  if (type && type.includes("portrait")) return true;
+  return Boolean(screen.height && screen.width && screen.height > screen.width);
 }
 function setTouchOverride(value) {
   touchOverride = value;
@@ -41515,7 +41527,7 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
   });
   let body = makeBody(x, feet, STAND_HEIGHT);
   let height = STAND_HEIGHT;
-  let wasJump = false, wasSit = false, wasRun = false, wasCrouch = false, wasPoop = false;
+  let wasJump = false, wasSit = false, wasRun = false, wasCrouch = false, wasPoop = false, wasStand = false;
   const d = sprite.data;
   run.tokyo = d;
   function showPose() {
@@ -41588,7 +41600,9 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
     d.sprinting = sprint;
     const jump = game.controls.pressed("jump"), jumpPressed = game.controls.justPressed("jump") || jump && !wasJump;
     wasJump = jump;
-    const standPressed = game.controls.justPressed("stand");
+    const stand = game.controls.pressed("stand");
+    const standPressed = game.controls.justPressed("stand") || stand && !wasStand;
+    wasStand = stand;
     const crouchRaw = game.controls.pressed("crouch");
     const crouchJustPressed = game.controls.justPressed("crouch") || crouchRaw && !wasCrouch;
     wasCrouch = crouchRaw;
@@ -42880,7 +42894,12 @@ var SEATED_FOOT_OFFSET = 21 * TOKYO_SCALE;
 var SEATED_FIRST_FRAME = 42;
 var SEATED_FRAME_COUNT = 4;
 function openStory() {
+  prepareMobileDisplay();
   game.scenes.go("story");
+}
+function openPlayground() {
+  prepareMobileDisplay();
+  startPlayground();
 }
 var Title = {
   name: "title",
@@ -42929,7 +42948,7 @@ var Title = {
       text: "Playground",
       icon: "paw",
       iconSize: 29,
-      onClick: startPlayground,
+      onClick: openPlayground,
       style: menuButtonStyles.secondary
     });
     game.text(
@@ -42946,6 +42965,12 @@ var Title = {
         { size: 16, font: "mono", color: "#d8dac1", align: "left" }
       );
     }
+    const rotateHint = isMobileView() ? game.text(
+      "Turn your phone sideways for the best view",
+      MENU_LEFT,
+      680,
+      { size: 18, font: "sans-bold", color: "#fff4d9", align: "left" }
+    ) : null;
     game.ui.button({
       id: "settings-btn",
       anchor: "top-right",
@@ -42980,12 +43005,13 @@ var Title = {
     let elapsed = 0;
     game.step("title", (dt) => {
       elapsed += dt;
+      if (rotateHint) rotateHint.visible = isPortrait();
       tokyo.setFrame(SEATED_FIRST_FRAME + deterministicMath.floor(elapsed * 2.5) % SEATED_FRAME_COUNT);
       if (game.touch.visible) game.touch.visible = false;
       if (game.input.keyPressed("Digit2")) {
         openStory();
       } else if (!game.ui.focus && (game.input.keyPressed("Enter") || game.input.keyPressed("Space"))) {
-        startPlayground();
+        openPlayground();
       }
     });
   }
