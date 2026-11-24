@@ -108,7 +108,7 @@ export const Play = {
 
             const settings = getSettings();
             hintsLabel.text = game.touch.visible
-                ? `STICK MOVE/CROUCH   •   JUMP   •   RUN [${settings.runBehavior.toUpperCase()}]   •   CROUCH [${settings.crouchBehavior.toUpperCase()}]   •   SIT   •   POOP`
+                ? `ARROWS MOVE / CROUCH / STAND   •   JUMP   •   RUN [${settings.runBehavior.toUpperCase()}]   •   SIT   •   POOP`
                 : `A/D WALK   SHIFT RUN [${settings.runBehavior.toUpperCase()}]   SPACE JUMP   DOWN/C CROUCH [${settings.crouchBehavior.toUpperCase()}]   E SIT   G POOP   R RESET`;
 
             telemetry.text = `${Math.round(Math.abs(tokyo.data.vx))} px/s`;

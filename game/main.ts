@@ -32,6 +32,7 @@ game.controls.bind('jump', { keys: ['Space', 'ArrowUp', 'KeyW', 'Touch:jump'], p
 game.controls.bind('run', { keys: ['ShiftLeft', 'ShiftRight', 'Touch:run'], pad: ['x'] });
 game.controls.bind('crouch', { keys: ['ArrowDown', 'KeyS', 'KeyC', 'Touch:crouch', 'Touch:down'], pad: ['lb'] });
 game.controls.bind('sit', { keys: ['KeyE', 'Touch:sit'], pad: ['b'] });
+game.controls.bind('stand', { keys: ['Touch:up'] });
 game.controls.bind('poop', { keys: ['KeyG', 'Touch:poop'], pad: ['rb'] });
 game.controls.bind('interact', { keys: ['KeyF', 'Touch:interact'], pad: ['y'] });
 game.controls.bind('pause', { keys: ['Escape', 'KeyP', 'Touch:pause'], pad: ['start'] });

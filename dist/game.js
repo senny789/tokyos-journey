@@ -1384,7 +1384,100 @@ function wrapPos(v, size) {
 }
 
 // phaser/engine/kernel/src/maths3d.ts
+function mat4Mul(a, b) {
+  const m = new Float32Array(16);
+  for (let c = 0; c < 4; c++) {
+    for (let r = 0; r < 4; r++) {
+      m[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+    }
+  }
+  return m;
+}
+function mat4Inverse(m) {
+  const inv = new Float32Array(16);
+  inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
+  inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
+  inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
+  inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
+  inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
+  inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
+  inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
+  inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
+  inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
+  inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
+  inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
+  inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
+  inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
+  inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
+  inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
+  inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
+  const det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+  if (!det || !Number.isFinite(det)) {
+    const id2 = new Float32Array(16);
+    id2[0] = id2[5] = id2[10] = id2[15] = 1;
+    return id2;
+  }
+  const k = 1 / det;
+  for (let i = 0; i < 16; i++) inv[i] *= k;
+  return inv;
+}
+function viewBasis(view) {
+  return {
+    right: { x: view[0], y: view[4], z: view[8] },
+    up: { x: view[1], y: view[5], z: view[9] }
+  };
+}
+function frustumPlanes(m) {
+  const out = new Float32Array(24);
+  const set = (p, a, b, c, d) => {
+    const l = deterministicMath.hypot(a, b, c) || 1;
+    out[p] = a / l;
+    out[p + 1] = b / l;
+    out[p + 2] = c / l;
+    out[p + 3] = d / l;
+  };
+  const r = (i) => [m[i], m[4 + i], m[8 + i], m[12 + i]];
+  const [x0, y0, z0, w0] = r(0);
+  const [x1, y1, z1, w1] = r(1);
+  const [x2, y2, z2, w2] = r(2);
+  const [x3, y3, z3, w3] = r(3);
+  set(0, x3 + x0, y3 + y0, z3 + z0, w3 + w0);
+  set(4, x3 - x0, y3 - y0, z3 - z0, w3 - w0);
+  set(8, x3 + x1, y3 + y1, z3 + z1, w3 + w1);
+  set(12, x3 - x1, y3 - y1, z3 - z1, w3 - w1);
+  set(16, x2, y2, z2, w2);
+  set(20, x3 - x2, y3 - y2, z3 - z2, w3 - w2);
+  return out;
+}
 var UNIT_MESH_RADIUS = deterministicMath.sqrt(3) / 2;
+function eulerToQuat(yaw, pitch, roll) {
+  const cy = deterministicMath.cos(yaw / 2), sy = -deterministicMath.sin(yaw / 2);
+  const cp = deterministicMath.cos(pitch / 2), sp = deterministicMath.sin(pitch / 2);
+  const cr = deterministicMath.cos(roll / 2), sr = deterministicMath.sin(roll / 2);
+  return [
+    sp * cy * cr + cp * sy * sr,
+    sy * cp * cr - cy * sp * sr,
+    cy * cp * sr - sy * sp * cr,
+    cy * cp * cr + sy * sp * sr
+  ];
+}
+function quatRotate(q, x, y, z) {
+  const [qx, qy, qz, qw] = q;
+  const tx2 = 2 * (qy * z - qz * y);
+  const ty = 2 * (qz * x - qx * z);
+  const tz = 2 * (qx * y - qy * x);
+  return [
+    x + qw * tx2 + qy * tz - qz * ty,
+    y + qw * ty + qz * tx2 - qx * tz,
+    z + qw * tz + qx * ty - qy * tx2
+  ];
+}
+
+// phaser/engine/kernel/src/curves.ts
+function catmullRom1(a, b, c, d, t) {
+  const t2 = t * t, t3 = t2 * t;
+  return 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3);
+}
 
 // phaser/engine/kernel/src/roster.ts
 var BLEND_MODES = ["normal", "add", "multiply", "screen", "subtract"];
@@ -1679,6 +1772,12 @@ function unpackColor(packed) {
   const r = packed >>> 24 & 255, g = packed >>> 16 & 255, b = packed >>> 8 & 255, a = packed & 255;
   const hex4 = (n) => n.toString(16).padStart(2, "0");
   return a === 255 ? `#${hex4(r)}${hex4(g)}${hex4(b)}` : `#${hex4(r)}${hex4(g)}${hex4(b)}${hex4(a)}`;
+}
+function colorToFloats(packed, out, o) {
+  out[o] = (packed >>> 24 & 255) / 255;
+  out[o + 1] = (packed >>> 16 & 255) / 255;
+  out[o + 2] = (packed >>> 8 & 255) / 255;
+  out[o + 3] = (packed & 255) / 255;
 }
 
 // phaser/engine/kernel/src/roster.impl.ts
@@ -2136,8 +2235,8 @@ var KernelRoster = class {
     const c = this.cell;
     const seen = /* @__PURE__ */ new Set();
     for (const [qx, qy] of this.images(x + w / 2, y + h / 2, w / 2, h / 2)) {
-      const rx = qx - w / 2, ry3 = qy - h / 2;
-      const x0 = deterministicMath.floor(rx / c), x1 = deterministicMath.floor((rx + w) / c), y0 = deterministicMath.floor(ry3 / c), y1 = deterministicMath.floor((ry3 + h) / c);
+      const rx = qx - w / 2, ry2 = qy - h / 2;
+      const x0 = deterministicMath.floor(rx / c), x1 = deterministicMath.floor((rx + w) / c), y0 = deterministicMath.floor(ry2 / c), y1 = deterministicMath.floor((ry2 + h) / c);
       for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) {
         const bucket = this.hash.get(cellKey(cx, cy));
         if (!bucket) continue;
@@ -2146,7 +2245,7 @@ var KernelRoster = class {
           const s = hh.slotOrNeg1();
           if (s < 0 || this.flags[s] & F_FROZEN) continue;
           const hw = this.width[s] * deterministicMath.abs(this.sx[s]) * 0.5, hh2 = this.height[s] * deterministicMath.abs(this.sy[s]) * 0.5;
-          if (this.x[s] + hw >= rx && this.x[s] - hw <= rx + w && this.y[s] + hh2 >= ry3 && this.y[s] - hh2 <= ry3 + h) {
+          if (this.x[s] + hw >= rx && this.x[s] - hw <= rx + w && this.y[s] + hh2 >= ry2 && this.y[s] - hh2 <= ry2 + h) {
             seen.add(hh);
             yield hh;
           }
@@ -3256,15 +3355,15 @@ var KernelInput = class {
     }
     if (p.down && e.type === "move") {
       p.downTime = now - p.downAt;
-      const tx3 = e.x - p.startX, ty = e.y - p.startY;
+      const tx2 = e.x - p.startX, ty = e.y - p.startY;
       for (const s of this.gestureSubs) {
-        if (!p.panning && deterministicMath.hypot(tx3, ty) >= s.o.panThreshold && !p.longFired) {
+        if (!p.panning && deterministicMath.hypot(tx2, ty) >= s.o.panThreshold && !p.longFired) {
           p.panning = true;
-          this.fire("onPan", this.pan(p, "start", tx3, ty, eventDx, eventDy));
+          this.fire("onPan", this.pan(p, "start", tx2, ty, eventDx, eventDy));
           break;
         }
       }
-      if (p.panning) this.fire("onPan", this.pan(p, "move", tx3, ty, eventDx, eventDy));
+      if (p.panning) this.fire("onPan", this.pan(p, "move", tx2, ty, eventDx, eventDy));
     }
     if (e.type === "up" || e.type === "cancel") {
       const wasDown = p.down;
@@ -3272,14 +3371,14 @@ var KernelInput = class {
       if (wasDown) p.pendRelease = true;
       const held = now - p.downAt;
       p.downTime = 0;
-      const tx3 = e.x - p.startX, ty = e.y - p.startY, dist = deterministicMath.hypot(tx3, ty), speed = deterministicMath.hypot(p.vx, p.vy);
+      const tx2 = e.x - p.startX, ty = e.y - p.startY, dist = deterministicMath.hypot(tx2, ty), speed = deterministicMath.hypot(p.vx, p.vy);
       if (wasDown && e.type === "up" && this.gestureSubs.length) {
         const o = this.gestureSubs[0].o;
         if (p.panning) {
-          this.fire("onPan", this.pan(p, "end", tx3, ty, eventDx, eventDy));
+          this.fire("onPan", this.pan(p, "end", tx2, ty, eventDx, eventDy));
           if (dist >= o.swipeMinDistance && speed >= o.swipeMinVelocity) {
-            const ang = deterministicMath.atan2(ty, tx3);
-            const dir = deterministicMath.abs(tx3) > deterministicMath.abs(ty) ? tx3 > 0 ? "right" : "left" : ty > 0 ? "down" : "up";
+            const ang = deterministicMath.atan2(ty, tx2);
+            const dir = deterministicMath.abs(tx2) > deterministicMath.abs(ty) ? tx2 > 0 ? "right" : "left" : ty > 0 ? "down" : "up";
             this.fire("onSwipe", { x: e.x, y: e.y, id: p.id, kind: p.kind, direction: dir, distance: dist, velocity: speed, angle: ang });
           }
         } else if (!p.longFired && held <= o.tapMaxDuration && dist <= o.tapTolerance) {
@@ -3301,8 +3400,8 @@ var KernelInput = class {
     this.route("pointer", ev);
     if (e.type === "wheel" && !ev.claimed && !this.captures.size && !this.worldSuspended) this.playerWheelBuf += e.deltaY ?? 0;
   }
-  pan(p, phase, tx3, ty, dx, dy) {
-    return { x: p.x, y: p.y, id: p.id, kind: p.kind, startX: p.startX, startY: p.startY, dx, dy, totalX: tx3, totalY: ty, phase };
+  pan(p, phase, tx2, ty, dx, dy) {
+    return { x: p.x, y: p.y, id: p.id, kind: p.kind, startX: p.startX, startY: p.startY, dx, dy, totalX: tx2, totalY: ty, phase };
   }
   gesture() {
     if (!this.firstGestureFired) {
@@ -3767,9 +3866,9 @@ var KernelCheats = class {
     return [...this.controls.values()].map((c) => ({ name: c.name, does: c.does, ...c.args ? { args: c.args } : {}, ...c.on ? { on: c.on() } : {} }));
   }
   /** Kernel use, when the game starts in a page: listen for the panel's key, and show its button when the address has `?cheats`. */
-  attach(host4) {
+  attach(host3) {
     if (typeof window === "undefined" || this.onKey) return;
-    this.host = host4;
+    this.host = host3;
     this.onKey = (e) => {
       if (e.code !== "Backquote" || !this.controls.size) return;
       e.preventDefault();
@@ -5107,9 +5206,21 @@ function bindVerbs(after, play2) {
   afterFn = after;
   playFn = play2;
 }
+function each(t, fn) {
+  if (t.id !== void 0 && !(Symbol.iterator in t)) {
+    if (t.alive) fn(t);
+    return;
+  }
+  for (const h of t) if (h.alive) fn(h);
+}
 var killFn = null;
 function bindKill(k) {
   killFn = k;
+}
+function kill(t) {
+  each(t, (h) => {
+    if (h.alive) killFn?.(h);
+  });
 }
 
 // phaser/engine/kernel/src/inspect.impl.ts
@@ -6030,11 +6141,11 @@ var Game = class {
       window.visualViewport?.addEventListener("scroll", resize);
       document.addEventListener("fullscreenchange", resize);
       window.addEventListener("orientationchange", resize);
-      const host4 = this.canvas?.parentElement ?? document.body;
+      const host3 = this.canvas?.parentElement ?? document.body;
       let ro = null;
       if (typeof ResizeObserver !== "undefined") {
         ro = new ResizeObserver(resize);
-        ro.observe(host4);
+        ro.observe(host3);
       }
       let dprMql = null;
       let onDpr = null;
@@ -6178,8 +6289,8 @@ var Game = class {
     if (!c || !s) return;
     const o = this.opts;
     const old = { width: s.width, height: s.height, dpr: s.dpr, cssScale: o.cssScale };
-    const host4 = c.parentElement ?? document.body;
-    const hw = host4.clientWidth || o.width, hh = host4.clientHeight || o.height;
+    const host3 = c.parentElement ?? document.body;
+    const hw = host3.clientWidth || o.width, hh = host3.clientHeight || o.height;
     const dpr = deterministicMath.min(window.devicePixelRatio || 1, o.dprCap ?? 2);
     let cssW = o.width, cssH = o.height;
     if (o.fit === "letterbox") {
@@ -6244,8 +6355,8 @@ var Builder = class {
 };
 function sizeToHost(o) {
   if (typeof document === "undefined" || o.fit !== "height" && o.fit !== "fill") return;
-  const host4 = o.mount ?? document.getElementById("game") ?? document.body;
-  const hw = host4.clientWidth, hh = host4.clientHeight;
+  const host3 = o.mount ?? document.getElementById("game") ?? document.body;
+  const hw = host3.clientWidth, hh = host3.clientHeight;
   if (!hw || !hh) return;
   if (o.fit === "fill") {
     o.width = deterministicMath.round(hw);
@@ -6302,6 +6413,73 @@ function createGame(opts) {
   return built;
 }
 
+// phaser/engine/kernel/src/webgl.ts
+var NUDGE = "ae_EdgeNudge";
+var MAIN = /\bvoid\s+main\s*\(\s*(?:void)?\s*\)/;
+var nudges = /* @__PURE__ */ new WeakMap();
+var nudgeOf = (height) => 1 / (128 * deterministicMath.max(1, height));
+var setNudge = (gl, programs, value) => {
+  const current = gl.getParameter(gl.CURRENT_PROGRAM);
+  for (const [program, at] of programs) {
+    if (!gl.isProgram(program)) {
+      programs.delete(program);
+      continue;
+    }
+    gl.useProgram(program);
+    gl.uniform1f(at, value);
+  }
+  gl.useProgram(current);
+};
+function glPixelHeight(gl, height) {
+  const state = nudges.get(gl);
+  if (!state) {
+    nudges.set(gl, { height, programs: /* @__PURE__ */ new Map() });
+    return;
+  }
+  if (state.height === height) return;
+  state.height = height;
+  setNudge(gl, state.programs, nudgeOf(height));
+}
+function compileGlProgram(gl, vertex, fragment, label) {
+  const shaders = [];
+  const program = gl.createProgram();
+  if (!program) throw new Error(`${label}: could not create WebGL program`);
+  const nudged = MAIN.test(vertex) && vertex.includes("gl_Position");
+  if (nudged) vertex = `${vertex.replace(MAIN, "void ae_main()")}
+uniform float ${NUDGE};
+void main() { ae_main(); gl_Position.y += ${NUDGE} * gl_Position.w; }
+`;
+  try {
+    for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]]) {
+      const shader2 = gl.createShader(type);
+      if (!shader2) throw new Error(`${label}: could not create WebGL shader`);
+      shaders.push(shader2);
+      gl.shaderSource(shader2, source);
+      gl.compileShader(shader2);
+      if (!gl.getShaderParameter(shader2, gl.COMPILE_STATUS)) throw new Error(`${label}: ${type === gl.VERTEX_SHADER ? "vertex" : "fragment"} shader: ${gl.getShaderInfoLog(shader2)}`);
+      gl.attachShader(program, shader2);
+    }
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(`${label}: program link: ${gl.getProgramInfoLog(program)}`);
+    const at = nudged ? gl.getUniformLocation(program, NUDGE) : null;
+    if (at) {
+      let state = nudges.get(gl);
+      if (!state) {
+        state = { height: typeof gl.drawingBufferHeight === "number" ? gl.drawingBufferHeight : 1, programs: /* @__PURE__ */ new Map() };
+        nudges.set(gl, state);
+      }
+      state.programs.set(program, at);
+      setNudge(gl, /* @__PURE__ */ new Map([[program, at]]), nudgeOf(state.height));
+    }
+    return program;
+  } catch (error) {
+    gl.deleteProgram(program);
+    throw error;
+  } finally {
+    for (const shader2 of shaders) gl.deleteShader(shader2);
+  }
+}
+
 // game/node_modules/@phaser-ae/preloader/dist/index.js
 function hex(colour) {
   const m = /^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.exec(colour.trim());
@@ -6325,13 +6503,13 @@ function colourAt(stops, t) {
   return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
 }
 var SPARKS_MAX = 220;
-function createLoadingView(host4, actions) {
+function createLoadingView(host3, actions) {
   const root = document.createElement("div");
   root.dataset.gamePreloader = "";
-  const body = host4 === document.body || host4 === document.documentElement;
-  const previousPosition = host4.style.position;
-  const positioned = !body && getComputedStyle(host4).position === "static";
-  if (positioned) host4.style.position = "relative";
+  const body = host3 === document.body || host3 === document.documentElement;
+  const previousPosition = host3.style.position;
+  const positioned = !body && getComputedStyle(host3).position === "static";
+  if (positioned) host3.style.position = "relative";
   root.style.cssText = `position:${body ? "fixed" : "absolute"};inset:0;z-index:2147483600;display:grid;place-items:center;overflow:hidden;opacity:1;container-type:size;`;
   const shadow = root.attachShadow({ mode: "open" });
   shadow.innerHTML = `<style>
@@ -6386,7 +6564,7 @@ function createLoadingView(host4, actions) {
   find(".skip").addEventListener("click", actions.dismiss);
   let loadingLabel = "Loading", stops = DARK_STOPS, spark = WHITE, light = false;
   let state = "loading";
-  host4.append(root);
+  host3.append(root);
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const ctx = typeof canvas.getContext === "function" ? canvas.getContext("2d") : null;
   const sparks = [];
@@ -6520,7 +6698,7 @@ function createLoadingView(host4, actions) {
     remove() {
       if (frame && typeof cancelAnimationFrame === "function") cancelAnimationFrame(frame);
       root.remove();
-      if (positioned && host4.style.position === "relative") host4.style.position = previousPosition;
+      if (positioned && host3.style.position === "relative") host3.style.position = previousPosition;
     }
   };
 }
@@ -6578,12 +6756,12 @@ function installPreloader(k, defaults = {}) {
       return;
     }
     if (!view) {
-      const host4 = k.mount;
-      if (!host4) {
+      const host3 = k.mount;
+      if (!host3) {
         timer = setTimeout(step, 30);
         return;
       }
-      view = createLoadingView(host4, { dismiss, retry });
+      view = createLoadingView(host3, { dismiss, retry });
       view.configure(options);
       release ??= k.holdReady?.("the loading screen is up") ?? null;
       started = previous = Date.now();
@@ -6778,11 +6956,11 @@ function worldSplit(tables, splits) {
 }
 function spriteParts(tables, splits, floors) {
   const split = worldSplit(tables, splits);
-  let floor3 = -1;
+  let floor2 = -1;
   if (floors.length) tables.forEach((t, i) => {
-    if (t.space === "world" && (t.pass ?? t.space) === "world" && floors.some((f) => f.through === t.layer)) floor3 = i;
+    if (t.space === "world" && (t.pass ?? t.space) === "world" && floors.some((f) => f.through === t.layer)) floor2 = i;
   });
-  return tables.map((t, i) => (t.pass ?? t.space) === "screen" ? "screen" : split >= 0 && i > split ? "over" : i <= floor3 ? "floor" : "world");
+  return tables.map((t, i) => (t.pass ?? t.space) === "screen" ? "screen" : split >= 0 && i > split ? "over" : i <= floor2 ? "floor" : "world");
 }
 function runsOf(blend2, deformKind, flags, count, base, tex) {
   const out = [];
@@ -8027,1623 +8205,6 @@ function wgslSnippetToGLSL(code, scope, helpers) {
   return new Translator(scope, helpers).translate(code);
 }
 
-// phaser/node_modules/@phaser-ae/kernel/src/wrap.ts
-function wrapDelta3(d, size) {
-  if (size <= 0) return d;
-  d %= size;
-  if (d > size / 2) d -= size;
-  else if (d < -size / 2) d += size;
-  return d;
-}
-
-// phaser/node_modules/@phaser-ae/kernel/src/maths3d.ts
-function mat4Mul(a, b) {
-  const m = new Float32Array(16);
-  for (let c = 0; c < 4; c++) {
-    for (let r = 0; r < 4; r++) {
-      m[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
-    }
-  }
-  return m;
-}
-function mat4Inverse(m) {
-  const inv = new Float32Array(16);
-  inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
-  inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
-  inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
-  inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
-  inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
-  inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
-  inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
-  inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
-  inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
-  inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
-  inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
-  inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
-  inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
-  inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
-  inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
-  inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
-  const det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
-  if (!det || !Number.isFinite(det)) {
-    const id2 = new Float32Array(16);
-    id2[0] = id2[5] = id2[10] = id2[15] = 1;
-    return id2;
-  }
-  const k = 1 / det;
-  for (let i = 0; i < 16; i++) inv[i] *= k;
-  return inv;
-}
-function viewBasis(view) {
-  return {
-    right: { x: view[0], y: view[4], z: view[8] },
-    up: { x: view[1], y: view[5], z: view[9] }
-  };
-}
-function frustumPlanes(m) {
-  const out = new Float32Array(24);
-  const set = (p, a, b, c, d) => {
-    const l = deterministicMath.hypot(a, b, c) || 1;
-    out[p] = a / l;
-    out[p + 1] = b / l;
-    out[p + 2] = c / l;
-    out[p + 3] = d / l;
-  };
-  const r = (i) => [m[i], m[4 + i], m[8 + i], m[12 + i]];
-  const [x0, y0, z0, w0] = r(0);
-  const [x1, y1, z1, w1] = r(1);
-  const [x2, y2, z2, w2] = r(2);
-  const [x3, y3, z3, w3] = r(3);
-  set(0, x3 + x0, y3 + y0, z3 + z0, w3 + w0);
-  set(4, x3 - x0, y3 - y0, z3 - z0, w3 - w0);
-  set(8, x3 + x1, y3 + y1, z3 + z1, w3 + w1);
-  set(12, x3 - x1, y3 - y1, z3 - z1, w3 - w1);
-  set(16, x2, y2, z2, w2);
-  set(20, x3 - x2, y3 - y2, z3 - z2, w3 - w2);
-  return out;
-}
-var UNIT_MESH_RADIUS2 = deterministicMath.sqrt(3) / 2;
-function eulerToQuat(yaw, pitch, roll) {
-  const cy = deterministicMath.cos(yaw / 2), sy = -deterministicMath.sin(yaw / 2);
-  const cp = deterministicMath.cos(pitch / 2), sp = deterministicMath.sin(pitch / 2);
-  const cr = deterministicMath.cos(roll / 2), sr = deterministicMath.sin(roll / 2);
-  return [
-    sp * cy * cr + cp * sy * sr,
-    sy * cp * cr - cy * sp * sr,
-    cy * cp * sr - sy * sp * cr,
-    cy * cp * cr + sy * sp * sr
-  ];
-}
-function quatRotate(q, x, y, z) {
-  const [qx, qy, qz, qw] = q;
-  const tx3 = 2 * (qy * z - qz * y);
-  const ty = 2 * (qz * x - qx * z);
-  const tz = 2 * (qx * y - qy * x);
-  return [
-    x + qw * tx3 + qy * tz - qz * ty,
-    y + qw * ty + qz * tx3 - qx * tz,
-    z + qw * tz + qx * ty - qy * tx3
-  ];
-}
-
-// phaser/node_modules/@phaser-ae/kernel/src/curves.ts
-function catmullRom1(a, b, c, d, t) {
-  const t2 = t * t, t3 = t2 * t;
-  return 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3);
-}
-
-// phaser/node_modules/@phaser-ae/kernel/src/color.ts
-var NAMED2 = { white: 4294967295, black: 255, red: 4278190335, green: 16711935, blue: 65535, yellow: 4294902015, cyan: 16777215, magenta: 4278255615, orange: 4289003775, transparent: 0 };
-function packColor2(css) {
-  const s = css.trim().toLowerCase();
-  if (s in NAMED2) return NAMED2[s];
-  if (/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/.test(s)) {
-    const h = s.slice(1);
-    if (h.length === 3 || h.length === 4) {
-      const r = parseInt(h[0] + h[0], 16), g = parseInt(h[1] + h[1], 16), b = parseInt(h[2] + h[2], 16), a = h.length === 4 ? parseInt(h[3] + h[3], 16) : 255;
-      return (r << 24 | g << 16 | b << 8 | a) >>> 0;
-    }
-    const v = parseInt(h, 16);
-    return h.length === 8 ? v >>> 0 : (v << 8 | 255) >>> 0;
-  }
-  const m = /^rgba?\(([^)]+)\)$/.exec(s);
-  if (m) {
-    const parts = m[1].split(/[\s,\/]+/).filter(Boolean);
-    if (parts.length !== 3 && parts.length !== 4) throw new Error(`color: cannot parse "${css}"`);
-    const num2 = (p) => {
-      const v = p === "" ? NaN : Number(p);
-      if (!Number.isFinite(v)) throw new Error(`color: cannot parse "${css}"`);
-      return v;
-    };
-    const ch = (p) => deterministicMath.min(255, deterministicMath.max(0, num2(p))) | 0;
-    const aRaw = parts[3];
-    const a = aRaw === void 0 ? 1 : aRaw.endsWith("%") ? num2(aRaw.slice(0, -1)) / 100 : num2(aRaw);
-    return (ch(parts[0]) << 24 | ch(parts[1]) << 16 | ch(parts[2]) << 8 | deterministicMath.round(deterministicMath.min(1, deterministicMath.max(0, a)) * 255)) >>> 0;
-  }
-  const hs = /^hsla?\(([^)]+)\)$/.exec(s);
-  if (hs) {
-    const parts = hs[1].split(/[\s,\/]+/).filter(Boolean);
-    const hueRaw = parseFloat(parts[0] ?? "");
-    if (!Number.isFinite(hueRaw)) throw new Error(`color: cannot parse "${css}"`);
-    const h = (hueRaw % 360 + 360) % 360 / 360;
-    const satRaw = parseFloat(parts[1] ?? ""), lRaw = parseFloat(parts[2] ?? "");
-    if (!Number.isFinite(satRaw) || !Number.isFinite(lRaw)) throw new Error(`color: cannot parse "${css}"`);
-    const sat = deterministicMath.min(1, deterministicMath.max(0, satRaw / 100));
-    const l = deterministicMath.min(1, deterministicMath.max(0, lRaw / 100));
-    const aRaw = parts[3];
-    const a = aRaw === void 0 ? 1 : deterministicMath.min(1, deterministicMath.max(0, aRaw.endsWith("%") ? parseFloat(aRaw) / 100 : parseFloat(aRaw)));
-    const c = (1 - deterministicMath.abs(2 * l - 1)) * sat, x = c * (1 - deterministicMath.abs(h * 6 % 2 - 1)), m2 = l - c / 2;
-    const seg = deterministicMath.floor(h * 6) % 6;
-    const rgbSeg = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]];
-    const [r1, g1, b1] = rgbSeg[seg];
-    const q = (v) => deterministicMath.round(deterministicMath.min(1, deterministicMath.max(0, v + m2)) * 255);
-    return (q(r1) << 24 | q(g1) << 16 | q(b1) << 8 | deterministicMath.round(a * 255)) >>> 0;
-  }
-  throw new Error(`color: cannot parse "${css}"`);
-}
-function colorToFloats2(packed, out, o) {
-  out[o] = (packed >>> 24 & 255) / 255;
-  out[o + 1] = (packed >>> 16 & 255) / 255;
-  out[o + 2] = (packed >>> 8 & 255) / 255;
-  out[o + 3] = (packed & 255) / 255;
-}
-
-// phaser/node_modules/@phaser-ae/kernel/src/registry.impl.ts
-var MAX_DEFORMS2 = 256 - 16;
-
-// phaser/node_modules/@phaser-ae/kernel/src/verbs.impl.ts
-function each(t, fn) {
-  if (t.id !== void 0 && !(Symbol.iterator in t)) {
-    if (t.alive) fn(t);
-    return;
-  }
-  for (const h of t) if (h.alive) fn(h);
-}
-var killFn2 = null;
-function kill(t) {
-  each(t, (h) => {
-    if (h.alive) killFn2?.(h);
-  });
-}
-
-// phaser/node_modules/@phaser-ae/kernel/src/math.ts
-var host2 = globalThis.Math;
-var abs2 = host2.abs;
-var sqrt2 = host2.sqrt;
-var floor2 = host2.floor;
-var f642 = new Float64Array(1);
-var u322 = new Uint32Array(f642.buffer);
-var HI2 = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1 ? 1 : 0;
-var LO2 = 1 - HI2;
-var hiWord2 = (x) => {
-  f642[0] = x;
-  return u322[HI2] | 0;
-};
-var loWord2 = (x) => {
-  f642[0] = x;
-  return u322[LO2];
-};
-var fromWords2 = (hi, lo) => {
-  u322[HI2] = hi;
-  u322[LO2] = lo;
-  return f642[0];
-};
-var withHi2 = (x, hi) => {
-  f642[0] = x;
-  u322[HI2] = hi;
-  return f642[0];
-};
-var withLo2 = (x, lo) => {
-  f642[0] = x;
-  u322[LO2] = lo;
-  return f642[0];
-};
-var copysign2 = (x, y) => hiWord2(y) < 0 ? -abs2(x) : abs2(x);
-var HUGE2 = 1e300;
-var TINY2 = 1e-300;
-var TWO242 = 16777216;
-var TWON242 = 5960464477539063e-23;
-var TWO542 = 18014398509481984;
-var TWOM542 = 5551115123125783e-32;
-function scalbn2(x, n) {
-  let hx = hiWord2(x);
-  const lx = loWord2(x);
-  let k = (hx & 2146435072) >> 20;
-  if (k === 0) {
-    if ((lx | hx & 2147483647) === 0) return x;
-    x *= TWO542;
-    hx = hiWord2(x);
-    k = ((hx & 2146435072) >> 20) - 54;
-    if (n < -5e4) return TINY2 * x;
-  }
-  if (k === 2047) return x + x;
-  k += n;
-  if (k > 2046) return HUGE2 * copysign2(HUGE2, x);
-  if (k > 0) return withHi2(x, hx & 2148532223 | k << 20);
-  if (k <= -54) return n > 5e4 ? HUGE2 * copysign2(HUGE2, x) : TINY2 * copysign2(TINY2, x);
-  return withHi2(x, hx & 2148532223 | k + 54 << 20) * TWOM542;
-}
-var TWO_OVER_PI2 = [
-  10680707,
-  7228996,
-  1387004,
-  2578385,
-  16069853,
-  12639074,
-  9804092,
-  4427841,
-  16666979,
-  11263675,
-  12935607,
-  2387514,
-  4345298,
-  14681673,
-  3074569,
-  13734428,
-  16653803,
-  1880361,
-  10960616,
-  8533493,
-  3062596,
-  8710556,
-  7349940,
-  6258241,
-  3772886,
-  3769171,
-  3798172,
-  8675211,
-  12450088,
-  3874808,
-  9961438,
-  366607,
-  15675153,
-  9132554,
-  7151469,
-  3571407,
-  2607881,
-  12013382,
-  4155038,
-  6285869,
-  7677882,
-  13102053,
-  15825725,
-  473591,
-  9065106,
-  15363067,
-  6271263,
-  9264392,
-  5636912,
-  4652155,
-  7056368,
-  13614112,
-  10155062,
-  1944035,
-  9527646,
-  15080200,
-  6658437,
-  6231200,
-  6832269,
-  16767104,
-  5075751,
-  3212806,
-  1398474,
-  7579849,
-  6349435,
-  12618859
-];
-var PIO22 = [
-  1.570796251296997,
-  /* 0x3FF921FB, 0x40000000 */
-  7549789415861596e-23,
-  /* 0x3E74442D, 0x00000000 */
-  5390302529957765e-30,
-  /* 0x3CF84698, 0x80000000 */
-  3282003415807913e-37,
-  /* 0x3B78CC51, 0x60000000 */
-  1270655753080676e-44,
-  /* 0x39F01B83, 0x80000000 */
-  12293330898111133e-52,
-  /* 0x387A2520, 0x40000000 */
-  27337005381646456e-60,
-  /* 0x36E38222, 0x80000000 */
-  21674168387780482e-67
-  /* 0x3569F31D, 0x00000000 */
-];
-var iq2 = new Int32Array(20);
-var fr2 = new Float64Array(20);
-var fq2 = new Float64Array(20);
-var qr2 = new Float64Array(20);
-var tx2 = new Float64Array(3);
-var ry2 = new Float64Array(2);
-function kernelRemPio22(e0, nx) {
-  const jk = 4, jp = jk, jx = nx - 1;
-  let jv = (e0 - 3) / 24 | 0;
-  if (jv < 0) jv = 0;
-  let q0 = e0 - 24 * (jv + 1);
-  for (let i = 0, j = jv - jx; i <= jx + jk; i++, j++) fr2[i] = j < 0 ? 0 : TWO_OVER_PI2[j];
-  for (let i = 0; i <= jk; i++) {
-    let fw2 = 0;
-    for (let j = 0; j <= jx; j++) fw2 += tx2[j] * fr2[jx + i - j];
-    qr2[i] = fw2;
-  }
-  let jz = jk, z = 0, n = 0, ih = 0, fw = 0;
-  for (; ; ) {
-    z = qr2[jz];
-    for (let i = 0, j = jz; j > 0; i++, j--) {
-      fw = TWON242 * z | 0;
-      iq2[i] = z - TWO242 * fw | 0;
-      z = qr2[j - 1] + fw;
-    }
-    z = scalbn2(z, q0);
-    z -= 8 * floor2(z * 0.125);
-    n = z | 0;
-    z -= n;
-    ih = 0;
-    if (q0 > 0) {
-      const i = iq2[jz - 1] >> 24 - q0;
-      n += i;
-      iq2[jz - 1] -= i << 24 - q0;
-      ih = iq2[jz - 1] >> 23 - q0;
-    } else if (q0 === 0) ih = iq2[jz - 1] >> 23;
-    else if (z >= 0.5) ih = 2;
-    if (ih > 0) {
-      n += 1;
-      let carry = 0;
-      for (let i = 0; i < jz; i++) {
-        const j = iq2[i];
-        if (carry === 0) {
-          if (j !== 0) {
-            carry = 1;
-            iq2[i] = 16777216 - j;
-          }
-        } else iq2[i] = 16777215 - j;
-      }
-      if (q0 === 1) iq2[jz - 1] &= 8388607;
-      else if (q0 === 2) iq2[jz - 1] &= 4194303;
-      if (ih === 2) {
-        z = 1 - z;
-        if (carry !== 0) z -= scalbn2(1, q0);
-      }
-    }
-    if (z === 0) {
-      let j = 0;
-      for (let i = jz - 1; i >= jk; i--) j |= iq2[i];
-      if (j === 0) {
-        let k = 1;
-        while (iq2[jk - k] === 0) k++;
-        for (let i = jz + 1; i <= jz + k; i++) {
-          fr2[jx + i] = TWO_OVER_PI2[jv + i];
-          let f = 0;
-          for (let jj = 0; jj <= jx; jj++) f += tx2[jj] * fr2[jx + i - jj];
-          qr2[i] = f;
-        }
-        jz += k;
-        continue;
-      }
-    }
-    break;
-  }
-  if (z === 0) {
-    jz -= 1;
-    q0 -= 24;
-    while (iq2[jz] === 0) {
-      jz--;
-      q0 -= 24;
-    }
-  } else {
-    z = scalbn2(z, -q0);
-    if (z >= TWO242) {
-      fw = TWON242 * z | 0;
-      iq2[jz] = z - TWO242 * fw | 0;
-      jz += 1;
-      q0 += 24;
-      iq2[jz] = fw;
-    } else iq2[jz] = z | 0;
-  }
-  fw = scalbn2(1, q0);
-  for (let i = jz; i >= 0; i--) {
-    qr2[i] = fw * iq2[i];
-    fw *= TWON242;
-  }
-  for (let i = jz; i >= 0; i--) {
-    fw = 0;
-    for (let k = 0; k <= jp && k <= jz - i; k++) fw += PIO22[k] * qr2[i + k];
-    fq2[jz - i] = fw;
-  }
-  fw = 0;
-  for (let i = jz; i >= 0; i--) fw += fq2[i];
-  ry2[0] = ih === 0 ? fw : -fw;
-  fw = fq2[0] - fw;
-  for (let i = 1; i <= jz; i++) fw += fq2[i];
-  ry2[1] = ih === 0 ? fw : -fw;
-  return n & 7;
-}
-var INVPIO22 = 0.6366197723675814;
-var PIO2_12 = 1.5707963267341256;
-var PIO2_1T2 = 6077100506506192e-26;
-var PIO2_22 = 6077100506303966e-26;
-var PIO2_2T2 = 20222662487959506e-37;
-var PIO2_32 = 20222662487111665e-37;
-var PIO2_3T2 = 84784276603689e-45;
-var NPIO2_HW2 = [
-  1073291771,
-  1074340347,
-  1074977148,
-  1075388923,
-  1075800698,
-  1076025724,
-  1076231611,
-  1076437499,
-  1076643386,
-  1076849274,
-  1076971356,
-  1077074300,
-  1077177244,
-  1077280187,
-  1077383131,
-  1077486075,
-  1077589019,
-  1077691962,
-  1077794906,
-  1077897850,
-  1077968460,
-  1078019932,
-  1078071404,
-  1078122876,
-  1078174348,
-  1078225820,
-  1078277292,
-  1078328763,
-  1078380235,
-  1078431707,
-  1078483179,
-  1078534651
-];
-var PIO4_MAX2 = fromWords2(1072243195, 4294967295);
-var THREE_PIO42 = fromWords2(1073928572, 0);
-var PIO2_WORD_LO2 = fromWords2(1073291771, 0);
-var PIO2_WORD_HI2 = fromWords2(1073291772, 0);
-var MEDIUM_MAX2 = fromWords2(1094263291, 4294967295);
-var TWOM272 = fromWords2(1044381696, 0);
-var TWOM282 = fromWords2(1043333120, 0);
-function remPio22(x) {
-  const ax = abs2(x);
-  if (ax <= PIO4_MAX2) {
-    ry2[0] = x;
-    ry2[1] = 0;
-    return 0;
-  }
-  if (ax < THREE_PIO42) {
-    const nearPio2 = ax >= PIO2_WORD_LO2 && ax < PIO2_WORD_HI2;
-    if (x > 0) {
-      let z3 = x - PIO2_12;
-      if (!nearPio2) {
-        ry2[0] = z3 - PIO2_1T2;
-        ry2[1] = z3 - ry2[0] - PIO2_1T2;
-      } else {
-        z3 -= PIO2_22;
-        ry2[0] = z3 - PIO2_2T2;
-        ry2[1] = z3 - ry2[0] - PIO2_2T2;
-      }
-      return 1;
-    }
-    let z2 = x + PIO2_12;
-    if (!nearPio2) {
-      ry2[0] = z2 + PIO2_1T2;
-      ry2[1] = z2 - ry2[0] + PIO2_1T2;
-    } else {
-      z2 += PIO2_22;
-      ry2[0] = z2 + PIO2_2T2;
-      ry2[1] = z2 - ry2[0] + PIO2_2T2;
-    }
-    return -1;
-  }
-  const hx = hiWord2(x), ix = hx & 2147483647;
-  if (ax <= MEDIUM_MAX2) {
-    let t = ax;
-    const n2 = t * INVPIO22 + 0.5 | 0, fn = n2;
-    let r = t - fn * PIO2_12, w = fn * PIO2_1T2;
-    if (n2 < 32 && ix !== NPIO2_HW2[n2 - 1]) ry2[0] = r - w;
-    else {
-      const j = ix >> 20;
-      ry2[0] = r - w;
-      let i = j - (hiWord2(ry2[0]) >> 20 & 2047);
-      if (i > 16) {
-        t = r;
-        w = fn * PIO2_22;
-        r = t - w;
-        w = fn * PIO2_2T2 - (t - r - w);
-        ry2[0] = r - w;
-        i = j - (hiWord2(ry2[0]) >> 20 & 2047);
-        if (i > 49) {
-          t = r;
-          w = fn * PIO2_32;
-          r = t - w;
-          w = fn * PIO2_3T2 - (t - r - w);
-          ry2[0] = r - w;
-        }
-      }
-    }
-    ry2[1] = r - ry2[0] - w;
-    if (hx < 0) {
-      ry2[0] = -ry2[0];
-      ry2[1] = -ry2[1];
-      return -n2;
-    }
-    return n2;
-  }
-  if (ix >= 2146435072) {
-    ry2[0] = NaN;
-    ry2[1] = NaN;
-    return 0;
-  }
-  const e0 = (ix >> 20) - 1046;
-  let z = fromWords2(ix - (e0 << 20), loWord2(x));
-  for (let i = 0; i < 2; i++) {
-    tx2[i] = z | 0;
-    z = (z - tx2[i]) * TWO242;
-  }
-  tx2[2] = z;
-  let nx = 3;
-  while (tx2[nx - 1] === 0) nx--;
-  const n = kernelRemPio22(e0, nx);
-  if (hx < 0) {
-    ry2[0] = -ry2[0];
-    ry2[1] = -ry2[1];
-    return -n;
-  }
-  return n;
-}
-var S12 = -0.16666666666666632;
-var S22 = 0.00833333333332249;
-var S32 = -1984126982985795e-19;
-var S42 = 27557313707070068e-22;
-var S52 = -25050760253406863e-24;
-var S62 = 158969099521155e-24;
-function kSin2(x, y, iy) {
-  if (abs2(x) < TWOM272) return x;
-  const z = x * x, v = z * x, r = S22 + z * (S32 + z * (S42 + z * (S52 + z * S62)));
-  return iy === 0 ? x + v * (S12 + z * r) : x - (z * (0.5 * y - v * r) - y - v * S12);
-}
-var C12 = 0.0416666666666666;
-var C22 = -0.001388888888887411;
-var C32 = 2480158728947673e-20;
-var C42 = -27557314351390663e-23;
-var C52 = 2087572321298175e-24;
-var C62 = -11359647557788195e-27;
-var COS_SMALL2 = fromWords2(1070805811, 0);
-var COS_BIG2 = fromWords2(1072234497, 0);
-function kCos2(x, y) {
-  const ax = abs2(x);
-  if (ax < TWOM272) return 1;
-  const z = x * x, r = z * (C12 + z * (C22 + z * (C32 + z * (C42 + z * (C52 + z * C62)))));
-  if (ax < COS_SMALL2) return 1 - (0.5 * z - (z * r - x * y));
-  const qx = ax >= COS_BIG2 ? 0.28125 : fromWords2((hiWord2(x) & 2147483647) - 2097152, 0);
-  const hz = 0.5 * z - qx, a = 1 - qx;
-  return a - (hz - (z * r - x * y));
-}
-var T2 = [
-  0.3333333333333341,
-  /* 0x3FD55555, 0x55555563 */
-  0.13333333333320124,
-  /* 0x3FC11111, 0x1110FE7A */
-  0.05396825397622605,
-  /* 0x3FABA1BA, 0x1BB341FE */
-  0.021869488294859542,
-  /* 0x3F9664F4, 0x8406D637 */
-  0.0088632398235993,
-  /* 0x3F8226E3, 0xE96E8493 */
-  0.0035920791075913124,
-  /* 0x3F6D6D22, 0xC9560328 */
-  0.0014562094543252903,
-  /* 0x3F57DBC8, 0xFEE08315 */
-  5880412408202641e-19,
-  /* 0x3F4344D8, 0xF2F26501 */
-  2464631348184699e-19,
-  /* 0x3F3026F7, 0x1A8D1068 */
-  7817944429395571e-20,
-  /* 0x3F147E88, 0xA03792A6 */
-  7140724913826082e-20,
-  /* 0x3F12B80F, 0x32F0A7E9 */
-  -18558637485527546e-21,
-  /* 0xBEF375CB, 0xDB605373 */
-  2590730518636337e-20
-  /* 0x3EFB2A70, 0x74BF7AD4 */
-];
-var PIO42 = 0.7853981633974483;
-var PIO4LO2 = 3061616997868383e-32;
-var TAN_BIG2 = fromWords2(1072010280, 0);
-function kTan2(x, y, iy) {
-  const ax = abs2(x), neg = x < 0, big = ax >= TAN_BIG2;
-  if (ax < TWOM282) {
-    if (x === 0 && iy === -1) return 1 / ax;
-    if (iy === 1) return x;
-    const w2 = x + y, z2 = withLo2(w2, 0), v2 = y - (z2 - x), a2 = -1 / w2, t2 = withLo2(a2, 0), s2 = 1 + t2 * z2;
-    return t2 + a2 * (s2 + t2 * v2);
-  }
-  if (big) {
-    if (neg) {
-      x = -x;
-      y = -y;
-    }
-    const z2 = PIO42 - x, w2 = PIO4LO2 - y;
-    x = z2 + w2;
-    y = 0;
-  }
-  const z = x * x, w = z * z;
-  let r = T2[1] + w * (T2[3] + w * (T2[5] + w * (T2[7] + w * (T2[9] + w * T2[11]))));
-  let v = z * (T2[2] + w * (T2[4] + w * (T2[6] + w * (T2[8] + w * (T2[10] + w * T2[12])))));
-  const s = z * x;
-  r = y + z * (s * (r + v) + y);
-  r += T2[0] * s;
-  const sum2 = x + r;
-  if (big) {
-    v = iy;
-    return (neg ? -1 : 1) * (v - 2 * (x - (sum2 * sum2 / (sum2 + v) - r)));
-  }
-  if (iy === 1) return sum2;
-  const zz = withLo2(sum2, 0), vv = r - (zz - x), a = -1 / sum2, t = withLo2(a, 0), ss = 1 + t * zz;
-  return t + a * (ss + t * vv);
-}
-function sin2(x) {
-  x = +x;
-  const ax = abs2(x);
-  if (ax <= PIO4_MAX2) return kSin2(x, 0, 0);
-  if (!(ax < Infinity)) return NaN;
-  switch (remPio22(x) & 3) {
-    case 0:
-      return kSin2(ry2[0], ry2[1], 1);
-    case 1:
-      return kCos2(ry2[0], ry2[1]);
-    case 2:
-      return -kSin2(ry2[0], ry2[1], 1);
-    default:
-      return -kCos2(ry2[0], ry2[1]);
-  }
-}
-function cos2(x) {
-  x = +x;
-  const ax = abs2(x);
-  if (ax <= PIO4_MAX2) return kCos2(x, 0);
-  if (!(ax < Infinity)) return NaN;
-  switch (remPio22(x) & 3) {
-    case 0:
-      return kCos2(ry2[0], ry2[1]);
-    case 1:
-      return -kSin2(ry2[0], ry2[1], 1);
-    case 2:
-      return -kCos2(ry2[0], ry2[1]);
-    default:
-      return kSin2(ry2[0], ry2[1], 1);
-  }
-}
-function tan2(x) {
-  x = +x;
-  const ax = abs2(x);
-  if (ax <= PIO4_MAX2) return kTan2(x, 0, 1);
-  if (!(ax < Infinity)) return NaN;
-  const n = remPio22(x);
-  return kTan2(ry2[0], ry2[1], 1 - ((n & 1) << 1));
-}
-var ATANHI2 = [
-  0.4636476090008061,
-  /* atan(0.5)hi 0x3FDDAC67, 0x0561BB4F */
-  0.7853981633974483,
-  /* atan(1.0)hi 0x3FE921FB, 0x54442D18 */
-  0.982793723247329,
-  /* atan(1.5)hi 0x3FEF730B, 0xD281F69B */
-  1.5707963267948966
-  /* atan(inf)hi 0x3FF921FB, 0x54442D18 */
-];
-var ATANLO2 = [
-  22698777452961687e-33,
-  /* atan(0.5)lo 0x3C7A2B7F, 0x222F65E2 */
-  3061616997868383e-32,
-  /* atan(1.0)lo 0x3C81A626, 0x33145C07 */
-  13903311031230998e-33,
-  /* atan(1.5)lo 0x3C700788, 0x7AF0CBBD */
-  6123233995736766e-32
-  /* atan(inf)lo 0x3C91A626, 0x33145C07 */
-];
-var AT2 = [
-  0.3333333333333293,
-  /* 0x3FD55555, 0x5555550D */
-  -0.19999999999876483,
-  /* 0xBFC99999, 0x9998EBC4 */
-  0.14285714272503466,
-  /* 0x3FC24924, 0x920083FF */
-  -0.11111110405462356,
-  /* 0xBFBC71C6, 0xFE231671 */
-  0.09090887133436507,
-  /* 0x3FB745CD, 0xC54C206E */
-  -0.0769187620504483,
-  /* 0xBFB3B0F2, 0xAF749A6D */
-  0.06661073137387531,
-  /* 0x3FB10D66, 0xA0D03D51 */
-  -0.058335701337905735,
-  /* 0xBFADDE2D, 0x52DEFD9A */
-  0.049768779946159324,
-  /* 0x3FA97B4B, 0x24760DEB */
-  -0.036531572744216916,
-  /* 0xBFA2B444, 0x2C6A6C2F */
-  0.016285820115365782
-  /* 0x3F90AD3A, 0xE322DA11 */
-];
-function atan3(x) {
-  x = +x;
-  const hx = hiWord2(x), ix = hx & 2147483647;
-  let id2;
-  if (ix >= 1141899264) {
-    if (x !== x) return NaN;
-    return hx > 0 ? ATANHI2[3] + ATANLO2[3] : -ATANHI2[3] - ATANLO2[3];
-  }
-  if (ix < 1071382528) {
-    if (ix < 1042284544) return x;
-    id2 = -1;
-  } else {
-    x = abs2(x);
-    if (ix < 1072889856) {
-      if (ix < 1072037888) {
-        id2 = 0;
-        x = (2 * x - 1) / (2 + x);
-      } else {
-        id2 = 1;
-        x = (x - 1) / (x + 1);
-      }
-    } else if (ix < 1073971200) {
-      id2 = 2;
-      x = (x - 1.5) / (1 + 1.5 * x);
-    } else {
-      id2 = 3;
-      x = -1 / x;
-    }
-  }
-  const z = x * x, w = z * z;
-  const s1 = z * (AT2[0] + w * (AT2[2] + w * (AT2[4] + w * (AT2[6] + w * (AT2[8] + w * AT2[10])))));
-  const s2 = w * (AT2[1] + w * (AT2[3] + w * (AT2[5] + w * (AT2[7] + w * AT2[9]))));
-  if (id2 < 0) return x - x * (s1 + s2);
-  const r = ATANHI2[id2] - (x * (s1 + s2) - ATANLO2[id2] - x);
-  return hx < 0 ? -r : r;
-}
-var PI2 = 3.141592653589793;
-var PI_O_22 = 1.5707963267948966;
-var PI_O_42 = 0.7853981633974483;
-var PI_LO2 = 12246467991473532e-32;
-function atan22(y, x) {
-  y = +y;
-  x = +x;
-  if (x !== x || y !== y) return NaN;
-  const hx = hiWord2(x), ix = hx & 2147483647, lx = loWord2(x);
-  const hy = hiWord2(y), iy = hy & 2147483647, ly = loWord2(y);
-  if ((hx - 1072693248 | lx) === 0) return atan3(y);
-  const m = hy >> 31 & 1 | hx >> 30 & 2;
-  if ((iy | ly) === 0) {
-    switch (m) {
-      case 0:
-      case 1:
-        return y;
-      case 2:
-        return PI2 + TINY2;
-      default:
-        return -PI2 - TINY2;
-    }
-  }
-  if ((ix | lx) === 0) return hy < 0 ? -PI_O_22 - TINY2 : PI_O_22 + TINY2;
-  if (ix === 2146435072) {
-    if (iy === 2146435072) {
-      switch (m) {
-        case 0:
-          return PI_O_42 + TINY2;
-        case 1:
-          return -PI_O_42 - TINY2;
-        case 2:
-          return 3 * PI_O_42 + TINY2;
-        default:
-          return -3 * PI_O_42 - TINY2;
-      }
-    }
-    switch (m) {
-      case 0:
-        return 0;
-      case 1:
-        return -0;
-      case 2:
-        return PI2 + TINY2;
-      default:
-        return -PI2 - TINY2;
-    }
-  }
-  if (iy === 2146435072) return hy < 0 ? -PI_O_22 - TINY2 : PI_O_22 + TINY2;
-  const k = iy - ix >> 20;
-  let z;
-  if (k > 60) z = PI_O_22 + 0.5 * PI_LO2;
-  else if (hx < 0 && k < -60) z = 0;
-  else z = atan3(abs2(y / x));
-  switch (m) {
-    case 0:
-      return z;
-    case 1:
-      return -z;
-    case 2:
-      return PI2 - (z - PI_LO2);
-    default:
-      return z - PI_LO2 - PI2;
-  }
-}
-var PIO2_HI2 = 1.5707963267948966;
-var PIO2_LO2 = 6123233995736766e-32;
-var PIO4_HI2 = 0.7853981633974483;
-var PS02 = 0.16666666666666666;
-var PS12 = -0.3255658186224009;
-var PS22 = 0.20121253213486293;
-var PS32 = -0.04005553450067941;
-var PS42 = 7915349942898145e-19;
-var PS52 = 3479331075960212e-20;
-var QS12 = -2.403394911734414;
-var QS22 = 2.0209457602335057;
-var QS32 = -0.6882839716054533;
-var QS42 = 0.07703815055590194;
-var asinP2 = (t) => t * (PS02 + t * (PS12 + t * (PS22 + t * (PS32 + t * (PS42 + t * PS52)))));
-var asinQ2 = (t) => 1 + t * (QS12 + t * (QS22 + t * (QS32 + t * QS42)));
-function asin2(x) {
-  x = +x;
-  const hx = hiWord2(x), ix = hx & 2147483647;
-  if (ix >= 1072693248) {
-    if ((ix - 1072693248 | loWord2(x)) === 0) return x * PIO2_HI2 + x * PIO2_LO2;
-    return NaN;
-  }
-  if (ix < 1071644672) {
-    if (ix < 1044381696) return x;
-    const t2 = x * x;
-    return x + x * (asinP2(t2) / asinQ2(t2));
-  }
-  const w = 1 - abs2(x), t = w * 0.5, p = asinP2(t), q = asinQ2(t), s = sqrt2(t);
-  let r;
-  if (ix >= 1072640819) r = PIO2_HI2 - (2 * (s + s * (p / q)) - PIO2_LO2);
-  else {
-    const ws = withLo2(s, 0), c = (t - ws * ws) / (s + ws);
-    r = PIO4_HI2 - (2 * s * (p / q) - (PIO2_LO2 - 2 * c) - (PIO4_HI2 - 2 * ws));
-  }
-  return hx > 0 ? r : -r;
-}
-function acos2(x) {
-  x = +x;
-  const hx = hiWord2(x), ix = hx & 2147483647;
-  if (ix >= 1072693248) {
-    if ((ix - 1072693248 | loWord2(x)) === 0) return hx > 0 ? 0 : PI2 + 2 * PIO2_LO2;
-    return NaN;
-  }
-  if (ix < 1071644672) {
-    if (ix <= 1012924416) return PIO2_HI2 + PIO2_LO2;
-    const z2 = x * x;
-    return PIO2_HI2 - (x - (PIO2_LO2 - x * (asinP2(z2) / asinQ2(z2))));
-  }
-  if (hx < 0) {
-    const z2 = (1 + x) * 0.5, s2 = sqrt2(z2), w = asinP2(z2) / asinQ2(z2) * s2 - PIO2_LO2;
-    return PI2 - 2 * (s2 + w);
-  }
-  const z = (1 - x) * 0.5, s = sqrt2(z), df = withLo2(s, 0), c = (z - df * df) / (s + df);
-  return 2 * (df + (asinP2(z) / asinQ2(z) * s + c));
-}
-var O_THRESHOLD2 = 709.782712893384;
-var U_THRESHOLD2 = -745.1332191019411;
-var TWOM10002 = 9332636185032189e-317;
-var LN2_HI2 = 0.6931471803691238;
-var LN2_LO2 = 19082149292705877e-26;
-var INVLN22 = 1.4426950408889634;
-var P12 = 0.16666666666666602;
-var P22 = -0.0027777777777015593;
-var P32 = 6613756321437934e-20;
-var P42 = -16533902205465252e-22;
-var P52 = 41381367970572385e-24;
-function exp2(x) {
-  x = +x;
-  let hx = hiWord2(x);
-  const xsb = hx >>> 31 & 1;
-  hx &= 2147483647;
-  if (hx >= 1082535490) {
-    if (hx >= 2146435072) {
-      if ((hx & 1048575 | loWord2(x)) !== 0) return NaN;
-      return xsb === 0 ? x : 0;
-    }
-    if (x > O_THRESHOLD2) return Infinity;
-    if (x < U_THRESHOLD2) return 0;
-  }
-  let hi = 0, lo = 0, k = 0;
-  if (hx > 1071001154) {
-    if (hx < 1072734898) {
-      hi = xsb === 0 ? x - LN2_HI2 : x + LN2_HI2;
-      lo = xsb === 0 ? LN2_LO2 : -LN2_LO2;
-      k = 1 - xsb - xsb;
-    } else {
-      k = INVLN22 * x + (xsb === 0 ? 0.5 : -0.5) | 0;
-      hi = x - k * LN2_HI2;
-      lo = k * LN2_LO2;
-    }
-    x = hi - lo;
-  } else if (hx < 1043333120) return 1 + x;
-  const t = x * x, c = x - t * (P12 + t * (P22 + t * (P32 + t * (P42 + t * P52))));
-  if (k === 0) return 1 - (x * c / (c - 2) - x);
-  const y = 1 - (lo - x * c / (2 - c) - hi);
-  if (k >= -1021) return withHi2(y, hiWord2(y) + (k << 20));
-  return withHi2(y, hiWord2(y) + (k + 1e3 << 20)) * TWOM10002;
-}
-var Q12 = -0.03333333333333313;
-var Q22 = 0.0015873015872548146;
-var Q32 = -793650757867488e-19;
-var Q42 = 4008217827329362e-21;
-var Q52 = -20109921818362437e-23;
-function expm12(x) {
-  x = +x;
-  let hx = hiWord2(x);
-  const xsb = hx & 2147483648;
-  hx &= 2147483647;
-  if (hx >= 1078159482) {
-    if (hx >= 1082535490) {
-      if (hx >= 2146435072) {
-        if ((hx & 1048575 | loWord2(x)) !== 0) return NaN;
-        return xsb === 0 ? x : -1;
-      }
-      if (x > O_THRESHOLD2) return Infinity;
-    }
-    if (xsb !== 0) return -1;
-  }
-  let hi, lo, k, c = 0;
-  if (hx > 1071001154) {
-    if (hx < 1072734898) {
-      if (xsb === 0) {
-        hi = x - LN2_HI2;
-        lo = LN2_LO2;
-        k = 1;
-      } else {
-        hi = x + LN2_HI2;
-        lo = -LN2_LO2;
-        k = -1;
-      }
-    } else {
-      k = INVLN22 * x + (xsb === 0 ? 0.5 : -0.5) | 0;
-      hi = x - k * LN2_HI2;
-      lo = k * LN2_LO2;
-    }
-    x = hi - lo;
-    c = hi - x - lo;
-  } else if (hx < 1016070144) return x;
-  else k = 0;
-  const hfx = 0.5 * x, hxs = x * hfx;
-  const r1 = 1 + hxs * (Q12 + hxs * (Q22 + hxs * (Q32 + hxs * (Q42 + hxs * Q52))));
-  let t = 3 - r1 * hfx;
-  let e = hxs * ((r1 - t) / (6 - x * t));
-  if (k === 0) return x - (x * e - hxs);
-  e = x * (e - c) - c;
-  e -= hxs;
-  if (k === -1) return 0.5 * (x - e) - 0.5;
-  if (k === 1) return x < -0.25 ? -2 * (e - (x + 0.5)) : 1 + 2 * (x - e);
-  let y;
-  if (k <= -2 || k > 56) {
-    y = 1 - (e - x);
-    return withHi2(y, hiWord2(y) + (k << 20)) - 1;
-  }
-  if (k < 20) {
-    t = fromWords2(1072693248 - (2097152 >> k), 0);
-    y = t - (e - x);
-  } else {
-    t = fromWords2(1023 - k << 20, 0);
-    y = x - (e + t);
-    y += 1;
-  }
-  return withHi2(y, hiWord2(y) + (k << 20));
-}
-var LG12 = 0.6666666666666735;
-var LG22 = 0.3999999999940942;
-var LG32 = 0.2857142874366239;
-var LG42 = 0.22222198432149784;
-var LG52 = 0.1818357216161805;
-var LG62 = 0.15313837699209373;
-var LG72 = 0.14798198605116586;
-function log3(x) {
-  x = +x;
-  let hx = hiWord2(x);
-  const lx = loWord2(x);
-  let k = 0;
-  if (hx < 1048576) {
-    if ((hx & 2147483647 | lx) === 0) return -Infinity;
-    if (hx < 0) return NaN;
-    k -= 54;
-    x *= TWO542;
-    hx = hiWord2(x);
-  }
-  if (hx >= 2146435072) return x + x;
-  k += (hx >> 20) - 1023;
-  hx &= 1048575;
-  let i = hx + 614244 & 1048576;
-  x = withHi2(x, hx | i ^ 1072693248);
-  k += i >> 20;
-  const f = x - 1;
-  if ((1048575 & 2 + hx) < 3) {
-    if (f === 0) return k === 0 ? 0 : k * LN2_HI2 + k * LN2_LO2;
-    const r2 = f * f * (0.5 - 0.3333333333333333 * f);
-    return k === 0 ? f - r2 : k * LN2_HI2 - (r2 - k * LN2_LO2 - f);
-  }
-  const s = f / (2 + f), dk = k, z = s * s;
-  i = hx - 398458;
-  const w = z * z, j = 440401 - hx;
-  const t1 = w * (LG22 + w * (LG42 + w * LG62)), t2 = z * (LG12 + w * (LG32 + w * (LG52 + w * LG72)));
-  i |= j;
-  const r = t2 + t1;
-  if (i > 0) {
-    const hfsq = 0.5 * f * f;
-    return k === 0 ? f - (hfsq - s * (hfsq + r)) : dk * LN2_HI2 - (hfsq - (s * (hfsq + r) + dk * LN2_LO2) - f);
-  }
-  return k === 0 ? f - s * (f - r) : dk * LN2_HI2 - (s * (f - r) - dk * LN2_LO2 - f);
-}
-function log1p2(x) {
-  x = +x;
-  const hx = hiWord2(x), ax = hx & 2147483647;
-  let k = 1, f = 0, hu = 0, c = 0;
-  if (hx < 1071284858) {
-    if (ax >= 1072693248) return x === -1 ? -Infinity : NaN;
-    if (ax < 1042284544) {
-      if (ax < 1016070144) return x;
-      return x - x * x * 0.5;
-    }
-    if (hx > 0 || hx <= (3218259651 | 0)) {
-      k = 0;
-      f = x;
-      hu = 1;
-    }
-  }
-  if (hx >= 2146435072) return x + x;
-  if (k !== 0) {
-    let u;
-    if (hx < 1128267776) {
-      u = 1 + x;
-      hu = hiWord2(u);
-      k = (hu >> 20) - 1023;
-      c = k > 0 ? 1 - (u - x) : x - (u - 1);
-      c /= u;
-    } else {
-      u = x;
-      hu = hiWord2(u);
-      k = (hu >> 20) - 1023;
-      c = 0;
-    }
-    hu &= 1048575;
-    if (hu < 434334) u = withHi2(u, hu | 1072693248);
-    else {
-      k += 1;
-      u = withHi2(u, hu | 1071644672);
-      hu = 1048576 - hu >> 2;
-    }
-    f = u - 1;
-  }
-  const hfsq = 0.5 * f * f;
-  if (hu === 0) {
-    if (f === 0) return k === 0 ? 0 : k * LN2_HI2 + (c + k * LN2_LO2);
-    const r2 = hfsq * (1 - 0.6666666666666666 * f);
-    return k === 0 ? f - r2 : k * LN2_HI2 - (r2 - (k * LN2_LO2 + c) - f);
-  }
-  const s = f / (2 + f), z = s * s;
-  const r = z * (LG12 + z * (LG22 + z * (LG32 + z * (LG42 + z * (LG52 + z * (LG62 + z * LG72))))));
-  return k === 0 ? f - (hfsq - s * (hfsq + r)) : k * LN2_HI2 - (hfsq - (s * (hfsq + r) + (k * LN2_LO2 + c)) - f);
-}
-var IVLN102 = 0.4342944819032518;
-var LOG10_2HI2 = 0.30102999566361177;
-var LOG10_2LO2 = 3694239077158931e-28;
-function log102(x) {
-  x = +x;
-  let hx = hiWord2(x);
-  const lx = loWord2(x);
-  let k = 0;
-  if (hx < 1048576) {
-    if ((hx & 2147483647 | lx) === 0) return -Infinity;
-    if (hx < 0) return NaN;
-    k -= 54;
-    x *= TWO542;
-    hx = hiWord2(x);
-  }
-  if (hx >= 2146435072) return x + x;
-  k += (hx >> 20) - 1023;
-  const i = k >>> 31 & 1;
-  x = withHi2(x, hx & 1048575 | 1023 - i << 20);
-  const y = k + i;
-  return y * LOG10_2LO2 + IVLN102 * log3(x) + y * LOG10_2HI2;
-}
-function log22(x) {
-  x = +x;
-  let hx = hiWord2(x);
-  const lx = loWord2(x);
-  let k = 0;
-  if (hx < 1048576) {
-    if ((hx & 2147483647 | lx) === 0) return -Infinity;
-    if (hx < 0) return NaN;
-    k -= 54;
-    x *= TWO542;
-    hx = hiWord2(x);
-  }
-  if (hx >= 2146435072) return x + x;
-  k += (hx >> 20) - 1023;
-  hx &= 1048575;
-  const i = hx + 614244 & 1048576;
-  x = withHi2(x, hx | i ^ 1072693248);
-  k += i >> 20;
-  return x === 1 ? k : k + log3(x) * INVLN22;
-}
-var BP2 = [1, 1.5];
-var DP_H2 = [0, 0.5849624872207642];
-var DP_L2 = [0, 1350039202129749e-23];
-var TWO532 = 9007199254740992;
-var L12 = 0.5999999999999946;
-var L22 = 0.4285714285785502;
-var L32 = 0.33333332981837743;
-var L42 = 0.272728123808534;
-var L52 = 0.23066074577556175;
-var L62 = 0.20697501780033842;
-var LG2C2 = 0.6931471805599453;
-var LG2_H2 = 0.6931471824645996;
-var LG2_L2 = -1904654299957768e-24;
-var OVT2 = 8008566259537294e-32;
-var CP2 = 0.9617966939259756;
-var CP_H2 = 0.9617967009544373;
-var CP_L2 = -7028461650952758e-24;
-var IVLN2_H2 = 1.4426950216293335;
-var IVLN2_L2 = 19259629911266175e-24;
-function powBig2(x, y) {
-  if (typeof x !== "bigint" || typeof y !== "bigint") throw new TypeError("Cannot mix BigInt and other types, use explicit conversions");
-  if (y < 0n) throw new RangeError("Exponent must be non-negative");
-  let r = 1n, b = x, e = y;
-  while (e > 0n) {
-    if (e & 1n) r *= b;
-    e >>= 1n;
-    if (e > 0n) b *= b;
-  }
-  return r;
-}
-function pow2(x, y) {
-  if (typeof x === "bigint" || typeof y === "bigint") return powBig2(x, y);
-  x = +x;
-  y = +y;
-  if (y === 2) return x * x;
-  if (y === 1) return x;
-  const hx = hiWord2(x), lx = loWord2(x), hy = hiWord2(y), ly = loWord2(y);
-  let ix = hx & 2147483647;
-  const iy = hy & 2147483647;
-  if ((iy | ly) === 0) return 1;
-  if (x !== x || y !== y) return NaN;
-  let yisint = 0;
-  if (hx < 0) {
-    if (iy >= 1128267776) yisint = 2;
-    else if (iy >= 1072693248) {
-      const k2 = (iy >> 20) - 1023;
-      if (k2 > 20) {
-        const j2 = ly >>> 52 - k2;
-        if (j2 << 52 - k2 >>> 0 === ly) yisint = 2 - (j2 & 1);
-      } else if (ly === 0) {
-        const j2 = iy >> 20 - k2;
-        if (j2 << 20 - k2 === iy) yisint = 2 - (j2 & 1);
-      }
-    }
-  }
-  if (ly === 0) {
-    if (iy === 2146435072) {
-      if ((ix - 1072693248 | lx) === 0) return NaN;
-      if (ix >= 1072693248) return hy >= 0 ? y : 0;
-      return hy < 0 ? -y : 0;
-    }
-    if (iy === 1072693248) return hy < 0 ? 1 / x : x;
-    if (hy === 1073741824) return x * x;
-    if (hy === 1071644672 && hx >= 0) return sqrt2(x);
-  }
-  let ax = abs2(x);
-  if (lx === 0 && (ix === 2146435072 || ix === 0 || ix === 1072693248)) {
-    let z2 = hy < 0 ? 1 / ax : ax;
-    if (hx < 0) {
-      if ((ix - 1072693248 | yisint) === 0) z2 = NaN;
-      else if (yisint === 1) z2 = -z2;
-    }
-    return z2;
-  }
-  let n = (hx >> 31) + 1;
-  if ((n | yisint) === 0) return NaN;
-  const s = (n | yisint - 1) === 0 ? -1 : 1;
-  let t1, t2;
-  if (iy > 1105199104) {
-    if (iy > 1139802112) {
-      if (ix <= 1072693247) return hy < 0 ? Infinity : 0;
-      if (ix >= 1072693248) return hy > 0 ? Infinity : 0;
-    }
-    if (ix < 1072693247) return hy < 0 ? s * Infinity : s * 0;
-    if (ix > 1072693248) return hy > 0 ? s * Infinity : s * 0;
-    const t3 = ax - 1;
-    const w2 = t3 * t3 * (0.5 - t3 * (0.3333333333333333 - t3 * 0.25));
-    const u2 = IVLN2_H2 * t3, v2 = t3 * IVLN2_L2 - w2 * INVLN22;
-    t1 = withLo2(u2 + v2, 0);
-    t2 = v2 - (t1 - u2);
-  } else {
-    n = 0;
-    if (ix < 1048576) {
-      ax *= TWO532;
-      n -= 53;
-      ix = hiWord2(ax);
-    }
-    n += (ix >> 20) - 1023;
-    const j2 = ix & 1048575;
-    let k2;
-    ix = j2 | 1072693248;
-    if (j2 <= 235662) k2 = 0;
-    else if (j2 < 767610) k2 = 1;
-    else {
-      k2 = 0;
-      n += 1;
-      ix -= 1048576;
-    }
-    ax = withHi2(ax, ix);
-    let u2 = ax - BP2[k2], v2 = 1 / (ax + BP2[k2]);
-    const ss = u2 * v2, sh = withLo2(ss, 0);
-    let th = fromWords2((ix >> 1 | 536870912) + 524288 + (k2 << 18), 0);
-    let tl = ax - (th - BP2[k2]);
-    const sl = v2 * (u2 - sh * th - sh * tl);
-    let s2 = ss * ss;
-    let r2 = s2 * s2 * (L12 + s2 * (L22 + s2 * (L32 + s2 * (L42 + s2 * (L52 + s2 * L62)))));
-    r2 += sl * (sh + ss);
-    s2 = sh * sh;
-    th = withLo2(3 + s2 + r2, 0);
-    tl = r2 - (th - 3 - s2);
-    u2 = sh * th;
-    v2 = sl * th + tl * ss;
-    const ph2 = withLo2(u2 + v2, 0), pl2 = v2 - (ph2 - u2);
-    const zh = CP_H2 * ph2, zl = CP_L2 * ph2 + pl2 * CP2 + DP_L2[k2];
-    const t3 = n;
-    t1 = withLo2(zh + zl + DP_H2[k2] + t3, 0);
-    t2 = zl - (t1 - t3 - DP_H2[k2] - zh);
-  }
-  const y1 = withLo2(y, 0);
-  const pl = (y - y1) * t1 + y * t2;
-  let ph = y1 * t1;
-  let z = pl + ph;
-  let j = hiWord2(z);
-  const i = loWord2(z);
-  if (j >= 1083179008) {
-    if ((j - 1083179008 | i) !== 0) return s * Infinity;
-    if (pl + OVT2 > z - ph) return s * Infinity;
-  } else if ((j & 2147483647) >= 1083231232) {
-    if ((j - 3230714880 | i) !== 0) return s * 0;
-    if (pl <= z - ph) return s * 0;
-  }
-  const ii = j & 2147483647;
-  let k = (ii >> 20) - 1023;
-  n = 0;
-  if (ii > 1071644672) {
-    n = j + (1048576 >> k + 1);
-    k = ((n & 2147483647) >> 20) - 1023;
-    const t3 = fromWords2(n & ~(1048575 >> k), 0);
-    n = (n & 1048575 | 1048576) >> 20 - k;
-    if (j < 0) n = -n;
-    ph -= t3;
-  }
-  const t = withLo2(pl + ph, 0);
-  const u = t * LG2_H2, v = (pl - (t - ph)) * LG2C2 + t * LG2_L2;
-  z = u + v;
-  const w = v - (z - u), tt = z * z;
-  const tp = z - tt * (P12 + tt * (P22 + tt * (P32 + tt * (P42 + tt * P52))));
-  const r = z * tp / (tp - 2) - (w + z * w);
-  z = 1 - (r - z);
-  j = hiWord2(z) + (n << 20);
-  if (j >> 20 <= 0) z = scalbn2(z, n);
-  else z = withHi2(z, j);
-  return s * z;
-}
-function sinh2(x) {
-  x = +x;
-  const jx = hiWord2(x), ix = jx & 2147483647;
-  if (ix >= 2146435072) return x + x;
-  const h = jx < 0 ? -0.5 : 0.5;
-  if (ix < 1077280768) {
-    if (ix < 1043333120) return x;
-    const t = expm12(abs2(x));
-    if (ix < 1072693248) return h * (2 * t - t * t / (t + 1));
-    return h * (t + t / (t + 1));
-  }
-  if (ix < 1082535490) return h * exp2(abs2(x));
-  if (ix < 1082536910 || ix === 1082536910 && loWord2(x) <= 2411329661) {
-    const w = exp2(0.5 * abs2(x));
-    return h * w * w;
-  }
-  return x * Infinity;
-}
-function cosh2(x) {
-  x = +x;
-  const ix = hiWord2(x) & 2147483647;
-  if (ix >= 2146435072) return x * x;
-  if (ix < 1071001155) {
-    const t = expm12(abs2(x)), w = 1 + t;
-    if (ix < 1015021568) return w;
-    return 1 + t * t / (w + w);
-  }
-  if (ix < 1077280768) {
-    const t = exp2(abs2(x));
-    return 0.5 * t + 0.5 / t;
-  }
-  if (ix < 1082535490) return 0.5 * exp2(abs2(x));
-  if (ix < 1082536910 || ix === 1082536910 && loWord2(x) <= 2411329661) {
-    const w = exp2(0.5 * abs2(x));
-    return 0.5 * w * w;
-  }
-  return Infinity;
-}
-function tanh2(x) {
-  x = +x;
-  const jx = hiWord2(x), ix = jx & 2147483647;
-  if (ix >= 2146435072) {
-    if (x !== x) return NaN;
-    return jx >= 0 ? 1 : -1;
-  }
-  let z;
-  if (ix < 1077280768) {
-    if (ix < 1015021568) return x * (1 + x);
-    if (ix >= 1072693248) {
-      const t = expm12(2 * abs2(x));
-      z = 1 - 2 / (t + 2);
-    } else {
-      const t = expm12(-2 * abs2(x));
-      z = -t / (t + 2);
-    }
-  } else z = 1 - TINY2;
-  return jx >= 0 ? z : -z;
-}
-var LN22 = 0.6931471805599453;
-function asinh2(x) {
-  x = +x;
-  const hx = hiWord2(x), ix = hx & 2147483647;
-  if (ix >= 2146435072) return x + x;
-  if (ix < 1043333120) return x;
-  let w;
-  if (ix > 1102053376) w = log3(abs2(x)) + LN22;
-  else if (ix > 1073741824) {
-    const t = abs2(x);
-    w = log3(2 * t + 1 / (sqrt2(x * x + 1) + t));
-  } else {
-    const t = x * x;
-    w = log1p2(abs2(x) + t / (1 + sqrt2(1 + t)));
-  }
-  return hx > 0 ? w : -w;
-}
-function acosh2(x) {
-  x = +x;
-  const hx = hiWord2(x);
-  if (hx < 1072693248) return NaN;
-  if (hx >= 1102053376) return hx >= 2146435072 ? x + x : log3(x) + LN22;
-  if ((hx - 1072693248 | loWord2(x)) === 0) return 0;
-  if (hx > 1073741824) return log3(2 * x - 1 / (x + sqrt2(x * x - 1)));
-  const t = x - 1;
-  return log1p2(t + sqrt2(2 * t + t * t));
-}
-function atanh2(x) {
-  x = +x;
-  const hx = hiWord2(x), ix = hx & 2147483647;
-  if (x !== x || ix > 1072693248 || ix === 1072693248 && loWord2(x) !== 0) return NaN;
-  if (ix === 1072693248) return x > 0 ? Infinity : -Infinity;
-  if (ix < 1043333120) return x;
-  const ax = abs2(x);
-  const t = ix < 1071644672 ? 0.5 * log1p2(ax + ax + (ax + ax) * ax / (1 - ax)) : 0.5 * log1p2((ax + ax) / (1 - ax));
-  return hx >= 0 ? t : -t;
-}
-var B12 = 715094163;
-var B22 = 696219795;
-var CB_C2 = 0.5428571428571428;
-var CB_D2 = -0.7053061224489796;
-var CB_E2 = 1.4142857142857144;
-var CB_F2 = 1.6071428571428572;
-var CB_G2 = 0.35714285714285715;
-function cbrt2(x) {
-  x = +x;
-  let hx = hiWord2(x);
-  const sign2 = hx & 2147483648;
-  hx ^= sign2;
-  if (hx >= 2146435072) return x + x;
-  if ((hx | loWord2(x)) === 0) return x;
-  x = withHi2(x, hx);
-  let t;
-  if (hx < 1048576) {
-    t = fromWords2(1129316352, 0) * x;
-    t = withHi2(t, (hiWord2(t) / 3 | 0) + B22);
-  } else t = fromWords2((hx / 3 | 0) + B12, 0);
-  let r = t * t / x;
-  let s = CB_C2 + r * t;
-  t *= CB_G2 + CB_F2 / (s + CB_E2 + CB_D2 / s);
-  t = fromWords2(hiWord2(t) + 1, 0);
-  s = t * t;
-  r = x / s;
-  const w = t + t;
-  r = (r - t) / (w + r);
-  t = t + t * r;
-  return sign2 !== 0 ? -t : t;
-}
-var TWO5002 = fromWords2(1596981248, 0);
-var TWOM5002 = fromWords2(548405248, 0);
-var TWO6002 = fromWords2(1701838848, 0);
-var TWOM6002 = fromWords2(443547648, 0);
-function hypot22(x, y) {
-  let ha = hiWord2(x) & 2147483647, hb = hiWord2(y) & 2147483647;
-  let a, b;
-  if (hb > ha) {
-    a = y;
-    b = x;
-    const j = ha;
-    ha = hb;
-    hb = j;
-  } else {
-    a = x;
-    b = y;
-  }
-  a = withHi2(a, ha);
-  b = withHi2(b, hb);
-  if (ha - hb > 62914560) return a + b;
-  let k = 0;
-  if (ha > 1596981248) {
-    if (ha >= 2146435072) {
-      if ((ha & 1048575 | loWord2(a)) === 0) return a;
-      if ((hb ^ 2146435072 | loWord2(b)) === 0) return b;
-      return NaN;
-    }
-    ha -= 629145600;
-    hb -= 629145600;
-    k += 600;
-    a = withHi2(a, ha);
-    b = withHi2(b, hb);
-  }
-  if (hb < 548405248) {
-    if (hb <= 1048575) {
-      if ((hb | loWord2(b)) === 0) return a;
-      const t1 = fromWords2(2144337920, 0);
-      b *= t1;
-      a *= t1;
-      k -= 1022;
-    } else {
-      ha += 629145600;
-      hb += 629145600;
-      k -= 600;
-      a = withHi2(a, ha);
-      b = withHi2(b, hb);
-    }
-  }
-  let w = a - b;
-  if (w > b) {
-    const t1 = fromWords2(ha, 0), t2 = a - t1;
-    w = sqrt2(t1 * t1 - (b * -b - t2 * (a + t1)));
-  } else {
-    a = a + a;
-    const y1 = fromWords2(hb, 0), y2 = b - y1, t1 = fromWords2(ha + 1048576, 0), t2 = a - t1;
-    w = sqrt2(t1 * y1 - (w * -w - (t1 * y2 + t2 * b)));
-  }
-  return k !== 0 ? fromWords2(1072693248 + (k << 20), 0) * w : w;
-}
-function hypot3(x, y) {
-  const n = arguments.length;
-  if (n === 2) return hypot22(+x, +y);
-  if (n === 0) return 0;
-  const values = [];
-  for (let i = 0; i < n; i++) values.push(+arguments[i]);
-  if (n === 1) return abs2(values[0]);
-  let max = 0, nan = false;
-  for (const v of values) {
-    const a = abs2(v);
-    if (a === Infinity) return Infinity;
-    if (a !== a) nan = true;
-    else if (a > max) max = a;
-  }
-  if (nan) return NaN;
-  if (max === 0) return 0;
-  const scale2 = max > TWO5002 ? TWOM6002 : max < TWOM5002 ? TWO6002 : 1;
-  let sum2 = 0, carry = 0;
-  for (const v of values) {
-    const a = v * scale2, term = a * a - carry, next = sum2 + term;
-    carry = next - sum2 - term;
-    sum2 = next;
-  }
-  return sqrt2(sum2) / scale2;
-}
-var FUNCTIONS2 = {
-  acos: acos2,
-  acosh: acosh2,
-  asin: asin2,
-  asinh: asinh2,
-  atan: atan3,
-  atan2: atan22,
-  atanh: atanh2,
-  cbrt: cbrt2,
-  cos: cos2,
-  cosh: cosh2,
-  exp: exp2,
-  expm1: expm12,
-  hypot: hypot3,
-  log: log3,
-  log10: log102,
-  log1p: log1p2,
-  log2: log22,
-  pow: pow2,
-  sin: sin2,
-  sinh: sinh2,
-  tan: tan2,
-  tanh: tanh2
-};
-var DETERMINISTIC_MATH_FUNCTIONS2 = Object.freeze(Object.keys(FUNCTIONS2));
-var deterministicMath2 = (() => {
-  const m = Object.create(Object.getPrototypeOf(host2));
-  for (const key of Reflect.ownKeys(host2)) Object.defineProperty(m, key, Object.getOwnPropertyDescriptor(host2, key));
-  for (const [name, fn] of Object.entries(FUNCTIONS2)) {
-    Object.defineProperty(fn, "length", { value: name === "atan2" || name === "pow" || name === "hypot" ? 2 : 1 });
-    Object.defineProperty(m, name, { value: fn, writable: true, enumerable: false, configurable: true });
-  }
-  return m;
-})();
-
-// phaser/node_modules/@phaser-ae/kernel/src/webgl.ts
-var NUDGE = "ae_EdgeNudge";
-var MAIN = /\bvoid\s+main\s*\(\s*(?:void)?\s*\)/;
-var nudges = /* @__PURE__ */ new WeakMap();
-var nudgeOf = (height) => 1 / (128 * deterministicMath.max(1, height));
-var setNudge = (gl, programs, value) => {
-  const current = gl.getParameter(gl.CURRENT_PROGRAM);
-  for (const [program, at] of programs) {
-    if (!gl.isProgram(program)) {
-      programs.delete(program);
-      continue;
-    }
-    gl.useProgram(program);
-    gl.uniform1f(at, value);
-  }
-  gl.useProgram(current);
-};
-function glPixelHeight2(gl, height) {
-  const state = nudges.get(gl);
-  if (!state) {
-    nudges.set(gl, { height, programs: /* @__PURE__ */ new Map() });
-    return;
-  }
-  if (state.height === height) return;
-  state.height = height;
-  setNudge(gl, state.programs, nudgeOf(height));
-}
-function compileGlProgram2(gl, vertex, fragment, label) {
-  const shaders = [];
-  const program = gl.createProgram();
-  if (!program) throw new Error(`${label}: could not create WebGL program`);
-  const nudged = MAIN.test(vertex) && vertex.includes("gl_Position");
-  if (nudged) vertex = `${vertex.replace(MAIN, "void ae_main()")}
-uniform float ${NUDGE};
-void main() { ae_main(); gl_Position.y += ${NUDGE} * gl_Position.w; }
-`;
-  try {
-    for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]]) {
-      const shader2 = gl.createShader(type);
-      if (!shader2) throw new Error(`${label}: could not create WebGL shader`);
-      shaders.push(shader2);
-      gl.shaderSource(shader2, source);
-      gl.compileShader(shader2);
-      if (!gl.getShaderParameter(shader2, gl.COMPILE_STATUS)) throw new Error(`${label}: ${type === gl.VERTEX_SHADER ? "vertex" : "fragment"} shader: ${gl.getShaderInfoLog(shader2)}`);
-      gl.attachShader(program, shader2);
-    }
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(`${label}: program link: ${gl.getProgramInfoLog(program)}`);
-    const at = nudged ? gl.getUniformLocation(program, NUDGE) : null;
-    if (at) {
-      let state = nudges.get(gl);
-      if (!state) {
-        state = { height: typeof gl.drawingBufferHeight === "number" ? gl.drawingBufferHeight : 1, programs: /* @__PURE__ */ new Map() };
-        nudges.set(gl, state);
-      }
-      state.programs.set(program, at);
-      setNudge(gl, /* @__PURE__ */ new Map([[program, at]]), nudgeOf(state.height));
-    }
-    return program;
-  } catch (error) {
-    gl.deleteProgram(program);
-    throw error;
-  } finally {
-    for (const shader2 of shaders) gl.deleteShader(shader2);
-  }
-}
-
 // game/node_modules/@phaser-ae/render-webgl2/dist/index.js
 var VERT = (gridX, gridY = gridX, customs = []) => `#version 300 es
 precision highp float;
@@ -9787,7 +8348,7 @@ precision highp float;in vec2 uv;uniform sampler2D source;out vec4 color;void ma
 var GlScene = class {
   constructor(gl) {
     this.gl = gl;
-    this.program = compileGlProgram2(gl, VS, FS, "render-webgl2:present");
+    this.program = compileGlProgram(gl, VS, FS, "render-webgl2:present");
     this.vao = gl.createVertexArray();
   }
   framebuffer = null;
@@ -9885,8 +8446,8 @@ function installWebGl2(k, deferRegistration = false) {
     blends = blendTable(gl);
     const customs = k.registry.list("deform").map((def, i) => ({ id: 16 + i, def }));
     const fragment = fragmentGLSL(customs, k.screen.pixelArt === true);
-    progFlat = compileGlProgram2(gl, VERT(1, 1, customs), fragment, "sprite");
-    progGrid = compileGlProgram2(gl, VERT(GRID_X2, GRID_Y2, customs), fragment, "deformed sprite");
+    progFlat = compileGlProgram(gl, VERT(1, 1, customs), fragment, "sprite");
+    progGrid = compileGlProgram(gl, VERT(GRID_X2, GRID_Y2, customs), fragment, "deformed sprite");
     for (const p of [progFlat, progGrid]) uni.set(p, { cam: gl.getUniformLocation(p, "uCam"), screen: gl.getUniformLocation(p, "uScreen"), texLoc: gl.getUniformLocation(p, "uTex") });
     vao = gl.createVertexArray();
     vbo = gl.createBuffer();
@@ -10083,7 +8644,7 @@ function installWebGl2(k, deferRegistration = false) {
     const c = k.surface.canvas;
     if (gl && c) {
       gl.viewport(0, 0, c.width, c.height);
-      glPixelHeight2(gl, c.height);
+      glPixelHeight(gl, c.height);
     }
   };
   k.hooks.on("app.resize", fitViewport);
@@ -10449,7 +9010,7 @@ function renderer(options = {}) {
   } };
 }
 
-// phaser/node_modules/@phaser-ae/kernel/src/world2d.ts
+// phaser/engine/kernel/src/world2d.ts
 var Table2d = class {
   constructor(layer) {
     this.layer = layer;
@@ -10759,8 +9320,8 @@ var Gather2d = class {
           iy = r.py[s] * b + r.y[s] * a;
         }
         if (W && cam) {
-          ix = cam.x + wrapDelta3(ix - cam.x, W.w);
-          iy = cam.y + wrapDelta3(iy - cam.y, W.h);
+          ix = cam.x + wrapDelta(ix - cam.x, W.w);
+          iy = cam.y + wrapDelta(iy - cam.y, W.h);
         }
         t.x[i] = ix;
         t.y[i] = iy;
@@ -10793,7 +9354,7 @@ var Gather2d = class {
 function installCamera2d(cam, screen3) {
   const r = cam.render;
   const c = cam;
-  const rel = (wx, wy, cx, cy) => c.wrap ? { x: wrapDelta3(wx - cx, c.wrap.w), y: wrapDelta3(wy - cy, c.wrap.h) } : { x: wx - cx, y: wy - cy };
+  const rel = (wx, wy, cx, cy) => c.wrap ? { x: wrapDelta(wx - cx, c.wrap.w), y: wrapDelta(wy - cy, c.wrap.h) } : { x: wx - cx, y: wy - cy };
   const toWorld = (sx, sy) => ({ x: (sx - screen3.width / 2) / cam.zoom + cam.x, y: (sy - screen3.height / 2) / cam.zoom + cam.y });
   const toScreen = (wx, wy) => {
     const d = rel(wx, wy, cam.x, cam.y);
@@ -10812,7 +9373,7 @@ function installCamera2d(cam, screen3) {
   return { toWorld, toScreen, view };
 }
 
-// phaser/node_modules/@phaser-ae/kernel/src/world3d.ts
+// phaser/engine/kernel/src/world3d.ts
 var ORI = new Float64Array(3);
 
 // game/node_modules/@phaser-ae/world-side/dist/index.js
@@ -10947,7 +9508,7 @@ function follow(opts = {}) {
         const live = targets.filter((t) => t.alive);
         if (!live.length) return;
         const W = cam.wrap;
-        const dX = (a2, b) => W ? wrapDelta3(a2 - b, W.w) : a2 - b, dY = (a2, b) => W ? wrapDelta3(a2 - b, W.h) : a2 - b;
+        const dX = (a2, b) => W ? wrapDelta(a2 - b, W.w) : a2 - b, dY = (a2, b) => W ? wrapDelta(a2 - b, W.h) : a2 - b;
         const a = live[0];
         let minX = 0, maxX = 0, minY = 0, maxY = 0;
         for (const t of live) {
@@ -12269,7 +10830,7 @@ var runtime_bake_exports = {};
 __export(runtime_bake_exports, {
   bakeFontInWorker: () => bakeFontInWorker
 });
-var host3;
+var host2;
 var bakeFontInWorker;
 var init_runtime_bake = __esm({
   "engine/vendor/typography/src/runtime-bake.ts"() {
@@ -12282,7 +10843,7 @@ var init_runtime_bake = __esm({
     init_runtime_bake_protocol();
     init_serial_worker_host();
     init_bake_progress_protocol();
-    host3 = new SerialWorkerHost({
+    host2 = new SerialWorkerHost({
       name: "gb-typography-font-baker",
       workerUrl: typographyAssetUrl("runtime-bake-worker.js"),
       prepare(request, id2) {
@@ -12319,7 +10880,7 @@ var init_runtime_bake = __esm({
         return bakeFontInNode(request);
       }
       request.onProgress?.({ stage: "font", phase: "queued", completed: 0, total: 1 });
-      return host3.run(request, request.signal);
+      return host2.run(request, request.signal);
     };
   }
 });
@@ -15960,7 +14521,7 @@ function checkGradient(g) {
   if (n < 2 || n > 4) throw new RangeError(`Typography gradient needs 2 to 4 colors, got ${n}`);
   for (const c of g.colors) {
     try {
-      packColor2(c);
+      packColor(c);
     } catch {
       throw new RangeError(`Typography gradient: cannot parse the color "${c}"`);
     }
@@ -15987,17 +14548,17 @@ function packFill(g, m, out = new Float32Array(FILL_FLOATS)) {
     step = m.lines.length > 1 ? m.lines[1].baseline - first.baseline : 0;
   }
   const x0 = ink.x, W = deterministicMath.max(ink.width, 1e-4), H = deterministicMath.max(h, 1e-4);
-  const rad = (g.angle ?? 90) * deterministicMath.PI / 180, cos3 = deterministicMath.cos(rad), sin3 = deterministicMath.sin(rad);
-  const smin = deterministicMath.min(0, W * cos3) + deterministicMath.min(0, H * sin3), span2 = deterministicMath.max(deterministicMath.abs(W * cos3) + deterministicMath.abs(H * sin3), 1e-4);
+  const rad = (g.angle ?? 90) * deterministicMath.PI / 180, cos2 = deterministicMath.cos(rad), sin2 = deterministicMath.sin(rad);
+  const smin = deterministicMath.min(0, W * cos2) + deterministicMath.min(0, H * sin2), span2 = deterministicMath.max(deterministicMath.abs(W * cos2) + deterministicMath.abs(H * sin2), 1e-4);
   out.fill(0);
-  out[0] = cos3 / span2;
-  out[1] = sin3 / span2;
-  out[2] = (-(x0 * cos3 + y0 * sin3) - smin) / span2;
+  out[0] = cos2 / span2;
+  out[1] = sin2 / span2;
+  out[2] = (-(x0 * cos2 + y0 * sin2) - smin) / span2;
   out[3] = n;
   for (let i = 0; i < 4; i++) out[4 + i] = i < n ? g.stops?.[i] ?? i / (n - 1) : 1;
   out[8] = y0;
   out[9] = step > 0 ? step : 0;
-  for (let i = 0; i < 4; i++) colorToFloats2(packColor2(g.colors[deterministicMath.min(i, n - 1)]), out, 12 + i * 4);
+  for (let i = 0; i < 4; i++) colorToFloats(packColor(g.colors[deterministicMath.min(i, n - 1)]), out, 12 + i * 4);
   return out;
 }
 var ROW_TEXELS = 14;
@@ -16181,7 +14742,7 @@ var TextGpuRenderer = class {
 var TextGlRenderer = class {
   constructor(gl) {
     this.gl = gl;
-    this.program = compileGlProgram2(gl, GL_VERTEX, GL_FRAGMENT, "Typography");
+    this.program = compileGlProgram(gl, GL_VERTEX, GL_FRAGMENT, "Typography");
     for (const name of [
       "matrix",
       "clip",
@@ -18854,15 +17415,15 @@ function compileCodec(descriptor2) {
     nonzeroU32(program.techniqueId, "codec technique id");
     nonzeroU32(program.programId, "codec program id");
     const programLabel = `codec program ${program.programId}`;
-    if (program.resourceKindMask !== void 0) u323(program.resourceKindMask, `${programLabel} resourceKindMask`);
-    if (program.semanticViewMask !== void 0) u323(program.semanticViewMask, `${programLabel} semanticViewMask`);
-    if (program.storageKeyMask !== void 0) u323(program.storageKeyMask, `${programLabel} storageKeyMask`);
-    if (program.drawKeyMask !== void 0) u323(program.drawKeyMask, `${programLabel} drawKeyMask`);
+    if (program.resourceKindMask !== void 0) u322(program.resourceKindMask, `${programLabel} resourceKindMask`);
+    if (program.semanticViewMask !== void 0) u322(program.semanticViewMask, `${programLabel} semanticViewMask`);
+    if (program.storageKeyMask !== void 0) u322(program.storageKeyMask, `${programLabel} storageKeyMask`);
+    if (program.drawKeyMask !== void 0) u322(program.drawKeyMask, `${programLabel} drawKeyMask`);
     if (program.paintCapabilities !== void 0) {
-      u323(program.paintCapabilities, `${programLabel} paintCapabilities`);
+      u322(program.paintCapabilities, `${programLabel} paintCapabilities`);
     }
     if (program.compositingCapabilities !== void 0) {
-      u323(program.compositingCapabilities, `${programLabel} compositingCapabilities`);
+      u322(program.compositingCapabilities, `${programLabel} compositingCapabilities`);
     }
     if (program.primitiveKind !== void 0) codecPrimitiveKind(program.primitiveKind, `${programLabel} primitiveKind`);
     const variant = u16(program.variant ?? 0, "codec program variant");
@@ -18879,7 +17440,7 @@ function compileCodec(descriptor2) {
       u8(buffer.vectorWidth, `${bufferLabel} vectorWidth`);
       if (buffer.alignment !== void 0) u16(buffer.alignment, `${bufferLabel} alignment`);
       if (buffer.stride !== void 0) u16(buffer.stride, `${bufferLabel} stride`);
-      if (buffer.usage !== void 0) u323(buffer.usage, `${bufferLabel} usage`);
+      if (buffer.usage !== void 0) u322(buffer.usage, `${bufferLabel} usage`);
       if (buffer.capacityClass !== void 0) u16(buffer.capacityClass, `${bufferLabel} capacityClass`);
     }
     u16(program.operations.length, `${programLabel} operation count`);
@@ -18889,9 +17450,9 @@ function compileCodec(descriptor2) {
       if (operation.target !== void 0) u8(operation.target, `${operationLabel} target`);
       if (operation.operand0 !== void 0) u8(operation.operand0, `${operationLabel} operand0`);
       if (operation.operand1 !== void 0) u8(operation.operand1, `${operationLabel} operand1`);
-      if (operation.immediate0 !== void 0) u323(operation.immediate0, `${operationLabel} immediate0`);
-      if (operation.immediate1 !== void 0) u323(operation.immediate1, `${operationLabel} immediate1`);
-      if (operation.immediate2 !== void 0) u323(operation.immediate2, `${operationLabel} immediate2`);
+      if (operation.immediate0 !== void 0) u322(operation.immediate0, `${operationLabel} immediate0`);
+      if (operation.immediate1 !== void 0) u322(operation.immediate1, `${operationLabel} immediate1`);
+      if (operation.immediate2 !== void 0) u322(operation.immediate2, `${operationLabel} immediate2`);
     }
     u16(program.inputs.length, `${programLabel} input count`);
     for (const [index, input] of program.inputs.entries()) {
@@ -19117,10 +17678,10 @@ function normalizeCodecCapabilitySet(value, label = "codec capability set") {
   return snapshot;
 }
 function preflightCapabilitySet(set, label) {
-  u323(set.maxBufferBytes, `${label} maxBufferBytes`);
-  u323(set.updateAlignment, `${label} updateAlignment`);
-  u323(set.coalesceGapBytes, `${label} coalesceGapBytes`);
-  u323(set.rangeCallPenaltyBytes, `${label} rangeCallPenaltyBytes`);
+  u322(set.maxBufferBytes, `${label} maxBufferBytes`);
+  u322(set.updateAlignment, `${label} updateAlignment`);
+  u322(set.coalesceGapBytes, `${label} coalesceGapBytes`);
+  u322(set.rangeCallPenaltyBytes, `${label} rangeCallPenaltyBytes`);
   u16(set.maxBuffersPerDraw, `${label} maxBuffersPerDraw`);
   u16(set.maxResourcesPerDraw, `${label} maxResourcesPerDraw`);
   u16(set.maxIndirectDraws, `${label} maxIndirectDraws`);
@@ -19362,7 +17923,7 @@ function requireRegister(registers, source, type, label) {
 function isPowerOfTwo(value) {
   return Number.isSafeInteger(value) && value > 0 && (value & value - 1) === 0;
 }
-function u323(value, label) {
+function u322(value, label) {
   if (!Number.isSafeInteger(value) || value < 0 || value > MAX_U322) throw new RangeError(`${label} needs a u32`);
   return value;
 }
@@ -21492,7 +20053,7 @@ function writeHeader(view, frame, byteLength, offsets) {
     ["codecParametersOffset", 0],
     ["codecParametersLength", 0]
   ]) {
-    view.setUint32(layout[field], u3232(value, field), true);
+    view.setUint32(layout[field], u323(value, field), true);
   }
 }
 function writeParagraphMutations(view, tableOffset, mutations) {
@@ -21501,9 +20062,9 @@ function writeParagraphMutations(view, tableOffset, mutations) {
   for (const [index, mutation] of mutations.entries()) {
     const offset = tableOffset + index * layout.size;
     view.setUint8(offset + layout.opcode, enumValue(opcodes, mutation.opcode, "paragraph mutation opcode"));
-    view.setUint32(offset + layout.paragraphId, u3232(mutation.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
     if (mutation.opcode === "upsert") {
-      view.setUint32(offset + layout.order, u3232(mutation.order, "paragraph order"), true);
+      view.setUint32(offset + layout.order, u323(mutation.order, "paragraph order"), true);
     }
   }
 }
@@ -21511,8 +20072,8 @@ function writeParagraphOrderMutations(view, tableOffset, mutations) {
   const layout = textShaperAbi.layouts.engineParagraphOrderMutation;
   for (const [index, mutation] of mutations.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u3232(mutation.paragraphId, "paragraph ID"), true);
-    view.setUint32(offset + layout.orderScope, u3232(mutation.orderScope, "paragraph order scope"), true);
+    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.orderScope, u323(mutation.orderScope, "paragraph order scope"), true);
     if (!Number.isFinite(mutation.orderRank)) throw new RangeError("paragraph order rank must be finite");
     view.setFloat64(offset + layout.orderRank, mutation.orderRank, true);
   }
@@ -21524,11 +20085,11 @@ function writeTextMutations(view, tableOffset, mutations, payloadOffsets) {
     const payloadOffset = payloadOffsets[index];
     view.setUint8(offset + layout.opcode, textShaperAbi.engine.textMutationOpcodes.replaceUtf16);
     view.setUint8(offset + layout.encoding, textShaperAbi.engine.textEncodings.utf16Le);
-    view.setUint32(offset + layout.paragraphId, u3232(mutation.paragraphId, "paragraph ID"), true);
-    view.setUint32(offset + layout.textStart, u3232(mutation.start, "text mutation start"), true);
-    view.setUint32(offset + layout.deleteCount, u3232(mutation.deleteCount, "text mutation delete count"), true);
+    view.setUint32(offset + layout.paragraphId, u323(mutation.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.textStart, u323(mutation.start, "text mutation start"), true);
+    view.setUint32(offset + layout.deleteCount, u323(mutation.deleteCount, "text mutation delete count"), true);
     view.setUint32(offset + layout.insertOffset, payloadOffset, true);
-    view.setUint32(offset + layout.insertCount, u3232(mutation.insert.length, "text mutation insert count"), true);
+    view.setUint32(offset + layout.insertCount, u323(mutation.insert.length, "text mutation insert count"), true);
     for (let unit = 0; unit < mutation.insert.length; unit += 1) {
       view.setUint16(payloadOffset + unit * 2, mutation.insert.charCodeAt(unit), true);
     }
@@ -21611,7 +20172,7 @@ function writeConstraints(view, tableOffset, constraints, dropCapVertexOffsets) 
   const engine = textShaperAbi.engine;
   for (const [index, value] of constraints.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u3232(value.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.paragraphId, u323(value.paragraphId, "paragraph ID"), true);
     for (const [field, number] of [
       ["flowThreadId", value.flowThreadId],
       ["geometryRevision", value.geometryRevision],
@@ -21619,7 +20180,7 @@ function writeConstraints(view, tableOffset, constraints, dropCapVertexOffsets) 
       ["regionStart", value.regionStart],
       ["resumeCluster", value.resumeCluster]
     ]) {
-      view.setUint32(offset + layout[field], u3232(number, field), true);
+      view.setUint32(offset + layout[field], u323(number, field), true);
     }
     view.setUint16(offset + layout.regionCount, u162(value.regionCount, "constraint region count"), true);
     view.setUint16(offset + layout.resumeRegion, u162(value.resumeRegion, "constraint resume region"), true);
@@ -21685,9 +20246,9 @@ function writeRegions(view, tableOffset, regions, vertexOffsets) {
   const layout = textShaperAbi.layouts.engineRegion;
   for (const [index, value] of regions.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.id, u3232(value.id, "region ID"), true);
-    view.setUint32(offset + layout.geometryRevision, u3232(value.geometryRevision, "region geometry revision"), true);
-    view.setUint32(offset + layout.transformIndex, u3232(value.transformIndex, "region transform index"), true);
+    view.setUint32(offset + layout.id, u323(value.id, "region ID"), true);
+    view.setUint32(offset + layout.geometryRevision, u323(value.geometryRevision, "region geometry revision"), true);
+    view.setUint32(offset + layout.transformIndex, u323(value.transformIndex, "region transform index"), true);
     view.setUint32(offset + layout.verticesOffset, vertexOffsets[index], true);
     view.setUint16(offset + layout.vertexCount, u162(value.vertices?.length ?? 0, "region vertex count"), true);
     view.setUint16(offset + layout.exclusionStart, u162(value.exclusionStart, "region exclusion start"), true);
@@ -21703,9 +20264,9 @@ function writeExclusions(view, tableOffset, exclusions, vertexOffsets) {
   const layout = textShaperAbi.layouts.engineExclusion;
   for (const [index, value] of exclusions.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.id, u3232(value.id, "exclusion ID"), true);
-    view.setUint32(offset + layout.regionId, u3232(value.regionId, "exclusion region ID"), true);
-    view.setUint32(offset + layout.geometryRevision, u3232(value.geometryRevision, "exclusion geometry revision"), true);
+    view.setUint32(offset + layout.id, u323(value.id, "exclusion ID"), true);
+    view.setUint32(offset + layout.regionId, u323(value.regionId, "exclusion region ID"), true);
+    view.setUint32(offset + layout.geometryRevision, u323(value.geometryRevision, "exclusion geometry revision"), true);
     view.setUint32(offset + layout.verticesOffset, vertexOffsets[index], true);
     view.setUint16(offset + layout.vertexCount, u162(value.vertices?.length ?? 0, "exclusion vertex count"), true);
     view.setUint8(
@@ -21742,7 +20303,7 @@ function writeInlineObjects(view, tableOffset, objects) {
   const layout = textShaperAbi.layouts.engineInlineObject;
   for (const [index, value] of objects.entries()) {
     const offset = tableOffset + index * layout.size;
-    view.setUint32(offset + layout.paragraphId, u3232(value.paragraphId, "paragraph ID"), true);
+    view.setUint32(offset + layout.paragraphId, u323(value.paragraphId, "paragraph ID"), true);
     for (const [field, number] of [
       ["id", value.id],
       ["contentRevision", value.contentRevision],
@@ -21751,7 +20312,7 @@ function writeInlineObjects(view, tableOffset, objects) {
       ["resourceId", value.resourceId],
       ["resourceGeneration", value.resourceGeneration]
     ]) {
-      view.setUint32(offset + layout[field], u3232(number, `inline object ${field}`), true);
+      view.setUint32(offset + layout[field], u323(number, `inline object ${field}`), true);
     }
     for (const [field, number] of [
       ["inlineExtent", value.inlineExtent],
@@ -21840,7 +20401,7 @@ function u162(value, label) {
   if (!Number.isSafeInteger(value) || value < 0 || value > 65535) throw new RangeError(`${label} must be a u16`);
   return value;
 }
-function u3232(value, label) {
+function u323(value, label) {
   if (!Number.isSafeInteger(value) || value < 0 || value > MAX_U324) throw new RangeError(`${label} must be a u32`);
   return value;
 }
@@ -30522,12 +29083,12 @@ function typography2(options = {}) {
 }
 
 // game/node_modules/@phaser-ae/maths/dist/index.js
-var PI3 = deterministicMath.PI;
+var PI2 = deterministicMath.PI;
 var c1 = 1.70158;
 var c2 = c1 * 1.525;
 var c3 = c1 + 1;
-var c4 = 2 * PI3 / 3;
-var c5 = 2 * PI3 / 4.5;
+var c4 = 2 * PI2 / 3;
+var c5 = 2 * PI2 / 4.5;
 var bounceOut = (t) => {
   const n = 7.5625, d = 2.75;
   if (t < 1 / d) return n * t * t;
@@ -30549,9 +29110,9 @@ var BASE = {
   easeInQuint: (t) => deterministicMath.pow(t, 5),
   easeOutQuint: (t) => 1 - deterministicMath.pow(1 - t, 5),
   easeInOutQuint: (t) => t < 0.5 ? 16 * deterministicMath.pow(t, 5) : 1 - deterministicMath.pow(-2 * t + 2, 5) / 2,
-  easeInSine: (t) => 1 - deterministicMath.cos(t * PI3 / 2),
-  easeOutSine: (t) => deterministicMath.sin(t * PI3 / 2),
-  easeInOutSine: (t) => -(deterministicMath.cos(PI3 * t) - 1) / 2,
+  easeInSine: (t) => 1 - deterministicMath.cos(t * PI2 / 2),
+  easeOutSine: (t) => deterministicMath.sin(t * PI2 / 2),
+  easeInOutSine: (t) => -(deterministicMath.cos(PI2 * t) - 1) / 2,
   easeInExpo: (t) => t === 0 ? 0 : deterministicMath.pow(2, 10 * t - 10),
   easeOutExpo: (t) => t === 1 ? 1 : 1 - deterministicMath.pow(2, -10 * t),
   easeInOutExpo: (t) => t === 0 ? 0 : t === 1 ? 1 : t < 0.5 ? deterministicMath.pow(2, 20 * t - 10) / 2 : (2 - deterministicMath.pow(2, -20 * t + 10)) / 2,
@@ -30567,7 +29128,7 @@ var BASE = {
   easeInBounce: (t) => 1 - bounceOut(1 - t),
   easeOutBounce: bounceOut,
   easeInOutBounce: (t) => t < 0.5 ? (1 - bounceOut(1 - 2 * t)) / 2 : (1 + bounceOut(2 * t - 1)) / 2,
-  swing: (t) => 0.5 - deterministicMath.cos(t * PI3) / 2
+  swing: (t) => 0.5 - deterministicMath.cos(t * PI2) / 2
 };
 var EASE = {
   ...BASE,
@@ -30654,12 +29215,12 @@ var vec2 = {
   }
 };
 var TAU2 = deterministicMath.PI * 2;
-var toRad = (deg) => deg * PI3 / 180;
-var toDeg = (rad) => rad * 180 / PI3;
+var toRad = (deg) => deg * PI2 / 180;
+var toDeg = (rad) => rad * 180 / PI2;
 var wrapAngle = (rad) => {
   let a = rad % TAU2;
-  if (a > PI3) a -= TAU2;
-  else if (a <= -PI3) a += TAU2;
+  if (a > PI2) a -= TAU2;
+  else if (a <= -PI2) a += TAU2;
   return a;
 };
 var signedAngle = (from, to) => wrapAngle(to - from);
@@ -30892,7 +29453,7 @@ var BackdropsGl = class {
     }
     if (!p) {
       try {
-        p = compileGlProgram2(gl, FULLSCREEN_GL, backdropGLSL(def), `backdrops:${def.name}`);
+        p = compileGlProgram(gl, FULLSCREEN_GL, backdropGLSL(def), `backdrops:${def.name}`);
       } catch (err) {
         const why = `GLSL ${err instanceof Error ? err.message : String(err)}`;
         this.programs.set(key, null);
@@ -31677,7 +30238,7 @@ function controls2d(opts = {}) {
               const p = input.pointer;
               if (!p) return { x: 0, y: 0 };
               const w = cam.toWorld(p.x, p.y), o = origin ?? cam, W = cam.wrap;
-              const dx = W ? wrapDelta3(w.x - o.x, W.w) : w.x - o.x, dy = W ? wrapDelta3(w.y - o.y, W.h) : w.y - o.y, l2 = deterministicMath.hypot(dx, dy);
+              const dx = W ? wrapDelta(w.x - o.x, W.w) : w.x - o.x, dy = W ? wrapDelta(w.y - o.y, W.h) : w.y - o.y, l2 = deterministicMath.hypot(dx, dy);
               return l2 < aimDeadzone ? { x: 0, y: 0 } : { x: dx / l2, y: dy / l2 };
             }
             const m = b.move;
@@ -33612,7 +32173,7 @@ var WIDTH = 1024;
 var UiGlRenderer = class {
   constructor(gl) {
     this.gl = gl;
-    this.program = compileGlProgram2(gl, UI_VERT, UI_FRAG, "ui");
+    this.program = compileGlProgram(gl, UI_VERT, UI_FRAG, "ui");
     this.vao = gl.createVertexArray();
     this.data = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.data);
@@ -34167,11 +32728,11 @@ function parseUiTheme(input) {
     const fonts = [];
     for (const f of r.fonts.slice(0, 8)) {
       if (!f || typeof f !== "object") continue;
-      const fr3 = f;
-      const family = str(fr3.family, 48), url = str(fr3.url, 2e3);
+      const fr2 = f;
+      const family = str(fr2.family, 48), url = str(fr2.url, 2e3);
       if (!family || !url || !/^[\w][\w -]*$/.test(family)) continue;
       const entry = { family, url };
-      const bold = str(fr3.bold, 2e3);
+      const bold = str(fr2.bold, 2e3);
       if (bold) entry.bold = bold;
       fonts.push(entry);
     }
@@ -36270,8 +34831,8 @@ function ui() {
         let overSb = null;
         const sb = p ? scrollAt(p.x, p.y) : null;
         if (p && sb?.kind === "list" && sb.overflow && sb.scrollTrack) {
-          const tx3 = sb.scrollTrack.x, ty = sb.scrollTrack.y, tw = 12, th = sb.scrollTrack.height;
-          if (p.x >= tx3 - tw / 2 && p.x <= tx3 + tw / 2 && p.y >= ty - th / 2 && p.y <= ty + th / 2) overSb = sb;
+          const tx2 = sb.scrollTrack.x, ty = sb.scrollTrack.y, tw = 12, th = sb.scrollTrack.height;
+          if (p.x >= tx2 - tw / 2 && p.x <= tx2 + tw / 2 && p.y >= ty - th / 2 && p.y <= ty + th / 2) overSb = sb;
         }
         for (const w of widgets.values()) {
           if (w.kind !== "list" || !w.scrollThumb) continue;
@@ -36523,7 +35084,7 @@ function ui() {
         f[o + 57] = st.shinePeriod;
         f[o + 58] = st.shineWidth;
         f[o + 59] = phase;
-        const tx3 = textureOf(st.texture);
+        const tx2 = textureOf(st.texture);
         f[o + 60] = deterministicMath.max(0, UI_RIM_FINISHES.indexOf(st.borderFinish));
         f[o + 61] = st.borderStripeWidth;
         f[o + 62] = st.borderStripeAngle * deterministicMath.PI / 180;
@@ -36532,15 +35093,15 @@ function ui() {
         u[o + 65] = 0;
         u[o + 66] = 0;
         u[o + 67] = 0;
-        f[o + 68] = tx3 ? tx3.rect[0] : 0;
-        f[o + 69] = tx3 ? tx3.rect[1] : 0;
-        f[o + 70] = tx3 ? tx3.rect[2] : 0;
-        f[o + 71] = tx3 ? tx3.rect[3] : 0;
+        f[o + 68] = tx2 ? tx2.rect[0] : 0;
+        f[o + 69] = tx2 ? tx2.rect[1] : 0;
+        f[o + 70] = tx2 ? tx2.rect[2] : 0;
+        f[o + 71] = tx2 ? tx2.rect[3] : 0;
         f[o + 72] = st.textureScale;
         f[o + 73] = st.textureStrength;
         f[o + 74] = st.textureAngle * deterministicMath.PI / 180;
-        f[o + 75] = tx3 ? UI_TEXTURE_MODES.indexOf(st.textureMode) + 1 : 0;
-        return tx3 ? tx3.tex : -1;
+        f[o + 75] = tx2 ? UI_TEXTURE_MODES.indexOf(st.textureMode) + 1 : 0;
+        return tx2 ? tx2.tex : -1;
       };
       const runs = (n) => {
         const out = [];
@@ -37581,7 +36142,7 @@ function compile(op, key) {
 var hex2 = (css) => {
   let c;
   try {
-    c = packColor2(css);
+    c = packColor(css);
   } catch {
     throw new Error(`particles-2d: not a colour "${css}"`);
   }
@@ -37745,7 +36306,7 @@ function contains2(s, x, y) {
 }
 var hex22 = (c) => {
   try {
-    return packColor2(c);
+    return packColor(c);
   } catch {
     throw new Error(`particles-2d: trail colors: not a colour "${c}"`);
   }
@@ -37984,14 +36545,14 @@ var Emitter = class _Emitter {
     if (this.scaleDrivesY) this.ops.set("scaleY", compile(c.scale, "scale"));
     this.color = compileColor(c.color ?? "#ffffff", "color");
     this.tintOp = c.tint ? compileColor(c.tint, "tint") : null;
-    const fr3 = c.frame ?? 0;
-    if (typeof fr3 === "object" && !Array.isArray(fr3)) {
-      const o = fr3;
+    const fr2 = c.frame ?? 0;
+    if (typeof fr2 === "object" && !Array.isArray(fr2)) {
+      const o = fr2;
       this.frames = o.frames.map(this.resolveFrame);
       this.frameCycle = !!o.cycle;
       this.frameQty = deterministicMath.max(1, o.quantity ?? 1);
     } else {
-      this.frames = (Array.isArray(fr3) ? fr3 : [fr3]).map(this.resolveFrame);
+      this.frames = (Array.isArray(fr2) ? fr2 : [fr2]).map(this.resolveFrame);
       this.frameCycle = false;
     }
     if (!this.frames.length) throw new Error("particles-2d: frame list is empty");
@@ -38198,8 +36759,8 @@ var Emitter = class _Emitter {
       }
       ox += this.k0[i * LIFE_KEYS.length];
       oy += this.k0[i * LIFE_KEYS.length + 1];
-      const rx = ox * cr - oy * sr, ry3 = ox * sr + oy * cr;
-      const x = (local ? wx - this.h.x : wx) + rx, y = (local ? wy - this.h.y : wy) + ry3;
+      const rx = ox * cr - oy * sr, ry2 = ox * sr + oy * cr;
+      const x = (local ? wx - this.h.x : wx) + rx, y = (local ? wy - this.h.y : wy) + ry2;
       this.x[i] = x;
       this.y[i] = y;
       this.px[i] = x;
@@ -38246,12 +36807,12 @@ var Emitter = class _Emitter {
         this.mtx[i] = (local ? 0 : this.h.x) + mx * cr - my * sr;
         this.mty[i] = (local ? 0 : this.h.y) + mx * sr + my * cr;
       } else this.hasMove[i] = 0;
-      const birth = this.scaleDrivesX && this.scaleDrivesY ? 1 : this.opV("scale", index, v), inhS = inh?.scale ?? 1, L53 = i * LIFE_KEYS.length;
+      const birth = this.scaleDrivesX && this.scaleDrivesY ? 1 : this.opV("scale", index, v), inhS = inh?.scale ?? 1, L52 = i * LIFE_KEYS.length;
       this.smx[i] = (this.scaleDrivesX ? 1 : birth) * inhS;
       this.smy[i] = (this.scaleDrivesY ? 1 : birth) * inhS;
       if (inh?.rot !== void 0) {
-        this.k0[L53 + 8] = this.k0[L53 + 8] + inh.rot;
-        this.k1[L53 + 8] = this.k1[L53 + 8] + inh.rot;
+        this.k0[L52 + 8] = this.k0[L52 + 8] + inh.rot;
+        this.k1[L52 + 8] = this.k1[L52 + 8] + inh.rot;
       }
       this.color.emit(rng, this.rgb, i * 3);
       if (this.tintOp) {
@@ -38455,9 +37016,9 @@ var Emitter = class _Emitter {
       } else {
         let ax = this.lifeVal(i, 2, t) + (c.gravityX ?? 0), ay = this.lifeVal(i, 3, t) + (c.gravityY ?? 0);
         if (c.turnGravity && rotE) {
-          const tx3 = ax * cr - ay * sr;
+          const tx2 = ax * cr - ay * sr;
           ay = ax * sr + ay * cr;
-          ax = tx3;
+          ax = tx2;
         }
         const px = this.x[i], py = this.y[i];
         for (const f of forces) {
@@ -38477,14 +37038,14 @@ var Emitter = class _Emitter {
             }
             case "noise": {
               const sc = f.scale ?? 0.01, sp = f.speed ?? 0.3, oct = f.octaves ?? 1, e = 0.5;
-              let nx = 0, ny = 0, amp = 1, fr3 = 1;
+              let nx = 0, ny = 0, amp = 1, fr2 = 1;
               for (let o = 0; o < oct; o++) {
-                const X = px * sc * fr3, Y = py * sc * fr3, T3 = t0 * sp * fr3;
-                const dNdy = (vnoise(X, Y + e + T3) - vnoise(X, Y - e + T3)) / (2 * e), dNdx = (vnoise(X + e, Y + T3) - vnoise(X - e, Y + T3)) / (2 * e);
+                const X = px * sc * fr2, Y = py * sc * fr2, T2 = t0 * sp * fr2;
+                const dNdy = (vnoise(X, Y + e + T2) - vnoise(X, Y - e + T2)) / (2 * e), dNdx = (vnoise(X + e, Y + T2) - vnoise(X - e, Y + T2)) / (2 * e);
                 nx += dNdy * amp;
                 ny += -dNdx * amp;
                 amp *= 0.5;
-                fr3 *= 2;
+                fr2 *= 2;
               }
               const no = this.noiseOver, inf = no ? no.op.update ? no.op.update(t, no.s, no.e, null) : no.s : 1;
               ax += nx * f.strength * inf;
@@ -38494,9 +37055,9 @@ var Emitter = class _Emitter {
             default: {
               let fx = f.x, fy = f.y;
               if (!f.world) {
-                const rx = f.x * cr - f.y * sr, ry3 = f.x * sr + f.y * cr;
+                const rx = f.x * cr - f.y * sr, ry2 = f.x * sr + f.y * cr;
                 fx = ex + rx;
-                fy = ey + ry3;
+                fy = ey + ry2;
               }
               const dx = fx - px, dy = fy - py, d2 = dx * dx + dy * dy, d = deterministicMath.sqrt(d2) || 1e-6;
               if (f.kind === "well") {
@@ -38583,20 +37144,20 @@ var Emitter = class _Emitter {
             i--;
             continue;
           }
-          const b = -(sd.bounce ?? 0.4), fr3 = 1 - deterministicMath.min(1, deterministicMath.max(0, sd.friction ?? 0.1));
+          const b = -(sd.bounce ?? 0.4), fr2 = 1 - deterministicMath.min(1, deterministicMath.max(0, sd.friction ?? 0.1));
           const solidX = sd.at(nx, ay0 + oy), solidY = sd.at(ax0 + ox, ny);
           const corner = !solidX && !solidY;
           if (solidX || corner) {
             this.x[i] = ax0;
             this.vx[i] = this.vx[i] * b;
           } else {
-            this.vx[i] = this.vx[i] * fr3;
+            this.vx[i] = this.vx[i] * fr2;
           }
           if (solidY || corner) {
             this.y[i] = ay0;
             this.vy[i] = this.vy[i] * b;
           } else {
-            this.vy[i] = this.vy[i] * fr3;
+            this.vy[i] = this.vy[i] * fr2;
           }
         }
       }
@@ -38682,7 +37243,7 @@ var Emitter = class _Emitter {
       if (this.delay[i] > 0) continue;
       const life = this.life[i], age = deterministicMath.min(this.age[i] + alpha * dt * this.timeScale, life), t = age / life;
       const x = this.px[i] + (this.x[i] - this.px[i]) * alpha + ox, y = this.py[i] + (this.y[i] - this.py[i]) * alpha + oy;
-      const fr3 = this.frame[i], rect2 = this.sys.assets.framePlace(fr3), size = this.size[i];
+      const fr2 = this.frame[i], rect2 = this.sys.assets.framePlace(fr2), size = this.size[i];
       const base = size > 0 ? size / deterministicMath.max(rect2.w, rect2.h) : 1;
       let sx = this.lifeVal(i, 5, t) * base * this.smx[i], sy = this.lifeVal(i, 6, t) * base * this.smy[i];
       const w = rect2.w * sx, h = rect2.h * sy, r = deterministicMath.max(deterministicMath.abs(w), deterministicMath.abs(h));
@@ -38714,7 +37275,7 @@ var Emitter = class _Emitter {
         B = this.rgb[i * 3 + 2];
       }
       const tint2 = ((R & 255) << 24 | (G & 255) << 16 | (B & 255) << 8 | 255) >>> 0;
-      out.add(x, y, rect2.w, rect2.h, fr3, tint2, rot * D2R2, sx, sy, a, blend2);
+      out.add(x, y, rect2.w, rect2.h, fr2, tint2, rot * D2R2, sx, sy, a, blend2);
     }
     void tmp;
   }
@@ -39338,7 +37899,7 @@ function collision() {
       const W = () => r.wrap;
       const rel = (a, b) => {
         const w = W();
-        return w ? { x: a.x - wrapDelta3(a.x - b.x, w.w), y: a.y - wrapDelta3(a.y - b.y, w.h) } : { x: b.x, y: b.y };
+        return w ? { x: a.x - wrapDelta(a.x - b.x, w.w), y: a.y - wrapDelta(a.y - b.y, w.h) } : { x: b.x, y: b.y };
       };
       const contactOf = (m) => deterministicMath.abs(m.x) > deterministicMath.abs(m.y) ? { side: m.x > 0 ? "left" : "right", overlap: deterministicMath.abs(m.x) } : { side: m.y > 0 ? "top" : "bottom", overlap: deterministicMath.abs(m.y) };
       const mtv = (a, bReal) => {
@@ -40318,7 +38879,7 @@ var World = class {
       if (o) n.set(o);
       return n;
     };
-    const f643 = (o) => {
+    const f642 = (o) => {
       const n = new Float64Array(to);
       if (o) n.set(o);
       return n;
@@ -40332,8 +38893,8 @@ var World = class {
     this.invM = f(this.invM);
     this.invI = f(this.invI);
     this.mass = f(this.mass);
-    this.ownM = f643(this.ownM);
-    this.ownI = f643(this.ownI);
+    this.ownM = f642(this.ownM);
+    this.ownI = f642(this.ownI);
     this.dens = f(this.dens);
     this.rest = f(this.rest);
     this.minBounceVelocity = f(this.minBounceVelocity);
@@ -40817,9 +39378,9 @@ var World = class {
     const i1 = incO + incEdge, i2 = incO + (incEdge + 1) % incPoly.n;
     let c1x = ivx[i1], c1y = ivy[i1], c2x = ivx[i2], c2y = ivy[i2];
     const r1 = refO + refEdge, r2 = refO + (refEdge + 1) % refPoly.n;
-    const tx3 = rvx[r2] - rvx[r1], ty = rvy[r2] - rvy[r1];
-    const tl = deterministicMath.hypot(tx3, ty) || 1;
-    const ux = tx3 / tl, uy = ty / tl;
+    const tx2 = rvx[r2] - rvx[r1], ty = rvy[r2] - rvy[r1];
+    const tl = deterministicMath.hypot(tx2, ty) || 1;
+    const ux = tx2 / tl, uy = ty / tl;
     const side1 = -(ux * rvx[r1] + uy * rvy[r1]), side2 = ux * rvx[r2] + uy * rvy[r2];
     let d1 = -(ux * c1x + uy * c1y) - side1, d2 = -(ux * c2x + uy * c2y) - side1;
     if (d1 > 0 && d2 > 0) return null;
@@ -41050,12 +39611,12 @@ var World = class {
     for (const [key, m] of this.manifolds) {
       if (this.sleeping.has(key)) continue;
       const a = m.a, b = m.b, mA = this.invM[a], iA = this.invI[a], mB = this.invM[b], iB = this.invI[b];
-      const nx = m.nx, ny = m.ny, tx3 = -ny, ty = nx;
+      const nx = m.nx, ny = m.ny, tx2 = -ny, ty = nx;
       for (const p of m.p) {
         const rnA = p.rax * ny - p.ray * nx, rnB = p.rbx * ny - p.rby * nx;
         const kN = mA + mB + iA * rnA * rnA + iB * rnB * rnB;
         p.massN = kN > 0 ? 1 / kN : 0;
-        const rtA = p.rax * ty - p.ray * tx3, rtB = p.rbx * ty - p.rby * tx3;
+        const rtA = p.rax * ty - p.ray * tx2, rtB = p.rbx * ty - p.rby * tx2;
         const kT = mA + mB + iA * rtA * rtA + iB * rtB * rtB;
         p.massT = kT > 0 ? 1 / kT : 0;
         const dx = this.x[b] + p.rbx - (this.x[a] + p.rax), dy = this.y[b] + p.rby - (this.y[a] + p.ray);
@@ -41071,9 +39632,9 @@ var World = class {
     for (const [key, m] of this.manifolds) {
       if (this.sleeping.has(key) || m.sensor) continue;
       const a = m.a, b = m.b, mA = this.invM[a], iA = this.invI[a], mB = this.invM[b], iB = this.invI[b];
-      const nx = m.nx, ny = m.ny, tx3 = -ny, ty = nx;
+      const nx = m.nx, ny = m.ny, tx2 = -ny, ty = nx;
       for (const p of m.p) {
-        const px = p.pn * nx + p.pt * tx3, py = p.pn * ny + p.pt * ty;
+        const px = p.pn * nx + p.pt * tx2, py = p.pn * ny + p.pt * ty;
         this.vx[a] -= mA * px;
         this.vy[a] -= mA * py;
         this.av[a] -= iA * (p.rax * py - p.ray * px);
@@ -41090,17 +39651,17 @@ var World = class {
     for (const [key, m] of this.manifolds) {
       if (this.sleeping.has(key) || m.sensor) continue;
       const a = m.a, b = m.b, mA = this.invM[a], iA = this.invI[a], mB = this.invM[b], iB = this.invI[b];
-      const nx = m.nx, ny = m.ny, tx3 = -ny, ty = nx;
+      const nx = m.nx, ny = m.ny, tx2 = -ny, ty = nx;
       let vAx = this.vx[a], vAy = this.vy[a], wA = this.av[a], vBx = this.vx[b], vBy = this.vy[b], wB = this.av[b];
       for (const p of m.p) {
         const dvx = vBx - wB * p.rby - (vAx - wA * p.ray), dvy = vBy + wB * p.rbx - (vAy + wA * p.rax);
-        const vt = dvx * tx3 + dvy * ty - m.tangentSpeed;
+        const vt = dvx * tx2 + dvy * ty - m.tangentSpeed;
         let impulse = -p.massT * vt;
         const maxF = m.friction * p.pn;
         const newImpulse = deterministicMath.min(deterministicMath.max(p.pt + impulse, -maxF), maxF);
         impulse = newImpulse - p.pt;
         p.pt = newImpulse;
-        const px = impulse * tx3, py = impulse * ty;
+        const px = impulse * tx2, py = impulse * ty;
         vAx -= mA * px;
         vAy -= mA * py;
         wA -= iA * (p.rax * py - p.ray * px);
@@ -41318,8 +39879,8 @@ var World = class {
       const pax = this.x[a] + rax, pay = this.y[a] + ray, pbx = this.x[b] + rbx, pby = this.y[b] + rby;
       if (j.kind === "motor") {
         if (!useBias) continue;
-        const tx3 = j.targetX ?? pbx, ty = j.targetY ?? pby;
-        const Cx = pbx - tx3, Cy = pby - ty;
+        const tx2 = j.targetX ?? pbx, ty = j.targetY ?? pby;
+        const Cx = pbx - tx2, Cy = pby - ty;
         const k11 = mB + iB * rby * rby, k12 = -iB * rbx * rby, k22 = mB + iB * rbx * rbx;
         const det = k11 * k22 - k12 * k12;
         const i11 = det ? k22 / det : 0, i12 = det ? -k12 / det : 0, i22 = det ? k11 / det : 0;
@@ -42531,7 +41092,7 @@ function controlsTouch(opts = {}) {
 }
 
 // game/engine.ts
-var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(typography2()).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(controls2d()).use(maths()).use(color()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "stick": { "codes": { "left": "Touch:left", "right": "Touch:right", "up": "Touch:up", "down": "Touch:down" }, "anchor": "bottom-left", "x": 125, "y": 175, "r": 65, "deadzone": 0.25, "tint": "#f4d888" }, "buttons": [{ "code": "Touch:jump", "label": "JUMP", "anchor": "bottom-right", "x": 110, "y": 160, "r": 46, "tint": "#f4d888" }, { "code": "Touch:crouch", "label": "CROUCH", "anchor": "bottom-right", "x": 110, "y": 265, "r": 36, "tint": "#c4d098" }, { "code": "Touch:run", "label": "RUN", "anchor": "bottom-right", "x": 215, "y": 160, "r": 36, "tint": "#e7dfb8" }, { "code": "Touch:sit", "label": "SIT", "anchor": "bottom-right", "x": 215, "y": 265, "r": 36, "tint": "#a8c0a0" }], "touchOnly": true, "alpha": 0.45 }));
+var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(typography2()).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(controls2d()).use(maths()).use(color()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "buttons": [{ "code": "Touch:left", "label": "<", "anchor": "bottom-left", "x": 55, "y": 110, "r": 38, "tint": "#f4d888" }, { "code": "Touch:right", "label": ">", "anchor": "bottom-left", "x": 175, "y": 110, "r": 38, "tint": "#f4d888" }, { "code": "Touch:up", "label": "^", "anchor": "bottom-left", "x": 115, "y": 170, "r": 38, "tint": "#f4d888" }, { "code": "Touch:down", "label": "v", "anchor": "bottom-left", "x": 115, "y": 50, "r": 38, "tint": "#f4d888" }, { "code": "Touch:interact", "label": "INTERACT", "anchor": "bottom-right", "x": 320, "y": 152, "r": 40, "tint": "#f5df9a" }, { "code": "Touch:jump", "label": "JUMP", "anchor": "bottom-right", "x": 110, "y": 160, "r": 46, "tint": "#f4d888" }, { "code": "Touch:run", "label": "RUN", "anchor": "bottom-right", "x": 215, "y": 160, "r": 36, "tint": "#e7dfb8" }, { "code": "Touch:sit", "label": "SIT", "anchor": "bottom-right", "x": 215, "y": 265, "r": 36, "tint": "#a8c0a0" }], "touchOnly": true, "alpha": 0.45 }));
 var game = composed.game;
 var signals = composed.signals;
 
@@ -43027,6 +41588,7 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
     d.sprinting = sprint;
     const jump = game.controls.pressed("jump"), jumpPressed = game.controls.justPressed("jump") || jump && !wasJump;
     wasJump = jump;
+    const standPressed = game.controls.justPressed("stand");
     const crouchRaw = game.controls.pressed("crouch");
     const crouchJustPressed = game.controls.justPressed("crouch") || crouchRaw && !wasCrouch;
     wasCrouch = crouchRaw;
@@ -43038,7 +41600,7 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
           d.crouchToggled = true;
         }
       }
-      if (jumpPressed && canStand() && d.crouchToggled) {
+      if ((jumpPressed || standPressed) && canStand() && d.crouchToggled) {
         d.crouchToggled = false;
       }
     } else {
@@ -43064,8 +41626,8 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
       const dropAt = POOP_DURATION - POOP_DROP_TIME;
       if (previousTime > dropAt && d.poopTime <= dropAt) {
         const rearOffset = d.facing * FOOT_PROBE_OFFSET;
-        const floor3 = floorAt(body.x - rearOffset) ?? floorAt(body.x) ?? floorAt(body.x + rearOffset);
-        if (floor3) spawnDroppings(floor3.x, floor3.y);
+        const floor2 = floorAt(body.x - rearOffset) ?? floorAt(body.x) ?? floorAt(body.x + rearOffset);
+        if (floor2) spawnDroppings(floor2.x, floor2.y);
       }
       if (d.poopTime === 0) d.poopCooldown = POOP_COOLDOWN;
       return;
@@ -43084,7 +41646,7 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
       d.sitPhase = d.seated ? "down" : "up";
       d.sitTime = 0;
     }
-    if (d.seated && (deterministicMath.abs(move2) > 0.1 || jumpPressed || crouch || !d.grounded)) {
+    if (d.seated && (deterministicMath.abs(move2) > 0.1 || jumpPressed || standPressed || crouch || !d.grounded)) {
       d.seated = false;
       d.sitPhase = "up";
       d.sitTime = 0;
@@ -44523,7 +43085,7 @@ var Play = {
         label.color = STATES2[index] === tokyo.data.state ? "#f4d888" : "#81958b";
       });
       const settings = getSettings();
-      hintsLabel.text = game.touch.visible ? `STICK MOVE/CROUCH   \u2022   JUMP   \u2022   RUN [${settings.runBehavior.toUpperCase()}]   \u2022   CROUCH [${settings.crouchBehavior.toUpperCase()}]   \u2022   SIT   \u2022   POOP` : `A/D WALK   SHIFT RUN [${settings.runBehavior.toUpperCase()}]   SPACE JUMP   DOWN/C CROUCH [${settings.crouchBehavior.toUpperCase()}]   E SIT   G POOP   R RESET`;
+      hintsLabel.text = game.touch.visible ? `ARROWS MOVE / CROUCH / STAND   \u2022   JUMP   \u2022   RUN [${settings.runBehavior.toUpperCase()}]   \u2022   SIT   \u2022   POOP` : `A/D WALK   SHIFT RUN [${settings.runBehavior.toUpperCase()}]   SPACE JUMP   DOWN/C CROUCH [${settings.crouchBehavior.toUpperCase()}]   E SIT   G POOP   R RESET`;
       telemetry.text = `${deterministicMath.round(deterministicMath.abs(tokyo.data.vx))} px/s`;
       shadow.x = tokyo.x;
       shadow.y = GROUND_Y - 2;
@@ -45691,7 +44253,7 @@ var Playground = {
       if (getTouchOverride() === null) game.touch.visible = isMobileView();
       area.text = currentArea(tokyo.x);
       tally.text = `TREATS ${park.treats.length}/12  |  BADGES ${badges().filter(Boolean).length}/8`;
-      controls.text = game.touch.visible ? "STICK move / down to crawl    JUMP / RUN / SIT / POOP    INTERACT to play    MAP for activities" : "A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   G poop   F interact   M map";
+      controls.text = game.touch.visible ? "ARROWS move / down crouch / up stand    JUMP / RUN / SIT / POOP    INTERACT to play" : "A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   G poop   F interact   M map";
       prompt.text = game.touch.visible ? activities.prompt().replaceAll("F:", "Interact:").replaceAll("E:", "Sit:").replaceAll("DOWN +", "Crouch +") : activities.prompt();
       message.text = park.messageTime > 0 ? park.message : "No timer. No damage. Just a very good day for a dog.";
       shadow.x = tokyo.x;
@@ -47156,15 +45718,6 @@ var DreamStart = {
     game.background.picture("dream-dark", "stretch");
     game.physics.gravity(0, 1500);
     game.touch.visible = getTouchOverride() ?? isMobileView();
-    game.touch.button({
-      code: "Touch:interact",
-      label: "ENTER",
-      anchor: "bottom-right",
-      x: 320,
-      y: 152,
-      r: 40,
-      tint: "#eee0ff"
-    });
     game.ui.pauseButton();
     game.ui.muteButton();
     for (const [id2, x, y, w, h] of [
@@ -47375,7 +45928,7 @@ var Journey = {
   enter() {
     const stage = journey.stage;
     const info = DREAM_LEVELS[stage - 1] ?? DREAM_LEVELS[1];
-    const floor3 = LEVEL_FLOORS[stage] ?? FLOOR2;
+    const floor2 = LEVEL_FLOORS[stage] ?? FLOOR2;
     const saved = journey.rescued.slice();
     let elapsed = 0;
     let messageTime = 0;
@@ -47404,19 +45957,10 @@ var Journey = {
     } else {
       game.background.picture(info.background, "stretch");
     }
-    game.touch.button({
-      code: "Touch:interact",
-      label: "INTERACT",
-      anchor: "bottom-right",
-      x: 320,
-      y: 152,
-      r: 40,
-      tint: "#f5df9a"
-    });
     game.ui.pauseButton();
     game.ui.muteButton();
     for (const [id2, x, y, w, h] of [
-      ["floor", SCREEN_W / 2, floor3 + FLOOR_HEIGHT / 2, SCREEN_W, FLOOR_HEIGHT],
+      ["floor", SCREEN_W / 2, floor2 + FLOOR_HEIGHT / 2, SCREEN_W, FLOOR_HEIGHT],
       ["left-edge", 0, 360, 32, 720],
       ["right-edge", SCREEN_W, 360, 32, 720]
     ]) {
@@ -47433,7 +45977,7 @@ var Journey = {
     }
     const tokyo = spawnTokyo(
       WALKING_START,
-      floor3,
+      floor2,
       () => !stopped && stumbleTime <= 0,
       stage === 2 ? 1.12 : 1.5
     );
@@ -47446,7 +45990,7 @@ var Journey = {
           id: "safe-light-" + (i + 1),
           texture: "dream-light",
           x,
-          y: floor3 - 42,
+          y: floor2 - 42,
           width: 170,
           height: 170,
           layer: "world",
@@ -47460,7 +46004,7 @@ var Journey = {
       id: "tokyo-light-shield",
       texture: "dream-shield",
       x: WALKING_START,
-      y: floor3 - 38,
+      y: floor2 - 38,
       width: 120,
       layer: "world",
       z: 9,
@@ -47473,7 +46017,7 @@ var Journey = {
         id: "roaming-dream-shadow",
         texture: "dream-entity",
         x: 824,
-        y: floor3 - DREAM_SHADOW_FOOT_OFFSET,
+        y: floor2 - DREAM_SHADOW_FOOT_OFFSET,
         width: DREAM_SHADOW_WIDTH,
         layer: "world",
         z: 8,
@@ -47485,7 +46029,7 @@ var Journey = {
       texture: "park-portal",
       frame: 1,
       x: EXIT_X,
-      y: floor3 - 83,
+      y: floor2 - 83,
       width: 112,
       height: 142,
       layer: "world",
@@ -47537,7 +46081,7 @@ var Journey = {
         id: "kennel-front-gate",
         texture: "dream-gate",
         x: 647,
-        y: floor3 - 82,
+        y: floor2 - 82,
         scale: DREAM_GATE_SCALE,
         layer: "world",
         z: 6,
@@ -47546,7 +46090,7 @@ var Journey = {
       const gateWall = game.spawn({
         id: "kennel-gate-collision",
         x: 647,
-        y: floor3 - 81,
+        y: floor2 - 81,
         width: 54,
         height: 165,
         visible: false,
@@ -47557,7 +46101,7 @@ var Journey = {
         id: "kennel-gate-latch",
         texture: "dream-latch",
         x: 424,
-        y: floor3 - 28,
+        y: floor2 - 28,
         width: 54,
         height: 58,
         layer: "world",
@@ -47577,7 +46121,7 @@ var Journey = {
         id: "first-house-way-out",
         texture: "dream-light",
         x: 1066,
-        y: floor3 - 58,
+        y: floor2 - 58,
         width: 110,
         height: 110,
         layer: "world",
@@ -47589,7 +46133,7 @@ var Journey = {
         id: "forest-wild-owl",
         texture: "dream-owl",
         x: 625,
-        y: floor3 - 91,
+        y: floor2 - 91,
         width: 78,
         height: 78,
         layer: "world",
@@ -47600,7 +46144,7 @@ var Journey = {
         id: "forest-lost-sign",
         texture: "dream-star",
         x: 368,
-        y: floor3 - 108,
+        y: floor2 - 108,
         width: 35,
         height: 35,
         layer: "world",
@@ -47619,7 +46163,7 @@ var Journey = {
           id: "dream-stray-dog-" + (i + 1),
           texture: "park-villain-dogs",
           x: dog.x,
-          y: floor3 - 42,
+          y: floor2 - 42,
           width: 92,
           height: 92,
           layer: "world",
@@ -47639,7 +46183,7 @@ var Journey = {
           texture: "dream-cat",
           frame: cat2.index * 2,
           x: cat2.x,
-          y: floor3 - 29,
+          y: floor2 - 29,
           width: 76,
           height: 68,
           layer: "world",
@@ -47663,7 +46207,7 @@ var Journey = {
         id: "puzzle-moon-pad",
         texture: "dream-puzzle-pad",
         x: 440,
-        y: floor3 - 31,
+        y: floor2 - 31,
         width: 68,
         height: 68,
         layer: "world",
@@ -47673,7 +46217,7 @@ var Journey = {
         id: "puzzle-moon-mark",
         texture: "dream-moon",
         x: 440,
-        y: floor3 - 31,
+        y: floor2 - 31,
         width: 40,
         height: 40,
         layer: "world",
@@ -47683,7 +46227,7 @@ var Journey = {
         id: "puzzle-star-pad",
         texture: "dream-puzzle-pad",
         x: 708,
-        y: floor3 - 31,
+        y: floor2 - 31,
         width: 68,
         height: 68,
         layer: "world",
@@ -47693,7 +46237,7 @@ var Journey = {
         id: "puzzle-star-mark",
         texture: "dream-star",
         x: 708,
-        y: floor3 - 31,
+        y: floor2 - 31,
         width: 40,
         height: 40,
         layer: "world",
@@ -47732,7 +46276,7 @@ var Journey = {
         id: "favorite-plushie-on-floor",
         texture: "home-plushie",
         x: 858,
-        y: floor3 - 29,
+        y: floor2 - 29,
         width: 66,
         layer: "world",
         z: 9,
@@ -47758,7 +46302,7 @@ var Journey = {
         id: "dream-family-" + person.id,
         texture: "family-" + person.id,
         x: 1060,
-        y: floor3 - FAMILY_GROUND_OFFSET * FAMILY_SCALE,
+        y: floor2 - FAMILY_GROUND_OFFSET * FAMILY_SCALE,
         scale: FAMILY_SCALE,
         layer: "world",
         z: 7
@@ -47766,7 +46310,7 @@ var Journey = {
       game.text(
         person.name,
         1060,
-        floor3 - 126,
+        floor2 - 126,
         { size: 16, font: "mono-bold", color: "#fff2c9", shadow: { color: "#181923", x: 2, y: 2 } }
       );
       targets.push({ x: 1060, label: "Run to " + person.name, act: () => {
@@ -47785,7 +46329,7 @@ var Journey = {
           id: "spring-reunion-" + person.id,
           texture: "family-" + person.id,
           x: groupX[i],
-          y: floor3 - FAMILY_GROUND_OFFSET * 1.27,
+          y: floor2 - FAMILY_GROUND_OFFSET * 1.27,
           scale: 1.27,
           layer: "world",
           z: 7
@@ -47794,7 +46338,7 @@ var Journey = {
         game.text(
           person.name,
           groupX[i],
-          floor3 - 117,
+          floor2 - 117,
           {
             size: 12,
             font: "mono-bold",
@@ -47919,7 +46463,7 @@ var Journey = {
           entity.x += direction2 * SHADOW_SPEED * dt;
         }
         entity.x = deterministicMath.max(40, deterministicMath.min(SCREEN_W - 40, entity.x));
-        entity.y = floor3 - DREAM_SHADOW_FOOT_OFFSET + deterministicMath.sin(elapsed * 4) * 5;
+        entity.y = floor2 - DREAM_SHADOW_FOOT_OFFSET + deterministicMath.sin(elapsed * 4) * 5;
         entity.sx = playerX < entity.x ? -1 : 1;
         entity.setFrame(deterministicMath.floor(elapsed * 3) % 2);
         const distanceAfterMove = deterministicMath.abs(entity.x - playerX);
@@ -47933,7 +46477,7 @@ var Journey = {
         }
         hazard.sprite.sx = hazard.direction;
         hazard.sprite.setFrame(hazard.frames[deterministicMath.floor(elapsed * 2.8) % 2]);
-        const dogHeight = tokyo.data.feet - floor3;
+        const dogHeight = tokyo.data.feet - floor2;
         if (deterministicMath.abs(tokyo.data.x - hazard.sprite.x) < HAZARD_TOUCH_X && deterministicMath.abs(dogHeight) < HAZARD_TOUCH_Y && hazardCooldown <= 0) {
           stumbleTime = 0.38;
           hazardCooldown = 1;
@@ -47989,15 +46533,6 @@ var Ending = {
     game.camera.snap(ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 1);
     game.physics.gravity(0, 1500);
     game.touch.visible = getTouchOverride() ?? isMobileView();
-    game.touch.button({
-      code: "Touch:interact",
-      label: "PLAY",
-      anchor: "bottom-right",
-      x: 320,
-      y: 152,
-      r: 40,
-      tint: "#f5df9a"
-    });
     const room = spawnHomeRoom();
     room.shade.alpha = 0;
     for (const [id2, x, y, w, h] of [
@@ -48178,6 +46713,7 @@ game.controls.bind("jump", { keys: ["Space", "ArrowUp", "KeyW", "Touch:jump"], p
 game.controls.bind("run", { keys: ["ShiftLeft", "ShiftRight", "Touch:run"], pad: ["x"] });
 game.controls.bind("crouch", { keys: ["ArrowDown", "KeyS", "KeyC", "Touch:crouch", "Touch:down"], pad: ["lb"] });
 game.controls.bind("sit", { keys: ["KeyE", "Touch:sit"], pad: ["b"] });
+game.controls.bind("stand", { keys: ["Touch:up"] });
 game.controls.bind("poop", { keys: ["KeyG", "Touch:poop"], pad: ["rb"] });
 game.controls.bind("interact", { keys: ["KeyF", "Touch:interact"], pad: ["y"] });
 game.controls.bind("pause", { keys: ["Escape", "KeyP", "Touch:pause"], pad: ["start"] });
@@ -48254,60 +46790,6 @@ game.assets.load(assets_default, { pack: "game" });
  * is preserved.
  */
 /*! Bundled license information:
-
-@phaser-ae/kernel/src/wrap.ts:
-@phaser-ae/kernel/src/maths3d.ts:
-@phaser-ae/kernel/src/curves.ts:
-@phaser-ae/kernel/src/controls3d.ts:
-@phaser-ae/kernel/src/roster.ts:
-@phaser-ae/kernel/src/clock.impl.ts:
-@phaser-ae/kernel/src/order.ts:
-@phaser-ae/kernel/src/hooks.impl.ts:
-@phaser-ae/kernel/src/color.ts:
-@phaser-ae/kernel/src/roster.impl.ts:
-@phaser-ae/kernel/src/signals.impl.ts:
-@phaser-ae/kernel/src/scheduler.impl.ts:
-@phaser-ae/kernel/src/rng.impl.ts:
-@phaser-ae/kernel/src/input.impl.ts:
-@phaser-ae/kernel/src/commands.impl.ts:
-@phaser-ae/kernel/src/registry.impl.ts:
-@phaser-ae/kernel/src/cheats.impl.ts:
-@phaser-ae/kernel/src/scene.impl.ts:
-@phaser-ae/kernel/src/camera.impl.ts:
-@phaser-ae/kernel/src/assets.impl.ts:
-@phaser-ae/kernel/src/workers.impl.ts:
-@phaser-ae/kernel/src/safe-area.impl.ts:
-@phaser-ae/kernel/src/verbs.impl.ts:
-@phaser-ae/kernel/src/inspect.impl.ts:
-@phaser-ae/kernel/src/game.impl.ts:
-@phaser-ae/kernel/src/history.impl.ts:
-@phaser-ae/kernel/src/webgl.ts:
-@phaser-ae/kernel/src/index.ts:
-@phaser-ae/kernel/src/world2d.ts:
-@phaser-ae/kernel/src/world3d.ts:
-@phaser-ae/kernel/src/internal.ts:
-@phaser-ae/kernel/src/verbs.ts:
-  (*!
-   * Phaser AE kernel (https://phaser.io)
-   * Required Notice: Copyright (c) 2026 Phaser Studio Inc. (https://phaser.io)
-   * Licensed under the PolyForm Shield License 1.0.0 (https://polyformproject.org/licenses/shield/1.0.0),
-   * with an additional permission to make and sell games: see LICENSE.md in the kernel's folder.
-   *)
-
-@phaser-ae/kernel/src/math.ts:
-  (*!
-   * Phaser AE kernel (https://phaser.io)
-   * Required Notice: Copyright (c) 2026 Phaser Studio Inc. (https://phaser.io)
-   * Licensed under the PolyForm Shield License 1.0.0 (https://polyformproject.org/licenses/shield/1.0.0),
-   * with an additional permission to make and sell games: see LICENSE.md in the kernel's folder.
-   *)
-  (*!
-   * The functions below are ported from fdlibm 5.3 (http://www.netlib.org/fdlibm):
-   * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
-   * Developed at SunSoft, a Sun Microsystems, Inc. business.
-   * Permission to use, copy, modify, and distribute this software is freely granted, provided that this notice
-   * is preserved.
-   *)
 
 @phaser-ae/ui/dist/index.js:
   (*! The ui pack's icons are Phosphor Icons (https://phosphoricons.com), by Helena Zhang and Tobias Fried.

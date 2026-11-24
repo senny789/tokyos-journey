@@ -1,67 +1,37 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { stripTypeScriptTypes } from 'node:module';
+import { extname, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const PORT = Number(process.env.TOKYO_PREVIEW_PORT ?? 4181);
-const HOST = '127.0.0.1';
-const projectFile = path => new URL(`../${path}`, import.meta.url);
-const readText = path => readFileSync(projectFile(path), 'utf8');
+// Serve the normal build, using the engine's local font copies when its CDN is unavailable.
+const root = fileURLToPath(new URL('..', import.meta.url));
+const dist = resolve(root, 'dist');
+const port = Number(process.env.TOKYO_PREVIEW_PORT ?? 4181);
+const fonts = resolve(root, 'phaser/examples/assets/fonts/typography');
+const skinFont = resolve(root, 'phaser/node_modules/.cache/phaser-ae-smoke/d85f3c7ae3d1ffaf-passion-one-ffd1cdc400de64af91e0.glb');
+const fontNames = ['sans', 'sans-bold', 'serif', 'serif-bold', 'mono', 'mono-bold'];
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wasm': 'application/wasm', '.png': 'image/png', '.glb': 'model/gltf-binary', '.json': 'application/json' };
 
-// The checked-in bundle already contains the engine. Keep that part intact
-// and load the current game modules separately so source edits show on reload.
-const bundle = readText('dist/game.js');
-const sourceStart = bundle.search(/^\/\/ game\/assets\.json\r?$/m);
-const engine = bundle.slice(0, sourceStart);
-if (sourceStart < 0 || !engine.includes('var game = composed.game;')) {
-    throw new Error('Could not find the Phaser runtime in dist/game.js. Restore the game’s Phaser AE engine to use the normal build.');
-}
-const licenseStart = bundle.indexOf('\n/*!', sourceStart);
-const licenses = licenseStart < 0 ? '' : bundle.slice(licenseStart);
-
-const html = readText('dist/index.html').replace('src="./game.js"', 'src="./main.js"');
-const mimeTypes = new Map([
-    ['html', 'text/html; charset=utf-8'],
-    ['js', 'text/javascript; charset=utf-8'],
-    ['png', 'image/png'],
-    ['wasm', 'application/wasm'],
-]);
-
-function readPreview(path) {
-    if (path === '/') return ['html', html];
-    if (path === '/engine.js') return ['js', `${engine}\nexport { game, signals, composed };\n${licenses}`];
-    if (path === '/text-shaper.wasm') return ['wasm', readFileSync(projectFile('dist/text-shaper.wasm'))];
-    if (/^\/assets\/(?:[\w-]+\/)*[\w-]+\.png$/.test(path)) {
-        const file = projectFile(`game${path}`);
-        if (existsSync(file)) return ['png', readFileSync(file)];
-    }
-    if (/^\/(assets|park-art)\.json\.js$/.test(path)) {
-        const jsonPath = path.slice(0, -3);
-        const data = readText(`game${jsonPath}`).replace(/^\uFEFF/, '');
-        return ['js', `export default ${data};`];
-    }
-    if (/^\/(?:(?:entities|scenes)\/)?[\w-]+\.js$/.test(path)) {
-        const source = projectFile(`game${path.slice(0, -3)}.ts`);
-        if (!existsSync(source)) return null;
-        const js = stripTypeScriptTypes(readFileSync(source, 'utf8'));
-        return ['js', js.replace(/(from ['"])(\.\/[\w-]+\.json)(['"])/g, '$1$2.js$3')];
-    }
-    return null;
+if (!existsSync(skinFont) || fontNames.some(name => !existsSync(resolve(fonts, `ui-${name}.glb`)))) {
+    throw new Error('Local preview fonts are missing. Run npm run -s smoke to populate the Phaser font cache.');
 }
 
-const server = createServer((request, response) => {
-    try {
-        const { pathname } = new URL(request.url, `http://${HOST}`);
-        const result = readPreview(pathname);
-        if (!result) {
-            response.writeHead(404).end();
-            return;
-        }
-        const [type, body] = result;
-        response.writeHead(200, { 'Content-Type': mimeTypes.get(type), 'Cache-Control': 'no-store' }).end(body);
-    } catch (error) {
-        console.error(error);
-        response.writeHead(500).end('The local preview could not load this file. Check the terminal for details.');
+createServer((request, response) => {
+    const path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
+    let file;
+    if (path === '/local-fonts/passion-one.glb') file = skinFont;
+    else if (/^\/local-fonts\/ui-(sans|sans-bold|serif|serif-bold|mono|mono-bold)\.glb$/.test(path)) file = resolve(fonts, path.slice('/local-fonts/'.length));
+    else {
+        file = resolve(dist, `.${path === '/' ? '/index.html' : path}`);
+        if (file !== dist && !file.startsWith(dist + sep)) return response.writeHead(403).end();
     }
-});
-
-server.listen(PORT, HOST, () => console.log(`Tokyo's Journey preview at http://${HOST}:${PORT}`));
+    if (!existsSync(file) || !statSync(file).isFile()) return response.writeHead(404).end();
+    response.writeHead(200, { 'Content-Type': types[extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
+    if (path === '/game.js') {
+        const bundle = readFileSync(file, 'utf8')
+            .replace(/https:\/\/cdn\.phaser\.games\/gameblocks\/typography\/ui\/ui-(sans-bold|sans|serif-bold|serif|mono-bold|mono)-[a-f0-9]+\.glb/g, '/local-fonts/ui-$1.glb')
+            .replace('https://cdn.phaser.games/gameblocks/fonts/passion-one-ffd1cdc400de64af91e0.glb', '/local-fonts/passion-one.glb');
+        return response.end(bundle);
+    }
+    createReadStream(file).pipe(response);
+}).listen(port, '127.0.0.1', () => console.log(`Tokyo's Journey preview: http://localhost:${port}/`));

@@ -101,8 +101,8 @@
     "assets/treats.png": "ea062af459436d6b2e95d7e50b9335f2dbb9469a6fec4f798eb8ad2907885b9d",
     "assets/trees.png": "8f03aeabfb126c441be0b98c272579a1b2ef2eb5aef2917d85a868bd2835cd6f",
     "assets/villain-dogs.png": "8fb9dc3e3c5171a46592df0a7b78ba27e6161cefb22d9e15c0381d1561089ce8",
-    "build.json": "11a17f2f82839f3c31d1f93b2262e3d73d03262a94e6d4fa90d10abee6112ade",
-    "game.js": "6a50ddd782a59ba1358dc2e29a1ae5fe55da18eb6fd6eb9b288d3f95cf0158cf",
+    "build.json": "bc3af90549ffa3bdc0ad88de0ee41a28d5daeddc0c6795a1daa5eacd01815d8e",
+    "game.js": "1d20e15b67cf455f2e583b40ff01ffc779fd5994c6cadbbdfe452cd1afb75ab1",
     "index.html": "e6000fc5f397ce749ff1f1242da947e94b4cade79cef46e95c9d9e72f221b4bb",
     "text-shaper.wasm": "67cf5be0116894e5b38038ddbd4fc9b0bf979317b3ecdbd0ece2d67edc960f7d"
   }

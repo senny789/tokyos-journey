@@ -80,8 +80,6 @@ export const Journey = {
             game.background.picture(info.background, 'stretch');
         }
 
-        game.touch.button({ code: 'Touch:interact', label: 'INTERACT', anchor: 'bottom-right',
-            x: 320, y: 152, r: 40, tint: '#f5df9a' });
         game.ui.pauseButton();
         game.ui.muteButton();
 

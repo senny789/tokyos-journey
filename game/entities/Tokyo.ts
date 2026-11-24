@@ -84,7 +84,7 @@ export function spawnTokyo(
         layer: 'world', z: 10, scale: artScale, tags: ['tokyo'], data: initialData(x, feet) });
     let body = makeBody(x, feet, STAND_HEIGHT);
     let height = STAND_HEIGHT;
-    let wasJump = false, wasSit = false, wasRun = false, wasCrouch = false, wasPoop = false;
+    let wasJump = false, wasSit = false, wasRun = false, wasCrouch = false, wasPoop = false, wasStand = false;
     const d = sprite.data;
     run.tokyo = d;
     function showPose(): void {
@@ -150,6 +150,9 @@ export function spawnTokyo(
 
         const jump = game.controls.pressed('jump'), jumpPressed = game.controls.justPressed('jump') || (jump && !wasJump);
         wasJump = jump;
+        const stand = game.controls.pressed('stand');
+        const standPressed = game.controls.justPressed('stand') || (stand && !wasStand);
+        wasStand = stand;
 
         const crouchRaw = game.controls.pressed('crouch');
         const crouchJustPressed = game.controls.justPressed('crouch') || (crouchRaw && !wasCrouch);
@@ -163,7 +166,7 @@ export function spawnTokyo(
                     d.crouchToggled = true;
                 }
             }
-            if (jumpPressed && canStand() && d.crouchToggled) {
+            if ((jumpPressed || standPressed) && canStand() && d.crouchToggled) {
                 d.crouchToggled = false;
             }
         } else {
@@ -211,7 +214,7 @@ export function spawnTokyo(
         if (sitPressed && d.grounded && d.crouchAmount === 0 && !crouch) {
             d.seated = !d.seated; d.sitPhase = d.seated ? 'down' : 'up'; d.sitTime = 0;
         }
-        if (d.seated && (Math.abs(move) > 0.1 || jumpPressed || crouch || !d.grounded)) {
+        if (d.seated && (Math.abs(move) > 0.1 || jumpPressed || standPressed || crouch || !d.grounded)) {
             d.seated = false; d.sitPhase = 'up'; d.sitTime = 0;
             if (jumpPressed) d.jumpBuffer = SIT_TRANSITION + JUMP_BUFFER;
         }

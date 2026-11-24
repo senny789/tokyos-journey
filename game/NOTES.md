@@ -2,7 +2,7 @@
 
 ## How to test it
 
-- Start the built preview with `npm run -s serve` and open `http://localhost:4173`. The source preview is also available with `npm run -s preview:local` at `http://127.0.0.1:4181` (Node.js 22.13+). Reload after edits. For PNG-only edits, stop and reopen the Phaser play session so it rebuilds the assets.
+- Run `npm run -s build`, then `npm run -s preview:local` and open `http://localhost:4181`. This preview uses local font copies; rebuild and reload after edits. If its font cache is missing, run `npm run -s smoke` first. The standard `npm run -s serve` uses Phaser's font CDN. For PNG-only edits, stop and reopen the Phaser play session so it rebuilds the assets.
 - After cloning, run `npm run setup:phaser` to restore the CLI and engine for build, smoke, and play.
 - Scenes: `title`, `story`, `home`, `dream-start`, `journey`, `ending`, `play` (Movement Meadow), `meadow` (treat meadow), `playground`, `parkmap`, `pause`, `settings`, `celebration`.
 - On the title screen, Story Mode is at (201,378) and Playground is at (200,498). Tab focuses the choices and Enter or Space activates the focused button. With nothing focused, Enter or Space opens Playground. Press 2 for Story Mode.
@@ -25,7 +25,7 @@
 - Dream lights protect Tokyo from the roaming shadow. Interact at each family member, cat, puzzle stone, toy or portal when its prompt appears. A caught Tokyo can retry the current level or wake at home.
 - Dream inspect ids: `tokyo`, `roaming-dream-shadow` (stage 2–9), `dream-roaming-shadow` (stage 1), `safe-light-*`, `dream-family-*`, `kennel-front-gate`, `city-cat-*`, `puzzle-moon-pad`, `puzzle-star-pad`, `favorite-plushie-on-floor`, `spring-reunion-*`, `journey-exit-portal`.
 - Ending: greet the family, play fetch with Senny, or choose Dream Again.
-- Gamepad: left stick moves, A jumps, X runs, LB crouches, B sits, RB poops, Y interacts, Start pauses. Touch uses the stick and labeled action buttons.
+- Gamepad: left stick moves, A jumps, X runs, LB crouches, B sits, RB poops, Y interacts, Start pauses. Touch uses left/right arrows to move, down to crouch, up to stand, and labeled Jump, Run, Sit, Poop and Interact buttons. The arrows are at the lower left; actions are at the lower right.
 - Playground: M opens the map; Esc/P pauses; R starts a new day; N toggles day/night. Map destinations are x250/640/1030 at y185 and y310; Back to Tokyo is (640,667).
 - Playground interactions: F at beds for Cozy paws; pick up sticks, greet the carrier for Fetch star, crouch at box 2 to hide, jump rocks for treats, crawl the tunnel, F at six bushes and six picnic foods, greet four people, befriend four shy dogs by sitting first, collect 12 treats, then use the portal at x6210 after all eight badges.
 - Sky: `park-sun`/`park-moon` at (1060,174); clouds drift at y181–266; stars twinkle at night. HUD day/night (976,44), map (1042,44), fullscreen (1108,44), sound (1168,44), pause (1236,44).

@@ -51,7 +51,7 @@ export const Playground = {
             if (getTouchOverride() === null) game.touch.visible = isMobileView();
             area.text = currentArea(tokyo.x);
             tally.text = `TREATS ${park.treats.length}/12  |  BADGES ${badges().filter(Boolean).length}/8`;
-            controls.text = game.touch.visible ? 'STICK move / down to crawl    JUMP / RUN / SIT / POOP    INTERACT to play    MAP for activities'
+            controls.text = game.touch.visible ? 'ARROWS move / down crouch / up stand    JUMP / RUN / SIT / POOP    INTERACT to play'
                 : 'A/D move   SHIFT run   SPACE jump   DOWN crouch   E sit   G poop   F interact   M map';
             prompt.text = game.touch.visible ? activities.prompt().replaceAll('F:', 'Interact:').replaceAll('E:', 'Sit:').replaceAll('DOWN +', 'Crouch +') : activities.prompt();
             message.text = park.messageTime > 0 ? park.message : 'No timer. No damage. Just a very good day for a dog.';

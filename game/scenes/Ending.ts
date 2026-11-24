@@ -33,8 +33,6 @@ export const Ending = {
         game.camera.snap(ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 1);
         game.physics.gravity(0, 1500);
         game.touch.visible = getTouchOverride() ?? isMobileView();
-        game.touch.button({ code: 'Touch:interact', label: 'PLAY', anchor: 'bottom-right',
-            x: 320, y: 152, r: 40, tint: '#f5df9a' });
         const room = spawnHomeRoom();
         room.shade.alpha = 0;
 

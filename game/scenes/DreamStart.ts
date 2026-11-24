@@ -21,8 +21,6 @@ export const DreamStart = {
         game.background.picture('dream-dark', 'stretch');
         game.physics.gravity(0, 1500);
         game.touch.visible = getTouchOverride() ?? isMobileView();
-        game.touch.button({ code: 'Touch:interact', label: 'ENTER', anchor: 'bottom-right',
-            x: 320, y: 152, r: 40, tint: '#eee0ff' });
         game.ui.pauseButton();
         game.ui.muteButton();
 
