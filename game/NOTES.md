@@ -4,6 +4,7 @@
 
 - Run `npm run -s build`, then `npm run -s preview:local` and open `http://localhost:4181`. This preview uses local font copies; rebuild and reload after edits. If its font cache is missing, run `npm run -s smoke` first. The standard `npm run -s serve` uses Phaser's font CDN. For PNG-only edits, stop and reopen the Phaser play session so it rebuilds the assets.
 - After cloning, run `npm run setup:phaser` to restore the CLI and engine for build, smoke, and play.
+- Reload the preview to see Tokyo’s portrait, the dusk backdrop, and real loading progress before the title.
 - Scenes: `title`, `story`, `level-select`, `home`, `dream-start`, `journey`, `ending`, `play` (Movement Meadow), `meadow` (treat meadow), `playground`, `parkmap`, `pause`, `settings`, `celebration`.
 - On the title screen, Story Mode is at (201,378) and Playground is at (200,498). Tab focuses the choices and Enter or Space activates the focused button. With nothing focused, Enter or Space opens Playground. Press 2 for Story Mode.
 - On mobile, choosing Story Mode or Playground requests fullscreen and landscape once per page load. If the phone cannot lock orientation, turn it sideways. Exiting fullscreen does not automatically reopen it; use the fullscreen button to enter it again.
@@ -46,6 +47,7 @@
 - `dreamFall.ts`: Level 1 tumble, fade and respawn.
 - `actionAudio.ts`: synthesized pawstep, jump, interaction, pickup and rift sounds.
 - `main.ts`: engine setup, asset loading, input bindings, scene registration and boot.
+- `preloadScreen.ts`: startup loading screen with Tokyo’s seated pose from the title atlas.
 - `scenes/Title.ts`, `Story.ts`, `LevelSelect.ts`, `Home.ts`, `DreamStart.ts`, `Journey.ts`, `Ending.ts`: title, story mode and level picker, bedtime, dream stages and morning.
 - `menuStyles.ts` shares the main-menu and Story Mode button styles.
 - `journey.ts`: stage data, dream art loading, shared progress and stage transitions. `home.ts`: shared home art and state. `homeRooms.ts`: Level 0 room and station positions. `homeInterior.ts`: room backgrounds and furniture. `homeDoors.ts`: partitions, doors, and collisions.

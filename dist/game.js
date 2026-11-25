@@ -6836,6 +6836,9 @@ function installPreloader(k, defaults2 = {}) {
   installed.set(k.assets, api);
   return api;
 }
+function preloader(options = {}) {
+  return { id: "preloader", attach: (k) => ({ preloader: installPreloader(k, options) }) };
+}
 
 // game/node_modules/@phaser-ae/render-webgpu/dist/index.js
 var GRID_X = 24;
@@ -8883,7 +8886,7 @@ async function probeWebGl2(atlasSize) {
 var FRIENDLY = "This game needs graphics support that is unavailable right now. Try updating your browser, enabling hardware acceleration, or opening the game on another device.";
 function renderer(options = {}) {
   return { id: "render-auto", attach(k) {
-    const preloader = installPreloader(k);
+    const preloader2 = installPreloader(k);
     let preference = options.backend ?? "auto";
     let status = "pending", backend = null, error = null;
     let failures = [], candidate = null;
@@ -8974,7 +8977,7 @@ function renderer(options = {}) {
       }
     });
     return {
-      preloader,
+      preloader: preloader2,
       renderer: { get status() {
         return status;
       }, get backend() {
@@ -41092,7 +41095,7 @@ function controlsTouch(opts = {}) {
 }
 
 // game/engine.ts
-var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(typography2()).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(controls2d()).use(maths()).use(color()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "buttons": [], "touchOnly": true, "alpha": 0.45 }));
+var composed = createGame({ "width": 1280, "height": 720, "fit": "letterbox", "background": "#253c36", "pixelArt": true, "backgroundPolicy": "pause", "seed": 67079 }).use(renderer()).use(side()).use(screen2()).use(follow()).use(typography2()).use(backdrops()).use(backdropSky()).use(backdropStars()).use(renderTexture()).use(controls2d()).use(maths()).use(color()).use(audio()).use(ui()).use(tween()).use(save({ "namespace": "tokyos-journey" })).use(particleTextures()).use(particles2d()).use(feel()).use(collision()).use(pointer()).use(core2d()).use(preloader()).use(uiSkins()).use(physics2d()).use(uiSkinBlock({ "color": "#dbbb72", "surface": "#33483d", "radius": 0, "depth": 4 })).use(controlsTouch({ "buttons": [], "touchOnly": true, "alpha": 0.45 }));
 var game = composed.game;
 var signals = composed.signals;
 
@@ -47751,8 +47754,36 @@ var TouchSettings = {
   }
 };
 
+// game/preloadScreen.ts
+var BADGE_POSITION = "center calc(50% - clamp(62px, 19vmin, 158px))";
+var BADGE_SIZE = "clamp(76px, 23vmin, 184px)";
+var TOKYO_WIDTH = "clamp(62px, 18vmin, 146px)";
+function configureLoadingScreen() {
+  const assetBase = game.assets.baseURL.replace(/\/$/, "") || ".";
+  game.preloader.configure({
+    delay: 0,
+    fadeOut: 0.24,
+    background: [
+      `url("${assetBase}/assets/tokyo-loading.png") ${BADGE_POSITION} / ${TOKYO_WIDTH} auto no-repeat`,
+      `radial-gradient(circle closest-side, #445740 84%, #dcb8747d 85%, transparent 89%) ${BADGE_POSITION} / ${BADGE_SIZE} ${BADGE_SIZE} no-repeat`,
+      "linear-gradient(180deg, #172a23a8, #192e26c7 52%, #14241fe8)",
+      `url("${assetBase}/assets/title-home-dusk.png") center / cover no-repeat`,
+      "#253c36"
+    ].join(", "),
+    style: {
+      title: "Loading Tokyo\u2019s Journey",
+      fill: "#eeb664",
+      track: "#182b22",
+      border: "#bfa064",
+      text: "#fff1d0",
+      font: "700 16px/1.4 system-ui, sans-serif"
+    }
+  });
+}
+
 // game/main.ts
 var PIXEL_PARK_STRIPS = /* @__PURE__ */ new Set(["beds", "boxes", "food", "houses", "people", "rocks", "villain-dogs"]);
+configureLoadingScreen();
 paintArt();
 prepareDialogueAudio();
 prepareActionAudio();

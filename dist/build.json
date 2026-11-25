@@ -1,6 +1,6 @@
 {
   "name": "Tokyo's Journey",
-  "sourceIdentity": "f25255ed49902c63a3777b8a19785378a903401f8ec0a18f43c3c0db530d9909",
+  "sourceIdentity": "37df7e8b932410e02c818f65d4ba8703b94197c5bd91e3195da57177d63036ca",
   "sources": {
     "game/actionAudio.ts": "c8e7ef55be30df6a191ac91f17ef27d7af579029d0377320b7a3089174b6ad79",
     "game/art.ts": "d503b0f94c6e10459832c7aabb655e5db473ae27cec3efa52de5e8087778951c",
@@ -12,7 +12,7 @@
     "game/dreamFall.ts": "21dcf9776662cdb5b8e96f55cd2a94b2d10cd7187f948052a34090de60679e38",
     "game/dreamPresentation.ts": "ee2b820864c6899dcd50043eae5e65d3a2eccc0d5a0fa2e7dfa1b189361bee66",
     "game/dreamWake.ts": "746644d05f2e6e5f283894debf9b30ad0e9696edeac5aa4bfc01b8621f75b1e3",
-    "game/engine.ts": "fc242ef11ca30a658a268db3e1e0c056474c3ead5959ee95d7e79560235cdaf5",
+    "game/engine.ts": "48a78452c5f13f571c7a03a1098bab9acc34190733140e84627c91c18099af8f",
     "game/entities/Droppings.ts": "f1fe77ba9f053a5754b128a7ff5fb70f84e117f30b3b4175e2e17c50e9579f9e",
     "game/entities/ParkActivities.ts": "fdb98209a8ba6ceb47800cbb44bf02f0379571b0c8f658e1ed8585cb5e9ee819",
     "game/entities/ParkWildlife.ts": "5a7750e7d11b01bd9637784157c4f44c561f6e397b6467ce193b760fbebc22cc",
@@ -24,7 +24,7 @@
     "game/homePrompt.ts": "3a8322462d88401e53ea3229c6a19af4b861647c0c193512c2fbcea9f236eb8f",
     "game/homeRooms.ts": "04c8e80717a12741e24b7f1fd2b4b39c624d36608f8cc158537f0dd41510baa4",
     "game/journey.ts": "9d37adf55e126c2ab3ddf0b85d11127d6ffa94b9c170dc1d51c687b35e1182ed",
-    "game/main.ts": "1a3eaae18fa6fd2c13dabc57b2b0cc9d1a0f7cc01e77c6cf27fcf10e8639e44f",
+    "game/main.ts": "8839c47725cc8ce98d3e8de3cb669bf8bb0b53aef76df40cefc93de10ae0dc6a",
     "game/meadow.ts": "1c8b5ebd42c64e2f527ddc485a2f4a42cd54358771848ce943f9003e543b3630",
     "game/menuStyles.ts": "d65ed5282eb129af1dd79c9449956f037c59606a43ecd7562d4cf87557c6a96a",
     "game/mobile.ts": "8d3816cd8ebb3e5174810285cf845c5136880e4d1153dee086f9970a1076b823",
@@ -63,6 +63,7 @@
     "game/park-art.json": "545ead220929f78cf3f639282cecae3cc9ed80c92567a53ae1a4ad8f6f812b99",
     "game/parkMap.ts": "2d8b92dac320a54e9befc07d628afa12d683e1ccbe0684e69659054191f33512",
     "game/playground.ts": "8b562cd056e89fe08f1c773542ca895bf7dcfdd0576c60e06776a8f0bf14d499",
+    "game/preloadScreen.ts": "f9c7e1c69c40bb28b46a454b9228586e8cab2d2e5799a739150c1de11883eee3",
     "game/riftPortal.ts": "8a64274b215980466d08c13d0489d02145d23267a548adba0705f5c2cfcc0e13",
     "game/scenery.ts": "d0e5fa9002fb6de559260386a104e61d234ab620c7dac1e6476c6ab04d057907",
     "game/scenes/Celebration.ts": "c791f44fd235c4cf8ffba1e2c6de7f3a2bd701c92ef519401bf32cd869bc0110",
@@ -161,6 +162,8 @@
     "../game/node_modules/@phaser-ae/pointer/schema.json": "ca881953b6e86e3f6f66f1b00fe81cd3b4a27697ec7b99e5eeb1a3537251613f",
     "../game/node_modules/@phaser-ae/core-2d/pack.json": "bc1bca7c915a27b3b05d20728bd2370a1668f88cc821dcb82e8fbd7c3cc5ce09",
     "../game/node_modules/@phaser-ae/core-2d/schema.json": "1e5a8d8096eec6d9633b68581ff830b295cde7290b039f863361fd8b3196645d",
+    "../game/node_modules/@phaser-ae/preloader/pack.json": "9ed668e3ed89b9937181aed2c88061666d815d522e93e67910037fb6ea941a02",
+    "../game/node_modules/@phaser-ae/preloader/schema.json": "2fc9296e097e62868098e6c7666d2397c44de016a09d3b4067e3bc0f33aee126",
     "../game/node_modules/@phaser-ae/ui-skins/pack.json": "4a0444f2fc7fd3fd74e5407a46018840b97fe351fc48e861beb68d0b0944934d",
     "../game/node_modules/@phaser-ae/ui-skins/schema.json": "90f8ce889219a9103d417a06122fdc80c7d9d3108f2362da154a766b5e76ce73",
     "../game/node_modules/@phaser-ae/physics-2d/pack.json": "7a2364e79b715098c2cb850379a8af32e6957c06d88d27eac334eeef60b8f00c",
@@ -285,13 +288,14 @@
     "assets/tokyo-fall.png": "3673c05b9c3e01c8503f3471dc0a38b64565cb88f10e65456f77ecab8e49ad55",
     "assets/tokyo-family-crouch.png": "38def2659da173acaeadf9346c96472ce8338eebd3fadc40066d5e7d57247b09",
     "assets/tokyo-family.png": "6e8dc8ed7248cf4431bcda3ca6118660fd748b1db8874f1d86bf923abf3c8d86",
+    "assets/tokyo-loading.png": "858aac118161cbdf7123ea9e6c42bad6a371bbefbfacc9782bbc10cc655e26c9",
     "assets/tokyo-poop.png": "3e96aa36aea6a7c9564d7401dab817f204a51cb36ebafe73cac53bb33334adfd",
     "assets/tokyo-sleep.png": "ec6f9b21a0af35ceee4ba08f16cfa5bb7fdac9a2c22a63b1c63c13b41757bed2",
     "assets/treat-atlas.png": "1b3a290b3a59b1b620ac3b106232060ad9ccf1ecb6911fb5574d63939140eacc",
     "assets/treats.png": "ea062af459436d6b2e95d7e50b9335f2dbb9469a6fec4f798eb8ad2907885b9d",
     "assets/trees.png": "8f03aeabfb126c441be0b98c272579a1b2ef2eb5aef2917d85a868bd2835cd6f",
     "assets/villain-dogs.png": "8fb9dc3e3c5171a46592df0a7b78ba27e6161cefb22d9e15c0381d1561089ce8",
-    "game.js": "5e227d1c96832e6411e21638f375d407abb5fce7b1c3c3392786d4c4e723732f",
+    "game.js": "b50b755441eca0fb887fc2df5706eeb0f3cab250ea0c38447d24ac48ce581e47",
     "index.html": "e6000fc5f397ce749ff1f1242da947e94b4cade79cef46e95c9d9e72f221b4bb",
     "text-shaper.wasm": "67cf5be0116894e5b38038ddbd4fc9b0bf979317b3ecdbd0ece2d67edc960f7d"
   },
@@ -416,6 +420,11 @@
       "artifactHash": "372252cc16265d3f96f2c18a040f3586f8418526c6cd15fe79a192b7b42dbc1f"
     },
     {
+      "id": "preloader",
+      "version": "3.0.0-5",
+      "artifactHash": "956ca9f879483489887a1e3694f9fcda48ca9a330bfff119cff6794107fcd33c"
+    },
+    {
       "id": "ui-skins",
       "version": "3.0.0-2",
       "artifactHash": "9c16f877ebbc0f33ffe1888cfdd9d4e0bbcdafd5f0bbf3b9640fc8797d3598c4"
@@ -440,6 +449,7 @@
     "assets/title-home-dusk.png",
     "assets/story-living-room.png",
     "assets/tokyo-family.png",
+    "assets/tokyo-loading.png",
     "assets/tokyo-family-crouch.png",
     "assets/tokyo-sleep.png",
     "assets/tokyo-fall.png",
@@ -602,6 +612,7 @@
     "game/park-art.json",
     "game/parkMap.ts",
     "game/playground.ts",
+    "game/preloadScreen.ts",
     "game/riftPortal.ts",
     "game/scenery.ts",
     "game/scenes/Celebration.ts",

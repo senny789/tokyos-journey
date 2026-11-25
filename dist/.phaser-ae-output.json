@@ -97,14 +97,15 @@
     "assets/tokyo-fall.png": "3673c05b9c3e01c8503f3471dc0a38b64565cb88f10e65456f77ecab8e49ad55",
     "assets/tokyo-family-crouch.png": "38def2659da173acaeadf9346c96472ce8338eebd3fadc40066d5e7d57247b09",
     "assets/tokyo-family.png": "6e8dc8ed7248cf4431bcda3ca6118660fd748b1db8874f1d86bf923abf3c8d86",
+    "assets/tokyo-loading.png": "858aac118161cbdf7123ea9e6c42bad6a371bbefbfacc9782bbc10cc655e26c9",
     "assets/tokyo-poop.png": "3e96aa36aea6a7c9564d7401dab817f204a51cb36ebafe73cac53bb33334adfd",
     "assets/tokyo-sleep.png": "ec6f9b21a0af35ceee4ba08f16cfa5bb7fdac9a2c22a63b1c63c13b41757bed2",
     "assets/treat-atlas.png": "1b3a290b3a59b1b620ac3b106232060ad9ccf1ecb6911fb5574d63939140eacc",
     "assets/treats.png": "ea062af459436d6b2e95d7e50b9335f2dbb9469a6fec4f798eb8ad2907885b9d",
     "assets/trees.png": "8f03aeabfb126c441be0b98c272579a1b2ef2eb5aef2917d85a868bd2835cd6f",
     "assets/villain-dogs.png": "8fb9dc3e3c5171a46592df0a7b78ba27e6161cefb22d9e15c0381d1561089ce8",
-    "build.json": "8defb4cff72cf74dd34ba582ed7fb67178618e14333a31c41cd8fb88d36c10e1",
-    "game.js": "5e227d1c96832e6411e21638f375d407abb5fce7b1c3c3392786d4c4e723732f",
+    "build.json": "ba7c94a91d80742fb5d8a6f529e5699ef65763dbde920082b0416b3d4f14472a",
+    "game.js": "b50b755441eca0fb887fc2df5706eeb0f3cab250ea0c38447d24ac48ce581e47",
     "index.html": "e6000fc5f397ce749ff1f1242da947e94b4cade79cef46e95c9d9e72f221b4bb",
     "text-shaper.wasm": "67cf5be0116894e5b38038ddbd4fc9b0bf979317b3ecdbd0ece2d67edc960f7d"
   }

@@ -12,8 +12,8 @@ should keep running.
 - `art.ts` paints the game's pictures by name (`game.paint`, `game.pixels`), once, before the first scene. A
   sprite shows one with `texture: 'name'`, at its size.
 - `main.ts` paints the art, loads the `title` pack under the loading screen, registers the scenes and starts the title, then
-  loads the `game` pack quietly while the title is up. The loading screen is a bar and the percentage on the game's
-  background colour (`screen.background`). The game is ready (`game.ready`) once all of that has landed and the
+  loads the `game` pack quietly while the title is up. `preloadScreen.ts` styles Phaser's built-in loader with Tokyo's
+  seated pose, the dusk backdrop, and a gold progress bar. The game is ready (`game.ready`) once all of that has landed and the
   loading screen has gone; debug controls run before then wait for it.
 - The menus wear one UI skin. The manifest composes `ui-skins` and `ui-skin-candy` after the core, and `main.ts`
   chooses it (`game.ui.theme = 'candy'`) before the first load, so its font loads under the loading screen

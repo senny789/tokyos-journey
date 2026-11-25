@@ -2,7 +2,7 @@
 
 **Start with [make-a-2d-game.md](make-a-2d-game.md), and read it whole:** the whole surface in one page. The other pages are reference: look a thing up there when the page sends you, or for a pack you added.
 
-This game composes `core-2d`, which brings `render-auto`, `world-side`, `world-screen`, `rig-follow`, `controls-2d`, `maths`, `color`, `audio`, `tween`, `particle-textures`, `particles-2d`, `feel`, `pointer`; and `typography`, `backdrops`, `backdrop-sky`, `backdrop-stars`, `render-texture`, `ui`, `save`, `collision`, `ui-skins`, `physics-2d`, `ui-skin-block`, `controls-touch`.
+This game composes `core-2d`, which brings `render-auto`, `world-side`, `world-screen`, `rig-follow`, `controls-2d`, `maths`, `color`, `audio`, `tween`, `particle-textures`, `particles-2d`, `feel`, `pointer`; and `typography`, `backdrops`, `backdrop-sky`, `backdrop-stars`, `render-texture`, `ui`, `save`, `collision`, `preloader`, `ui-skins`, `physics-2d`, `ui-skin-block`, `controls-touch`.
 Nothing else exists. Import `game` from `./engine.js`.
 
 - [make-a-2d-game.md](make-a-2d-game.md)
@@ -29,9 +29,10 @@ Nothing else exists. Import `game` from `./engine.js`.
 - [20-feel.md](20-feel.md)
 - [21-collision.md](21-collision.md)
 - [22-pointer.md](22-pointer.md)
-- [24-ui-skins.md](24-ui-skins.md)
-- [25-physics-2d.md](25-physics-2d.md)
-- [26-ui-skin-block.md](26-ui-skin-block.md)
-- [27-controls-touch.md](27-controls-touch.md)
+- [24-preloader.md](24-preloader.md)
+- [25-ui-skins.md](25-ui-skins.md)
+- [26-physics-2d.md](26-physics-2d.md)
+- [27-ui-skin-block.md](27-ui-skin-block.md)
+- [28-controls-touch.md](28-controls-touch.md)
 - [renderer-capabilities.md](renderer-capabilities.md)
 - [font-catalog.md](font-catalog.md)

@@ -4,6 +4,7 @@
     "assets/title-home-dusk.png",
     "assets/story-living-room.png",
     "assets/tokyo-family.png",
+    "assets/tokyo-loading.png",
     "assets/tokyo-family-crouch.png",
     "assets/tokyo-sleep.png",
     "assets/tokyo-fall.png",
@@ -131,6 +132,9 @@
     },
     {
       "id": "core-2d"
+    },
+    {
+      "id": "preloader"
     },
     {
       "id": "ui"

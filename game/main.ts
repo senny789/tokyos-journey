@@ -27,9 +27,11 @@ import { TouchSettings } from './scenes/TouchSettings.js';
 import { RIFT_PORTAL_ART } from './riftPortal.js';
 import { prepareDialogueAudio } from './dialogueAudio.js';
 import { prepareActionAudio } from './actionAudio.js';
+import { configureLoadingScreen } from './preloadScreen.js';
 
 const PIXEL_PARK_STRIPS = new Set(['beds', 'boxes', 'food', 'houses', 'people', 'rocks', 'villain-dogs']);
 
+configureLoadingScreen();
 paintArt();
 prepareDialogueAudio();
 prepareActionAudio();
