@@ -5,7 +5,10 @@ import { parkProp } from '../parkMap.js';
 
 const DOG_SPEED = 34, DOG_FOLLOW_SPEED = 75, DOG_PERSONAL_SPACE = 90;
 const DOG_NAMES = ['Dash', 'Dumpling', 'Patch', 'Bruno'];
-export type ParkInteraction = { x: () => number; y: number; prompt: () => string; act: () => void; radius?: number; available?: () => boolean };
+export type ParkInteraction = {
+    x: () => number; y: number; prompt: () => string; act: () => void | false;
+    radius?: number; available?: () => boolean; sound?: string | null;
+};
 export function parkSparkles(x: number, y: number): void {
     game.particles.burst({ x, y, count: 12, layer: 'front', frame: 'particle:star',
         speed: [35, 100], lifespan: [0.3, 0.8], color: ['#ffe39a', '#f7fcdf'] });
@@ -21,7 +24,7 @@ export function spawnParkWildlife(interactions: ParkInteraction[]): void {
         interactions.push({ x: () => dog.x, y: PARK_GROUND - 35, radius: 115,
             prompt: () => dog.data.friendly ? `F: play with ${DOG_NAMES[i]}` : `E: sit, then F: befriend ${DOG_NAMES[i]}`,
             act: () => {
-                if (!run.tokyo?.seated && !dog.data.friendly) { say(`${DOG_NAMES[i]} is shy. Sit with E, then press F to say hello.`); return; }
+                if (!run.tokyo?.seated && !dog.data.friendly) { say(`${DOG_NAMES[i]} is shy. Sit with E, then press F to say hello.`); return false; }
                 if (!dog.data.friendly) { park.friends.push(i); dog.data.friendly = true; }
                 say(`${DOG_NAMES[i]} trusts Tokyo! A happy little play-bow.`);
                 parkSparkles(dog.x, dog.y);

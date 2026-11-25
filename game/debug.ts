@@ -7,6 +7,7 @@ import { PARK_AREAS, badges, park, startPlayground, visitArea } from './playgrou
 import { HOME_FAMILY, home, homePreview } from './home.js';
 import { HOME_ROOMS } from './homeRooms.js';
 import { completeDreamStage, journey, prepareDreamStage } from './journey.js';
+import { openDarkPlaceSection } from './scenes/DreamStart.js';
 
 export function addDebugControls(): void {
     game.inspect.state(() => ({
@@ -29,10 +30,10 @@ export function addDebugControls(): void {
 
     game.cheats.add({
         name: 'screen',
-        does: 'Open title, play, meadow, story, home, dream-start, parkmap, celebration, pause, or settings',
+        does: 'Open title, play, meadow, story, level-select, home, dream-start, parkmap, celebration, pause, or settings',
         args: 'name',
         run: name => {
-            const target = ['touch-settings', 'settings', 'play', 'pause', 'story', 'home', 'dream-start', 'journey', 'ending', 'meadow', 'parkmap', 'celebration'].includes(name ?? '') ? name! : 'title';
+            const target = ['touch-settings', 'settings', 'play', 'pause', 'story', 'level-select', 'home', 'dream-start', 'journey', 'ending', 'meadow', 'parkmap', 'celebration'].includes(name ?? '') ? name! : 'title';
             game.scenes.go(target);
             return `Switched to screen: ${target}`;
         }
@@ -74,6 +75,12 @@ export function addDebugControls(): void {
             prepareDreamStage(stage);
             return 'Started dream level ' + stage;
         },
+    });
+    game.cheats.add({
+        name: 'dream-section',
+        does: 'Start Level 1 at the ledges, the descent, or the far side',
+        args: '1-3',
+        run: number => openDarkPlaceSection(Number(number)),
     });
     game.cheats.add({
         name: 'dream-win',

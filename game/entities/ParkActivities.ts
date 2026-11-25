@@ -1,10 +1,14 @@
 import { game } from '../engine.js';
+import { INTERACT_SOUND, PICKUP_SOUND, RIFT_SOUND } from '../actionAudio.js';
 import { run } from './Tokyo.js';
 import { PARK_GROUND, badges, park, say } from '../playground.js';
 import { parkProp } from '../parkMap.js';
+import { spawnRiftPortal } from '../riftPortal.js';
 import { parkSparkles, spawnParkWildlife, type ParkInteraction } from './ParkWildlife.js';
+import { createDialogueVoice } from '../dialogueAudio.js';
 
 const INTERACTION_RANGE = 92, REST_SECONDS = 2;
+const PORTAL_X = 6210, PORTAL_HEIGHT = 235;
 const TREAT_POSITIONS = [
     [470, 515], [1190, 510], [1790, 425], [2070, 450], [2290, 415], [2420, 345],
     [2760, 535], [2925, 535], [3440, 505], [4020, 505], [4960, 510], [6100, 505],
@@ -21,6 +25,8 @@ const BUSH_X = [3250, 3370, 3500, 3620, 3750, 3880];
 
 export function spawnParkActivities() {
     const interactions: ParkInteraction[] = [];
+    const voice = createDialogueVoice();
+    let spokenLine: string | null = null;
     let nearest: ParkInteraction | undefined;
     let hidingTime = 0, restTime = 0;
     const restSpots = [350, 710, 4530, 5740];
@@ -37,7 +43,7 @@ export function spawnParkActivities() {
         parkProp(`park-bed-${i + 1}`, 'beds', i, x, i === 2 ? 94 : 58);
         interactions.push({ x: () => x, y: PARK_GROUND - 25, prompt: () => 'F: curl up / E: get up', act: () => {
             const d = run.tokyo;
-            if (!d || !d.grounded) return;
+            if (!d || !d.grounded) return false;
             d.seated = true; d.sitPhase = 'down'; d.sitTime = 0;
             d.crouchToggled = false;
             say('A cozy rest. Stay seated for two seconds to earn Cozy paws.');
@@ -47,13 +53,18 @@ export function spawnParkActivities() {
         const person = parkProp(`park-person-${i + 1}`, 'people', i, x, i === 2 ? 100 : 158, PARK_GROUND, true);
         interactions.push({ x: () => x, y: PARK_GROUND - 35,
             prompt: () => i === 1 && park.carrying >= 0 ? 'F: return the fetch stick' : 'F: say hello',
+            sound: null,
             act: () => {
                 if (!park.greeted.includes(i)) park.greeted.push(i);
+                let line = PEOPLE_LINES[i]!;
                 if (i === 1 && park.carrying >= 0) {
                     park.carrying = -1; park.fetched = true;
-                    say('Perfect fetch! The mail carrier cheers for Tokyo. Fetch star earned!');
+                    line = 'Perfect fetch! The mail carrier cheers for Tokyo. Fetch star earned!';
                     parkSparkles(x, PARK_GROUND - 80);
-                } else say(PEOPLE_LINES[i]);
+                }
+                say(line);
+                spokenLine = line;
+                voice.speak(line, park.messageTime);
                 game.tween.to(person, { y: person.y - 8 }, { duration: 0.2, yoyo: true });
             } });
     });
@@ -61,6 +72,7 @@ export function spawnParkActivities() {
         const x = 1270 + i * 86;
         const stick = parkProp(`fetch-stick-${i + 1}`, 'sticks', i, x, 40);
         interactions.push({ x: () => x, y: PARK_GROUND - 20, available: () => park.carrying !== i,
+            sound: PICKUP_SOUND,
             prompt: () => park.carrying >= 0 ? 'F: swap fetch sticks' : 'F: pick up a fetch stick',
             act: () => { park.carrying = i; say('Stick collected! Bring it left to the mail carrier, or F in open space to toss it.'); } });
         game.step(`fetch-stick-${i}`, () => {
@@ -95,7 +107,7 @@ export function spawnParkActivities() {
             } });
     }
     interactions.push({ x: () => 1930, y: PARK_GROUND - 25, prompt: () => 'DOWN + F: hide in the open box', act: () => {
-        if (!run.tokyo?.crouched) { say('Hold DOWN or C to crouch, then press F to hide in the open box.'); return; }
+        if (!run.tokyo?.crouched) { say('Hold DOWN or C to crouch, then press F to hide in the open box.'); return false; }
         hidingTime = 1.4; park.hidden = true;
         say('Peekaboo! Tokyo found her hiding place. Hide & seek earned!'); parkSparkles(1930, 500);
     } });
@@ -105,12 +117,14 @@ export function spawnParkActivities() {
         crateOpened = true; parkSparkles(2980, 500);
         say('A shower of golden stars! The mystery crate says: follow your nose into the garden.');
     } });
-    const portal = parkProp('park-portal', 'portal', 0, 6210, 235, PARK_GROUND, true);
-    interactions.push({ x: () => 6210, y: PARK_GROUND - 50, radius: 145,
-        prompt: () => badges().every(Boolean) ? 'F: celebrate a perfect park day!' : 'F: inspect the magical gateway',
+    const portal = spawnRiftPortal('park-portal', PORTAL_X, PARK_GROUND, PORTAL_HEIGHT);
+    portal.setOpen(badges().every(Boolean));
+    interactions.push({ x: () => PORTAL_X, y: PARK_GROUND - 50, radius: 145,
+        sound: RIFT_SOUND,
+        prompt: () => portal.data.open ? 'F: enter the rift to celebrate' : 'Rift sealed. Earn all 8 activity badges.',
         act: () => {
-            if (!badges().every(Boolean)) { say(`The portal glows with friendship. Find all 8 activity badges! Check your Park map.`); return; }
-            park.celebrated = true; parkSparkles(6210, 400); game.scenes.push('celebration');
+            if (!portal.data.open) { say('Check the Park map for badge activities.'); return false; }
+            park.celebrated = true; parkSparkles(PORTAL_X, 400); game.scenes.push('celebration');
         } });
     TREAT_POSITIONS.forEach(([x, y], i) => {
         if (park.treats.includes(i)) return;
@@ -124,6 +138,7 @@ export function spawnParkActivities() {
             const d = run.tokyo;
             if (d && Math.abs(d.x - x) < 43 && Math.abs(d.feet - 25 - treat.y) < 42) {
                 treat.data.collected = true; park.treats.push(i); parkSparkles(x, treat.y);
+                game.sound.play(PICKUP_SOUND);
                 say(`Tasty discovery! Treats ${park.treats.length}/12${park.treats.length === 12 ? ' - Treat explorer earned!' : '.'}`);
                 game.tween.to(treat, { y: treat.y - 30, alpha: 0 }, { duration: 0.25, onComplete: () => treat.destroy() });
             }
@@ -133,9 +148,12 @@ export function spawnParkActivities() {
     const interact = (): void => {
         const d = run.tokyo;
         if (!d) return;
-        if (nearest) nearest.act();
-        else if (park.carrying >= 0) {
+        if (nearest) {
+            const sound = nearest.sound === undefined ? INTERACT_SOUND : nearest.sound;
+            if (nearest.act() !== false && sound) game.sound.play(sound);
+        } else if (park.carrying >= 0) {
             const thrown = parkProp('thrown-stick', 'sticks', park.carrying, d.x + d.facing * 50, 40, d.feet - 50);
+            game.sound.play(INTERACT_SOUND);
             park.carrying = -1;
             game.tween.to(thrown, { x: d.x + d.facing * 260, y: PARK_GROUND - 20, rot: d.facing * 5 },
                 { duration: 0.7, onComplete: () => thrown.destroy() });
@@ -151,11 +169,15 @@ export function spawnParkActivities() {
         const atBed = restSpots.some(x => Math.abs(d.x - x) < 70);
         restTime = atBed && d.seated && d.grounded ? restTime + dt : 0;
         if (restTime >= REST_SECONDS && !park.rested) { park.rested = true; say('Cozy paws earned! Tokyo is ready for another adventure.'); parkSparkles(d.x, d.feet - 40); }
+        if (spokenLine !== null && (park.message !== spokenLine || park.messageTime === 0)) {
+            voice.stop();
+            spokenLine = null;
+        }
         nearest = interactions.filter(item => (item.available?.() ?? true) && Math.abs(d.x - item.x()) < (item.radius ?? INTERACTION_RANGE)
             && Math.abs(d.feet - 25 - item.y) < 95)
             .sort((a, b) => Math.abs(d.x - a.x()) - Math.abs(d.x - b.x()))[0];
+        portal.setOpen(badges().every(Boolean));
         if (game.controls.justPressed('interact')) interact();
-        portal.setFrame(badges().every(Boolean) ? 1 + Math.floor(game.clock.time * 3) % 3 : 0);
     }, { after: 'tokyo-visual' });
     return { interact, prompt: () => nearest?.prompt() ?? (park.carrying >= 0 ? 'F: toss stick / return it to the mail carrier' : 'Explore freely - M opens your park map') };
 }

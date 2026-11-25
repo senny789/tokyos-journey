@@ -1,25 +1,49 @@
 import { game } from './engine.js';
 
 export const DREAM_GATE_SCALE = 4;
-export const DREAM_SHADOW_WIDTH = 161;
-export const DREAM_SHADOW_FOOT_OFFSET = 47;
+export const DREAM_CLIFF_ART = {
+    key: 'dream-cliff',
+    width: 160,
+    height: 144,
+    surfaceY: 5,
+    variants: {
+        needle: { frame: 0, rimWidth: 57 },
+        shoulder: { frame: 1, rimWidth: 71 },
+        bank: { frame: 2, rimWidth: 125 },
+        outcrop: { frame: 3, rimWidth: 78 },
+    },
+} as const;
+export const DREAM_LEDGE_ART = {
+    key: 'dream-floating-ledge',
+    width: 48,
+    height: 24,
+    surfaceY: 3,
+    variants: {
+        taper: { frame: 0, rimWidth: 36 },
+        shelf: { frame: 1, rimWidth: 42 },
+        split: { frame: 2, rimWidth: 38 },
+        ridge: { frame: 3, rimWidth: 40 },
+    },
+} as const;
 const LIGHT_GRID = 42;
-const SHIELD_GRID = 30;
 const RUNE_COLORS = { O: '#694d56', S: '#c69a62', G: '#e6bf7c', L: '#fff0ae' };
 
 export async function loadDreamSprites(): Promise<void> {
     await game.assets.load([
         { kind: 'image', key: 'dream-owl', url: 'assets/dream/owl-sprites.png', w: 27, h: 27, cols: 2, rows: 1 },
         { kind: 'image', key: 'dream-cat', url: 'assets/dream/cats-sprites.png', w: 27, h: 24, cols: 4, rows: 1 },
-        { kind: 'image', key: 'dream-entity', url: 'assets/dream/shadow-sprites.png', w: 48, h: 36, cols: 2, rows: 1 },
+        { kind: 'image', key: DREAM_CLIFF_ART.key, url: 'assets/dream/cliffs.png',
+            w: DREAM_CLIFF_ART.width, h: DREAM_CLIFF_ART.height, cols: 4, rows: 1 },
+        { kind: 'image', key: DREAM_LEDGE_ART.key, url: 'assets/dream/floating-ledges.png',
+            w: DREAM_LEDGE_ART.width, h: DREAM_LEDGE_ART.height, cols: 4, rows: 1 },
     ]);
 
-    paintSafeLight();
+    paintDreamLight();
     paintKennelGate();
     paintPuzzleStones();
 }
 
-function paintSafeLight(): void {
+function paintDreamLight(): void {
     game.paint('dream-light', LIGHT_GRID, LIGHT_GRID, (ctx, frame) => {
         for (let y = 0; y < LIGHT_GRID; y++) {
             for (let x = 0; x < LIGHT_GRID; x++) {
@@ -44,22 +68,6 @@ function paintSafeLight(): void {
         ctx.fillRect(26, 13 + frame % 2, 1, 1);
         ctx.fillRect(15, 20 - frame % 2, 1, 1);
     }, { frames: 4, res: 1 });
-
-    game.paint('dream-shield', SHIELD_GRID, SHIELD_GRID, ctx => {
-        const center = SHIELD_GRID / 2;
-        for (let y = 0; y < SHIELD_GRID; y++) {
-            for (let x = 0; x < SHIELD_GRID; x++) {
-                const radius = Math.hypot(x + 0.5 - center, y + 0.5 - center);
-                if (radius < 12) ctx.fillStyle = '#ffdf8520';
-                else if (radius < 13.6) ctx.fillStyle = '#ffdb8480';
-                else if (radius < 14.3) ctx.fillStyle = '#da9c4c48';
-                else continue;
-                ctx.fillRect(x, y, 1, 1);
-            }
-        }
-        ctx.fillStyle = '#fff3c6';
-        for (const [x, y] of [[4, 8], [20, 3], [26, 19], [9, 26]]) ctx.fillRect(x, y, 1, 1);
-    }, { res: 1 });
 }
 
 function paintKennelGate(): void {

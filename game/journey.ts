@@ -4,15 +4,15 @@ import { loadDreamSprites } from './dreamArt.js';
 export type FamilyName = 'sandesh' | 'sushil' | 'dad' | 'mom' | 'reshika' | 'senny';
 
 export const DREAM_LEVELS = [
-    { number: 1, name: 'The Dark Place', title: 'FOLLOW THE VOICE', background: 'dream-dark', family: null },
-    { number: 2, name: 'The Kennel', title: 'FIND THE OPEN GATE', background: 'dream-kennel', family: 'sandesh' },
-    { number: 3, name: 'The First House', title: 'FIND THE WAY OUT', background: 'dream-night-house', family: 'sushil' },
-    { number: 4, name: 'The Dark Forest', title: 'FOLLOW THE FIREFLIES', background: 'dream-forest', family: 'dad' },
-    { number: 5, name: 'The Grassland', title: 'CROSS THE WIDE FIELD', background: 'dream-grassland', family: 'mom' },
-    { number: 6, name: 'The City', title: 'MAKE TWO NEW FRIENDS', background: 'dream-city', family: 'reshika' },
-    { number: 7, name: 'The Puzzle House', title: 'FOLLOW THE PAWPRINTS', background: 'home-room', family: 'senny' },
-    { number: 8, name: 'The Toy World', title: 'FIND YOUR PLUSHIE', background: 'dream-toys', family: null },
-    { number: 9, name: 'The Spring Outdoors', title: 'BRING EVERYONE TOGETHER', background: 'dream-spring', family: null },
+    { number: 1, name: 'The Dark Place', background: 'dream-dark', family: null },
+    { number: 2, name: 'The Kennel', background: 'dream-kennel', family: 'sandesh' },
+    { number: 3, name: 'The First House', background: 'dream-night-house', family: 'sushil' },
+    { number: 4, name: 'The Dark Forest', background: 'dream-forest', family: 'dad' },
+    { number: 5, name: 'The Grassland', background: 'dream-grassland', family: 'mom' },
+    { number: 6, name: 'The City', background: 'dream-city', family: 'reshika' },
+    { number: 7, name: 'The Puzzle House', background: 'home-room', family: 'senny' },
+    { number: 8, name: 'The Toy World', background: 'dream-toys', family: null },
+    { number: 9, name: 'The Spring Outdoors', background: 'dream-spring', family: null },
 ] as const;
 
 export const journey: {
@@ -25,7 +25,8 @@ export const journey: {
 
 export async function loadJourneyArt(): Promise<void> {
     await game.assets.load([
-        { kind: 'image', key: 'dream-dark', url: 'assets/dream/dark.png' },
+        // Use the sky above the horizon and the doorway painted into the original backdrop.
+        { kind: 'image', key: 'dream-dark', url: 'assets/dream/dark.png', w: 1280, h: 404 },
         { kind: 'image', key: 'dream-kennel', url: 'assets/dream/kennel.png' },
         { kind: 'image', key: 'dream-night-house', url: 'assets/dream/night-house.png' },
         { kind: 'image', key: 'dream-forest', url: 'assets/dream/forest.png' },

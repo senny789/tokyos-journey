@@ -32,12 +32,12 @@ export function paintHomePromptKeys(): void {
     }
 }
 
-export function spawnHomePrompt(onClick: () => void) {
-    const biscuit = game.graphics({ id: 'home-interact-biscuit', width: BISCUIT_TEXTURE_WIDTH,
+export function spawnHomePrompt(onClick: () => void, id = 'home-interact') {
+    const biscuit = game.graphics({ id: id + '-biscuit', width: BISCUIT_TEXTURE_WIDTH,
         height: HOME_PROMPT_HEIGHT + BISCUIT_SHADOW_DEPTH, layer: 'hud' });
     biscuit.handle.visible = false;
     const button = game.ui.button({
-        id: 'home-interact-button', h: HOME_PROMPT_HEIGHT, iconSize: 24, z: 3,
+        id: id + '-button', h: HOME_PROMPT_HEIGHT, iconSize: 24, z: 3,
         hidden: true, safeArea: false, tabIndex: -1, bounce: false, onClick,
         style: {
             designHeight: HOME_PROMPT_HEIGHT, font: 'bold 18px sans', textColor: '#382415',
@@ -100,6 +100,15 @@ export function spawnHomePrompt(onClick: () => void) {
         hide(): void {
             button.ui.hidden = true;
             biscuit.handle.visible = false;
+        },
+        secondaryTouchPressed(): boolean {
+            // The UI widget handles the primary pointer. A second finger can still press the biscuit.
+            const input = game.kernel.input;
+            const primary = input.pointer;
+            const { x, y, w, h } = button.ui.rect;
+            return input.pointers.some(pointer => pointer.id !== primary?.id && pointer.isTouch && pointer.pressed
+                && pointer.startX >= x && pointer.startX < x + w
+                && pointer.startY >= y && pointer.startY < y + h);
         },
     };
 }

@@ -1,4 +1,5 @@
 import { game } from '../engine.js';
+import { JUMP_SOUND, RUN_PAW_SOUND, WALK_PAW_SOUND } from '../actionAudio.js';
 import { getSettings } from '../settings.js';
 import { TOKYO_ART_SCALE, TOKYO_CARRY_CROUCH_START, type TokyoToy } from '../tokyoArt.js';
 import { spawnDroppings } from './Droppings.js';
@@ -13,6 +14,8 @@ const STAND_HEIGHT = 60, CROUCH_HEIGHT = 41, BODY_WIDTH = 76;
 const SPRITE_SCALE = 1.5, FOOT_OFFSET = 39, SIT_TRANSITION = 0.20;
 const CROUCH_TRANSITION = 0.24;
 const WALK_STRIDE = 144, RUN_STRIDE = 172, CRAWL_STRIDE = 80;
+const WALK_PAW_CONTACTS = [2 / 8, 6 / 8];
+const RUN_PAW_CONTACTS = [1 / 8, 5 / 8];
 const MOTION_EPSILON = 0.01;
 const POOP_DURATION = 0.85, POOP_DROP_TIME = 0.42, POOP_COOLDOWN = 1.15;
 const FOOT_PROBE_OFFSET = BODY_WIDTH / 2 - 4;
@@ -236,6 +239,7 @@ export function spawnTokyo(
         if (d.jumpBuffer > 0 && d.coyote > 0 && d.crouchAmount === 0 && !d.seated && !standingUp) {
             body.body.vy = -jumpProfile.launchSpeed; d.coyote = 0; d.jumpBuffer = 0; d.jumpLock = 0.1;
             d.grounded = false; d.landing = 0;
+            game.sound.play(JUMP_SOUND);
         }
         if (!jump && body.body.vy < -jumpProfile.releaseSpeed) body.body.vy = -jumpProfile.releaseSpeed;
     }, { before: 'physics-2d' });
@@ -244,7 +248,9 @@ export function spawnTokyo(
         d.x = body.x; d.feet = body.y + height / 2; d.vx = body.body.vx; d.vy = body.body.vy;
         const moving = distance > MOTION_EPSILON && Math.abs(d.vx) > 5;
         const stride = d.crouchAmount > 0 ? CRAWL_STRIDE : d.sprinting ? RUN_STRIDE : WALK_STRIDE;
-        if (d.grounded && moving && !d.seated) d.gait = (d.gait + distance / stride) % 1;
+        const previousGait = d.gait;
+        const gait = d.grounded && moving && !d.seated ? previousGait + distance / stride : previousGait;
+        d.gait = gait % 1;
         d.crouchMotion = d.crouchAmount === 0 ? 'none'
             : !d.crouched ? 'rising'
             : d.crouchAmount < 1 ? 'lowering'
@@ -258,6 +264,14 @@ export function spawnTokyo(
         else if (Math.abs(d.vx) > 12) next = d.sprinting ? 'running' : 'walking';
         d.elapsed = next === d.state ? d.elapsed + dt : 0; d.state = next;
         d.frame = animationFrame(d);
+        if (next === 'walking' || next === 'running') {
+            const running = next === 'running';
+            const contacts = running ? RUN_PAW_CONTACTS : WALK_PAW_CONTACTS;
+            // Compare the unwrapped gait so paw contacts still trigger across a stride boundary.
+            if (contacts.some(phase => Math.floor(gait - phase) > Math.floor(previousGait - phase))) {
+                game.sound.play(running ? RUN_PAW_SOUND : WALK_PAW_SOUND);
+            }
+        }
         sprite.x = Math.round(d.x); sprite.y = Math.round(d.feet - FOOT_OFFSET * scaleRatio);
         sprite.sx = d.facing * artScale;
         sprite.sy = artScale;

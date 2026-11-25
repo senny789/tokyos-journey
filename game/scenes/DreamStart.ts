@@ -1,120 +1,167 @@
 import { game } from '../engine.js';
-import { DREAM_SHADOW_WIDTH, DREAM_SHADOW_FOOT_OFFSET } from '../dreamArt.js';
+import { PICKUP_SOUND, RIFT_SOUND } from '../actionAudio.js';
 import { run, spawnTokyo } from '../entities/Tokyo.js';
-import { isMobileView, getTouchOverride } from '../mobile.js';
-import { journey } from '../journey.js';
+import { getTouchOverride, isMobileView } from '../mobile.js';
+import { DREAM_LEVELS, completeDreamStage, prepareDreamStage } from '../journey.js';
+import { showDreamTitle, spawnDreamPrompt } from '../dreamPresentation.js';
+import { playDreamWake } from '../dreamWake.js';
+import { playDreamFall, playDreamRespawn } from '../dreamFall.js';
+import { spawnRiftPortal } from '../riftPortal.js';
+import {
+    DARK_PLACE_EXIT, DARK_PLACE_LIGHT, DARK_PLACE_SECTIONS, DARK_PLACE_WIDTH, LOWEST_DARK_PLACE_LANDING,
+    darkPlaceEntry, spawnDarkPlaceTerrain,
+} from '../darkPlaceTerrain.js';
 
-const WIDTH = 1280;
-const FLOOR = 540;
-const SAFE_LIGHTS = [204, 467, 730, 993, 1174];
-const SAFE_RADIUS = 86;
-const BUFFER_RADIUS = 120;
-const ENTITY_SPEED = 194;
+const GRAVITY = 1500;
+const TOKYO_SCALE = 1.42;
+const JUMP = { launchSpeed: 610, releaseSpeed: 440 };
+const FALL_BELOW_LANDING = 90;
+const EXIT_RANGE = 54;
+const SURFACE_TOLERANCE = 8;
+const PORTAL_HEIGHT = 132;
+const LIGHT_PICKUP_RANGE = 28;
+const LIGHT_HEIGHT = 38;
+const LIGHT_GLOW_SIZE = 116;
+const LIGHT_GLOW_CENTER_OFFSET = 8;
+const LIGHT_SIZE = 26;
+const TOKYO_HALO_WIDTH = 152;
+const TOKYO_HALO_HEIGHT = 116;
+const TOKYO_HALO_Y_OFFSET = 6;
+const TOKYO_HALO_TINT = '#ffc76c';
+const TOKYO_HALO_ALPHA = 0.58;
+const TOKYO_HALO_LOW_ALPHA = 0.42;
+const TOKYO_HALO_PULSE_SECONDS = 0.8;
+const TOKYO_HIGHLIGHT_TINT = '#ffe3ad';
+const TOKYO_HIGHLIGHT_ALPHA = 0.23;
+
+let previewSection = 0;
+let retryAfterFall = false;
+
+export function openDarkPlaceSection(number: number): string {
+    const index = number - 1;
+    const section = DARK_PLACE_SECTIONS[index];
+    if (!section) return 'Choose section 1, 2, or 3.';
+    previewSection = index;
+    prepareDreamStage(1);
+    return 'Started ' + section.name;
+}
+
+function showTokyoLight(tokyo: ReturnType<typeof spawnTokyo>): void {
+    const halo = game.spawn({ id: 'dark-place-tokyo-halo', texture: 'particle:soft',
+        x: tokyo.x, y: tokyo.y + TOKYO_HALO_Y_OFFSET, width: TOKYO_HALO_WIDTH, height: TOKYO_HALO_HEIGHT,
+        layer: 'world', z: tokyo.z - 1, tint: TOKYO_HALO_TINT, alpha: TOKYO_HALO_ALPHA, blend: 'add' });
+    const highlight = game.spawn({ id: 'dark-place-tokyo-highlight', frame: tokyo.frame,
+        x: tokyo.x, y: tokyo.y, sx: tokyo.sx, sy: tokyo.sy,
+        layer: 'world', z: tokyo.z + 1, tint: TOKYO_HIGHLIGHT_TINT, alpha: TOKYO_HIGHLIGHT_ALPHA, blend: 'add' });
+    game.tween.to(halo, { alpha: TOKYO_HALO_LOW_ALPHA },
+        { duration: TOKYO_HALO_PULSE_SECONDS, ease: 'easeInOutSine', yoyo: true, loop: true });
+    game.step('dark-place-tokyo-light', () => {
+        halo.x = highlight.x = tokyo.x;
+        halo.y = tokyo.y + TOKYO_HALO_Y_OFFSET;
+        highlight.y = tokyo.y;
+        highlight.frame = tokyo.frame;
+        highlight.sx = tokyo.sx;
+        highlight.sy = tokyo.sy;
+        halo.visible = highlight.visible = tokyo.visible;
+    }, { after: 'tokyo-visual' });
+}
 
 export const DreamStart = {
     name: 'dream-start',
     enter(): void {
-        let stopped = false;
-        let caughtAlready = false;
-        let elapsed = 0;
-        game.camera.snap(WIDTH / 2, 360, 1);
-        game.background.picture('dream-dark', 'stretch');
-        game.physics.gravity(0, 1500);
-        game.touch.visible = getTouchOverride() ?? isMobileView();
+        const { width, height } = game.screen;
+        const entry = darkPlaceEntry(previewSection);
+        let phase: 'intro' | 'playing' | 'falling' | 'respawning' =
+            retryAfterFall ? 'respawning' : previewSection === 0 ? 'intro' : 'playing';
+        previewSection = 0;
+        retryAfterFall = false;
+        run.scene = 'journey';
+        const halfWidth = width / 2;
+        game.camera.snap(Math.max(halfWidth, Math.min(DARK_PLACE_WIDTH - halfWidth, entry.x)), height / 2, 1);
+        game.rig.bounds({ x: 0, y: 0, w: DARK_PLACE_WIDTH, h: height });
+        game.background.color('#131037');
+        game.physics.gravity(0, GRAVITY);
+        game.touch.visible = phase === 'playing' && (getTouchOverride() ?? isMobileView());
         game.ui.pauseButton();
         game.ui.muteButton();
 
-        for (const [id, x, y, w, h] of [
-            ['dream-floor', WIDTH / 2, FLOOR + 24, WIDTH, 48],
-            ['dream-left-edge', 0, 360, 32, 720],
-            ['dream-right-edge', WIDTH, 360, 32, 720],
-        ] as const) {
-            game.spawn({ id, x, y, width: w, height: h, visible: false, layer: 'world',
-                body: { type: 'static', friction: 0 } });
-        }
+        spawnDarkPlaceTerrain();
+        const tokyo = spawnTokyo(entry.x, entry.top, () => phase === 'playing', TOKYO_SCALE, JUMP);
+        game.rig.follow(tokyo);
+        const portal = spawnRiftPortal('dark-place-portal', DARK_PLACE_EXIT.x, DARK_PLACE_EXIT.top, PORTAL_HEIGHT);
+        const lightY = DARK_PLACE_LIGHT.top - LIGHT_HEIGHT;
+        const glow = game.spawn({ id: 'dark-place-light-glow', texture: 'dream-light',
+            x: DARK_PLACE_LIGHT.x, y: lightY + LIGHT_GLOW_CENTER_OFFSET, width: LIGHT_GLOW_SIZE, layer: 'world', z: 5,
+            anims: { pulse: { strip: 'dream-light', fps: 5 } } });
+        glow.play('pulse');
+        const light = game.spawn({ id: 'dark-place-light', texture: 'dream-star',
+            x: DARK_PLACE_LIGHT.x, y: lightY, width: LIGHT_SIZE, layer: 'world', z: 6 });
 
-        run.scene = 'journey';
-        const tokyo = spawnTokyo(120, FLOOR, () => !stopped, 1.42);
-        const lights: { x: number; sprite: ReturnType<typeof game.spawn> }[] = [];
-        for (let i = 0; i < SAFE_LIGHTS.length; i++) {
-            const x = SAFE_LIGHTS[i];
-            const sprite = game.spawn({ id: 'dark-place-light-' + (i + 1), texture: 'dream-light',
-                x, y: FLOOR - 42, width: 170, height: 170, layer: 'world', z: 2, frame: i % 4 });
-            lights.push({ x, sprite });
+        function startPlaying(): void {
+            phase = 'playing';
+            game.touch.visible = getTouchOverride() ?? isMobileView();
+            showDreamTitle(DREAM_LEVELS[0].name);
         }
-        const aura = game.spawn({ id: 'dream-light-around-tokyo', texture: 'dream-shield',
-            x: 120, y: FLOOR - 34, width: 120, layer: 'world', z: 9, alpha: 0.82 });
-        const shadow = game.spawn({ id: 'dream-roaming-shadow', texture: 'dream-entity',
-            x: 852, y: FLOOR - DREAM_SHADOW_FOOT_OFFSET, width: DREAM_SHADOW_WIDTH, layer: 'world', z: 8, frame: 0 });
-        game.text('THE DARK PLACE', WIDTH / 2, 94,
-            { size: 30, font: 'mono-bold', color: '#eee2ff', shadow: { color: '#171323', x: 2, y: 3 } });
-        game.text('A voice calls from a little light in the distance…', WIDTH / 2, 132,
-            { size: 16, font: 'mono', color: '#d4c6f2' });
-        const voice = game.text('“Tokyo? I’m over here…”  —  Senny', 1051, 357,
-            { size: 17, font: 'mono-bold', color: '#fff0d1',
-                shadow: { color: '#3b2670', x: 2, y: 2 } });
-        const objective = game.text('Find the glowing doorway.', WIDTH / 2, 615,
-            { size: 18, font: 'mono-bold', color: '#f7eacc', shadow: { color: '#171323', x: 2, y: 2 } });
-        const prompt = game.text('', WIDTH / 2, 675,
-            { size: 14, font: 'mono-bold', color: '#f0e5ff', shadow: { color: '#171323', x: 1, y: 2 } });
-
-        function caught(): void {
-            if (caughtAlready) return;
-            stopped = true;
-            caughtAlready = true;
-            game.ui.panel({ anchor: 'center', w: 608, h: 298, z: 30, safeArea: false, style: 'dark' });
-            game.text('THE SHADOW FOUND TOKYO', WIDTH / 2, 237,
-                { z: 31, size: 32, font: 'mono-bold', color: '#edbdd6' });
-            game.text('The warm light will protect her next time.', WIDTH / 2, 294,
-                { z: 31, size: 18, font: 'mono', color: '#f4e8d0' });
-            game.ui.button({ id: 'dark-place-retry', anchor: 'center', y: 170, z: 31, h: 58,
-                text: 'Try this dream again', icon: 'restart', style: 'good',
-                onClick: () => game.scenes.go('dream-start') });
-            game.ui.button({ id: 'dark-place-home', anchor: 'center', y: 239, z: 31, h: 50,
-                text: 'Wake up at home', icon: 'home', style: 'flat',
-                onClick: () => game.scenes.go('home') });
+        if (phase === 'intro') {
+            playDreamWake(tokyo, startPlaying);
+        } else if (phase === 'respawning') {
+            playDreamRespawn(tokyo, startPlaying);
+        } else {
+            showDreamTitle(DREAM_LEVELS[0].name);
         }
-
+        let interactRequested = false;
+        const prompt = spawnDreamPrompt(() => { interactRequested = true; });
+        let wasInteract = false;
         game.step('dream-start', dt => {
-            if (stopped) return;
-            elapsed += dt;
-            const playerX = tokyo.data.x;
-            const nearestLight = lights.reduce((best, light) => Math.min(best, Math.abs(playerX - light.x)), Infinity);
-            const protectedNow = nearestLight <= SAFE_RADIUS;
-            aura.visible = protectedNow;
-            aura.x = playerX;
-            aura.y = tokyo.data.feet - 34;
-            aura.alpha = 0.65 + Math.sin(elapsed * 3) * 0.12;
-            if (nearestLight <= BUFFER_RADIUS && Math.abs(shadow.x - playerX) < BUFFER_RADIUS + 10) {
-                shadow.x = playerX < shadow.x
-                    ? playerX + BUFFER_RADIUS + 10
-                    : playerX - BUFFER_RADIUS - 10;
-            } else {
-                shadow.x += (playerX < shadow.x ? -1 : 1) * ENTITY_SPEED * dt;
+            if (phase !== 'playing') {
+                game.touch.visible = false;
+                if (game.controls.justPressed('pause')) game.scenes.push('pause');
+                return;
             }
-            shadow.x = Math.max(40, Math.min(WIDTH - 40, shadow.x));
-            shadow.y = FLOOR - DREAM_SHADOW_FOOT_OFFSET + Math.sin(elapsed * 4) * 5;
-            shadow.sx = playerX < shadow.x ? -1 : 1;
-            shadow.setFrame(Math.floor(elapsed * 3) % 2);
-            const gap = Math.abs(shadow.x - playerX);
-            if (gap < 54 && !protectedNow) caught();
+            const { x, feet, grounded } = tokyo.data;
+            // Touch buttons can set a key after the intent's pressed edge was sampled.
+            const interact = game.controls.pressed('interact');
+            const interactPressed = interactRequested || game.controls.justPressed('interact') || (interact && !wasInteract);
+            interactRequested = false;
+            wasInteract = interact;
+            if (!grounded && feet > LOWEST_DARK_PLACE_LANDING + FALL_BELOW_LANDING) {
+                phase = 'falling';
+                prompt.hide();
+                game.touch.visible = false;
+                playDreamFall(tokyo, () => {
+                    retryAfterFall = true;
+                    game.scenes.go('dream-start');
+                });
+                return;
+            }
 
-            const nearPortal = playerX >= 1116;
-            objective.text = protectedNow ? 'The patch of light protects Tokyo.'
-                : 'Move from light to light. The shadow is roaming.';
-            prompt.text = nearPortal
-                ? (game.touch.visible ? 'Enter the light portal' : 'F  ENTER THE LIGHT PORTAL')
-                : game.touch.visible ? 'Move with the stick · Jump to dodge · Find Senny’s light'
-                : '← → MOVE   ·   SPACE JUMP   ·   SHIFT RUN   ·   F INTERACT';
-            if (nearPortal && game.controls.justPressed('interact')) {
-                journey.stage = 2;
-                journey.visitedCats = [];
-                journey.puzzleStep = 0;
-                game.scenes.go('journey');
+            if (!portal.data.open && grounded
+                && Math.abs(feet - DARK_PLACE_LIGHT.top) <= SURFACE_TOLERANCE
+                && Math.abs(x - DARK_PLACE_LIGHT.x) <= LIGHT_PICKUP_RANGE) {
+                portal.setOpen(true);
+                game.sound.play(PICKUP_SOUND);
+                glow.destroy();
+                light.destroy();
+                showTokyoLight(tokyo);
+                game.particles.burst({ x: DARK_PLACE_LIGHT.x, y: lightY, count: 14, layer: 'front',
+                    frame: 'particle:spark', color: ['#fff0ae', '#ffc76c'], blend: 'add',
+                    speed: [40, 135], lifespan: [0.25, 0.55] });
             }
-            voice.text = elapsed < 5 ? '“Tokyo? I’m over here…”  —  Senny' : 'SENNY’S VOICE  →';
+
+            const atExit = grounded && Math.abs(feet - DARK_PLACE_EXIT.top) <= SURFACE_TOLERANCE
+                && Math.abs(x - DARK_PLACE_EXIT.x) <= EXIT_RANGE;
+            if (atExit && portal.data.open) {
+                const tapped = prompt.show('Enter the rift', portal.x, portal.y - PORTAL_HEIGHT / 2, dt);
+                if (interactPressed || tapped) {
+                    game.sound.play(RIFT_SOUND);
+                    completeDreamStage();
+                    return;
+                }
+            } else {
+                prompt.hide();
+            }
             if (game.controls.justPressed('pause')) game.scenes.push('pause');
-        }, { after: 'tokyo-visual' });
+        }, { after: 'rig-follow.camera' });
     },
     exit(): void { game.touch.visible = false; },
 };

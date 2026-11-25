@@ -13,6 +13,7 @@ import { Settings } from './scenes/Settings.js';
 import { Playground } from './scenes/Playground.js';
 import { ParkMap } from './scenes/ParkMap.js';
 import { Story } from './scenes/Story.js';
+import { LevelSelect } from './scenes/LevelSelect.js';
 import { Celebration } from './scenes/Celebration.js';
 import { Home } from './scenes/Home.js';
 import { DreamStart } from './scenes/DreamStart.js';
@@ -23,10 +24,15 @@ import { paintHomeInterior } from './homeInterior.js';
 import { loadJourneyArt } from './journey.js';
 import { loadTokyoArt } from './tokyoArt.js';
 import { TouchSettings } from './scenes/TouchSettings.js';
+import { RIFT_PORTAL_ART } from './riftPortal.js';
+import { prepareDialogueAudio } from './dialogueAudio.js';
+import { prepareActionAudio } from './actionAudio.js';
 
-const PIXEL_PARK_STRIPS = new Set(['beds', 'boxes', 'food', 'houses', 'people', 'portal', 'rocks', 'villain-dogs']);
+const PIXEL_PARK_STRIPS = new Set(['beds', 'boxes', 'food', 'houses', 'people', 'rocks', 'villain-dogs']);
 
 paintArt();
+prepareDialogueAudio();
+prepareActionAudio();
 // Load the pixel-friendly menu skin and character art before either scene.
 game.ui.theme = 'block';
 game.controls.bind('jump', { keys: ['Space', 'ArrowUp', 'KeyW', 'Touch:jump'], pad: ['a'] });
@@ -60,12 +66,13 @@ for (const [key, w, h, cols] of [
     ['houses', 256, 240, 4], ['people', 96, 160, 4], ['beds', 128, 96, 4],
     ['boxes', 96, 96, 6], ['food', 64, 64, 6], ['insects', 40, 40, 6],
     ['sticks', 64, 64, 6], ['bushes', 128, 112, 6], ['rocks', 160, 112, 7],
-    ['portal', 192, 240, 4], ['villain-dogs', 112, 112, 8], ['treats', 48, 48, 4], ['clouds', 192, 128, 6],
+    ['villain-dogs', 112, 112, 8], ['treats', 48, 48, 4], ['clouds', 192, 128, 6],
 ] as const) {
     const suffix = PIXEL_PARK_STRIPS.has(key) ? '-pixel' : '';
     await game.assets.load([{ kind: 'image', key: `park-${key}`, url: `assets/park-${key}${suffix}.png`, w, h, cols, rows: 1 }]);
 }
 await game.assets.load([
+    RIFT_PORTAL_ART,
     { kind: 'image', key: 'sky-sun', url: 'assets/sky-sun.png' },
     { kind: 'image', key: 'sky-moon', url: 'assets/sky-moon.png' },
     { kind: 'image', key: 'sky-cloud', url: 'assets/sky-cloud.png' },
@@ -83,6 +90,7 @@ game.scenes.register(TouchSettings);
 game.scenes.register(Playground);
 game.scenes.register(ParkMap);
 game.scenes.register(Story);
+game.scenes.register(LevelSelect);
 game.scenes.register(Home);
 game.scenes.register(DreamStart);
 game.scenes.register(Journey);

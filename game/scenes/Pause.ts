@@ -2,6 +2,7 @@ import { game } from '../engine.js';
 import { addFullscreenButton, isMobileView } from '../mobile.js';
 import { run } from '../entities/Tokyo.js';
 import { startPlayground } from '../playground.js';
+import { journey } from '../journey.js';
 
 export const Pause = {
     name: 'pause',
@@ -29,6 +30,7 @@ export const Pause = {
         game.ui.button({ parent: menu, h: 72, text: 'Restart', icon: 'restart', onClick: () => {
             if (run.scene === 'play') startPlayground();
             else if (run.scene === 'home') game.scenes.go('home');
+            else if (run.scene === 'journey') game.scenes.go(journey.stage === 1 ? 'dream-start' : 'journey');
             else { run.spawnX = 220; game.scenes.go('meadow'); }
         } });
         game.ui.button({ parent: menu, h: 72, text: 'Title', icon: 'home', onClick: () => game.scenes.go('title') });

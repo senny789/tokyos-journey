@@ -10,4 +10,4 @@ Tokyo enters open grassland in daylight. She has to avoid hostile dogs and make 
 
 ## Implemented playthrough
 
-Cross the sunlit meadow past two patrolling stray dogs. Jump to clear a dog’s path; contact briefly slows Tokyo. Reach Mom for a reassuring greeting, then interact with the portal. The shadow still follows, while the light patches give clear regrouping points.
+Cross the sunlit meadow past two patrolling stray dogs. Jump to clear a dog’s path. Contact briefly slows Tokyo. Reach Mom for a reassuring greeting, then interact with the portal.

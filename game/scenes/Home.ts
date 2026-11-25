@@ -1,4 +1,5 @@
 import { game } from '../engine.js';
+import { INTERACT_SOUND, PICKUP_SOUND } from '../actionAudio.js';
 import { run, spawnTokyo, UPWARD_PLATFORM_TAG } from '../entities/Tokyo.js';
 import { getTouchOverride, isMobileView } from '../mobile.js';
 import { FAMILY_GROUND_OFFSET, HOME_FAMILY, home, homePreview } from '../home.js';
@@ -14,7 +15,8 @@ import {
     type HomeRoom,
 } from '../homeRooms.js';
 import { beginDream } from '../journey.js';
-import { TOKYO_ART_SCALE, type TokyoToy } from '../tokyoArt.js';
+import { TOKYO_ART_SCALE, TOKYO_SLEEP_TEXTURE, type TokyoToy } from '../tokyoArt.js';
+import { createDialogueVoice } from '../dialogueAudio.js';
 
 const WALL_WIDTH = 28;
 const ROOM_FADE_TIME = 0.22;
@@ -92,6 +94,7 @@ type HomeTarget = {
     gap: number;
     range?: number;
     surface?: () => number;
+    sound?: string | null;
     label: () => string;
     act: () => void;
 };
@@ -205,8 +208,10 @@ export const Home = {
         let eatingSince = 0;
         let messageUntil = 0;
         let messageAnchor: PromptAnchor | null = null;
+        const voice = createDialogueVoice();
         let flight: { from: number; to: number; time: number } | null = null;
         function say(line: string, anchor: PromptAnchor): void {
+            voice.speak(line, MESSAGE_TIME);
             dialogue.set({ text: line });
             messageUntil = elapsed + MESSAGE_TIME;
             messageAnchor = anchor;
@@ -365,7 +370,7 @@ export const Home = {
         function goToSleep(): void {
             home.phase = 'sleeping';
             dropToy();
-            quietTokyo.setFrame(LOW_TOKYO_FRAME);
+            quietTokyo.setTexture(TOKYO_SLEEP_TEXTURE, 0);
             restPose(HOME_DOG_BED, HOME_DOG_BED_TOP - RESTING_FOOT_OFFSET, 1);
             setLight(false);
             game.touch.visible = false;
@@ -389,17 +394,20 @@ export const Home = {
                         ? Infinity : member.sprite.x;
                 },
                 y: () => member.promptAnchor.y, gap: FAMILY_PROMPT_GAP,
+                sound: null,
                 label: () => member.onSofa ? 'Play'
                     : member.id === 'senny' && home.holding === 'ball' ? 'Return ball' : member.prompt,
                 act: () => playWith(member) })),
             { at: () => HOME_LIGHT_SWITCH, y: () => 420, gap: PROP_PROMPT_GAP,
                 label: () => home.lightOn ? 'Turn off lamp' : 'Turn on lamp', act: () => setLight(!home.lightOn) },
             { at: () => home.holding === 'plushie' ? Infinity : plushie.x, y: () => plushie.y - 44, gap: PROP_PROMPT_GAP,
-                surface: () => plushie.y + plushie.height / 2, label: () => 'Pick up plushie', act: () => pickUp('plushie') },
+                surface: () => plushie.y + plushie.height / 2, sound: PICKUP_SOUND,
+                label: () => 'Pick up plushie', act: () => pickUp('plushie') },
             { at: () => home.ball === 'floor' ? ball.x : Infinity, y: () => ball.y - 44, gap: PROP_PROMPT_GAP,
-                surface: () => ball.y + ball.height / 2, label: () => 'Pick up ball', act: () => pickUp('ball') },
+                surface: () => ball.y + ball.height / 2, sound: null,
+                label: () => 'Pick up ball', act: () => pickUp('ball') },
             { at: () => home.phase === 'treats' ? HOME_TREATS : Infinity, y: () => bowl.y - 44, gap: PROP_PROMPT_GAP,
-                label: () => 'Eat treats', act: eatTreats },
+                sound: PICKUP_SOUND, label: () => 'Eat treats', act: eatTreats },
             { at: () => home.phase === 'bedtime' ? HOME_DOG_BED : Infinity, y: () => HOME_WALK_Y - 80, gap: 88,
                 surface: () => Math.abs(tokyo.data.feet - HOME_DOG_BED_TOP) <= INTERACT_HEIGHT
                     ? HOME_DOG_BED_TOP : HOME_WALK_Y,
@@ -456,6 +464,7 @@ export const Home = {
                 dialogue.object.y = centerY - textHeight / 2;
                 dialogue.object.visible = true;
             } else {
+                if (dialogueBox.visible) voice.stop();
                 dialogueBox.visible = false;
                 dialogue.object.visible = false;
             }
@@ -498,7 +507,11 @@ export const Home = {
             }
             if (interactRequested || game.controls.justPressed('interact')) {
                 interactRequested = false;
-                chosen?.act();
+                if (chosen) {
+                    const sound = chosen.sound === undefined ? INTERACT_SOUND : chosen.sound;
+                    if (sound) game.sound.play(sound);
+                    chosen.act();
+                }
             }
         }, { after: 'rig-follow.camera' });
     },

@@ -41201,6 +41201,111 @@ function paintArt() {
   }, { res: 1 });
 }
 
+// game/actionAudio.ts
+var JUMP_SOUND = "tokyo-jump";
+var WALK_PAW_SOUND = "tokyo-walk-pawstep";
+var RUN_PAW_SOUND = "tokyo-run-pawstep";
+var FALL_SOUND = "tokyo-fall";
+var RESPAWN_SOUND = "tokyo-respawn";
+var INTERACT_SOUND = "interact-click";
+var PICKUP_SOUND = "pickup-chime";
+var RIFT_SOUND = "rift-chime";
+function prepareActionAudio() {
+  game.sound.defineAll({
+    [JUMP_SOUND]: {
+      type: "triangle",
+      freq: 310,
+      freqEnd: 690,
+      sweep: "exponential",
+      duration: 0.12,
+      attack: 8e-3,
+      release: 0.055,
+      volume: 0.34
+    },
+    [WALK_PAW_SOUND]: {
+      type: "noise",
+      noise: "pink",
+      filter: { type: "lowpass", freq: 1280, freqEnd: 510, sweep: "exponential", decay: 0.045 },
+      duration: 0.062,
+      attack: 3e-3,
+      decay: 0.022,
+      sustain: 0.12,
+      release: 0.024,
+      volume: 0.22
+    },
+    [RUN_PAW_SOUND]: [
+      {
+        type: "noise",
+        noise: "pink",
+        filter: { type: "lowpass", freq: 1450, freqEnd: 450, sweep: "exponential", decay: 0.05 },
+        duration: 0.071,
+        attack: 3e-3,
+        decay: 0.026,
+        sustain: 0.12,
+        release: 0.031,
+        volume: 0.28
+      },
+      {
+        type: "sine",
+        freq: 137,
+        freqEnd: 91,
+        sweep: "exponential",
+        duration: 0.043,
+        attack: 3e-3,
+        release: 0.023,
+        volume: 0.1
+      }
+    ],
+    [FALL_SOUND]: {
+      type: "triangle",
+      freq: 660,
+      freqEnd: 132,
+      sweep: "exponential",
+      duration: 0.37,
+      attack: 0.018,
+      decay: 0.09,
+      sustain: 0.47,
+      release: 0.12,
+      volume: 0.29
+    },
+    [RESPAWN_SOUND]: {
+      type: "sine",
+      notes: "G4 C5",
+      step: 0.09,
+      attack: 0.012,
+      release: 0.048,
+      volume: 0.23
+    },
+    [INTERACT_SOUND]: {
+      type: "triangle",
+      freq: 580,
+      freqEnd: 390,
+      sweep: "exponential",
+      duration: 0.08,
+      attack: 5e-3,
+      release: 0.04,
+      volume: 0.29
+    },
+    [PICKUP_SOUND]: {
+      type: "sine",
+      notes: "A5 D6",
+      step: 0.075,
+      attack: 9e-3,
+      release: 0.055,
+      volume: 0.31
+    },
+    [RIFT_SOUND]: {
+      type: "triangle",
+      notes: "D5 A5 D6:2",
+      step: 0.09,
+      attack: 0.018,
+      release: 0.09,
+      volume: 0.28,
+      echo: { time: 0.13, feedback: 0.24, mix: 0.18 }
+    }
+  });
+}
+
 // game/mobile.ts
 var touchOverride = null;
 var forceHorizontal = false;
@@ -41359,10 +41464,15 @@ var CARRY_WIDTH = 92;
 var CARRY_HEIGHT = 68;
 var TOKYO_ART_SCALE = ORIGINAL_FRAME / FRAME;
 var TOKYO_CARRY_CROUCH_START = COLUMNS * MOTION_ROWS;
+var TOKYO_SLEEP_TEXTURE = "tokyo-sleep";
+var TOKYO_FALL_TEXTURE = "tokyo-fall";
+var TOKYO_FALL_FRAMES = 4;
 async function loadTokyoArt() {
   await game.assets.load([
     { kind: "image", key: "tokyo", url: "assets/tokyo-family.png", w: FRAME, h: FRAME, cols: COLUMNS, rows: MOTION_ROWS },
     { kind: "image", key: "tokyo-crouch", url: "assets/tokyo-family-crouch.png", w: FRAME, h: FRAME, cols: COLUMNS, rows: CROUCH_ROWS },
+    { kind: "image", key: TOKYO_SLEEP_TEXTURE, url: "assets/tokyo-sleep.png", w: FRAME, h: FRAME, cols: 2, rows: 1 },
+    { kind: "image", key: TOKYO_FALL_TEXTURE, url: "assets/tokyo-fall.png", w: FRAME, h: FRAME, cols: TOKYO_FALL_FRAMES, rows: 1 },
     ...["plushie", "ball"].map((toy) => ({
       kind: "image",
       key: `tokyo-carry-${toy}`,
@@ -41475,6 +41585,8 @@ var CROUCH_TRANSITION = 0.24;
 var WALK_STRIDE = 144;
 var RUN_STRIDE = 172;
 var CRAWL_STRIDE = 80;
+var WALK_PAW_CONTACTS = [2 / 8, 6 / 8];
+var RUN_PAW_CONTACTS = [1 / 8, 5 / 8];
 var MOTION_EPSILON = 0.01;
 var POOP_DURATION = 0.85;
 var POOP_DROP_TIME = 0.42;
@@ -41736,6 +41848,7 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
       d.jumpLock = 0.1;
       d.grounded = false;
       d.landing = 0;
+      game.sound.play(JUMP_SOUND);
     }
     if (!jump && body.body.vy < -jumpProfile.releaseSpeed) body.body.vy = -jumpProfile.releaseSpeed;
   }, { before: "physics-2d" });
@@ -41747,7 +41860,9 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
     d.vy = body.body.vy;
     const moving = distance > MOTION_EPSILON && deterministicMath.abs(d.vx) > 5;
     const stride = d.crouchAmount > 0 ? CRAWL_STRIDE : d.sprinting ? RUN_STRIDE : WALK_STRIDE;
-    if (d.grounded && moving && !d.seated) d.gait = (d.gait + distance / stride) % 1;
+    const previousGait = d.gait;
+    const gait = d.grounded && moving && !d.seated ? previousGait + distance / stride : previousGait;
+    d.gait = gait % 1;
     d.crouchMotion = d.crouchAmount === 0 ? "none" : !d.crouched ? "rising" : d.crouchAmount < 1 ? "lowering" : moving ? "crawling" : "idle";
     const standingUp = !d.seated && d.sitPhase === "up" && d.sitTime < SIT_TRANSITION;
     let next = "idle";
@@ -41759,6 +41874,13 @@ function spawnTokyo(x, feet, canControl, visualScale = SPRITE_SCALE, jumpProfile
     d.elapsed = next === d.state ? d.elapsed + dt : 0;
     d.state = next;
     d.frame = animationFrame(d);
+    if (next === "walking" || next === "running") {
+      const running = next === "running";
+      const contacts = running ? RUN_PAW_CONTACTS : WALK_PAW_CONTACTS;
+      if (contacts.some((phase) => deterministicMath.floor(gait - phase) > deterministicMath.floor(previousGait - phase))) {
+        game.sound.play(running ? RUN_PAW_SOUND : WALK_PAW_SOUND);
+      }
+    }
     sprite.x = deterministicMath.round(d.x);
     sprite.y = deterministicMath.round(d.feet - FOOT_OFFSET * scaleRatio);
     sprite.sx = d.facing * artScale;
@@ -42145,6 +42267,7 @@ function spawnTreats(onCollect) {
 function collectTreat(item, onCollect) {
   item.collected = true;
   currentTreats.collected++;
+  game.sound.play(PICKUP_SOUND);
   game.tween.to(item.sprite, { y: item.y - 36, scale: 1.7, alpha: 0 }, {
     duration: 0.32,
     ease: "easeOutQuad",
@@ -42501,22 +42624,60 @@ var HOME_STATIONS = {
 
 // game/dreamArt.ts
 var DREAM_GATE_SCALE = 4;
-var DREAM_SHADOW_WIDTH = 161;
-var DREAM_SHADOW_FOOT_OFFSET = 47;
+var DREAM_CLIFF_ART = {
+  key: "dream-cliff",
+  width: 160,
+  height: 144,
+  surfaceY: 5,
+  variants: {
+    needle: { frame: 0, rimWidth: 57 },
+    shoulder: { frame: 1, rimWidth: 71 },
+    bank: { frame: 2, rimWidth: 125 },
+    outcrop: { frame: 3, rimWidth: 78 }
+  }
+};
+var DREAM_LEDGE_ART = {
+  key: "dream-floating-ledge",
+  width: 48,
+  height: 24,
+  surfaceY: 3,
+  variants: {
+    taper: { frame: 0, rimWidth: 36 },
+    shelf: { frame: 1, rimWidth: 42 },
+    split: { frame: 2, rimWidth: 38 },
+    ridge: { frame: 3, rimWidth: 40 }
+  }
+};
 var LIGHT_GRID = 42;
-var SHIELD_GRID = 30;
 var RUNE_COLORS = { O: "#694d56", S: "#c69a62", G: "#e6bf7c", L: "#fff0ae" };
 async function loadDreamSprites() {
   await game.assets.load([
     { kind: "image", key: "dream-owl", url: "assets/dream/owl-sprites.png", w: 27, h: 27, cols: 2, rows: 1 },
     { kind: "image", key: "dream-cat", url: "assets/dream/cats-sprites.png", w: 27, h: 24, cols: 4, rows: 1 },
-    { kind: "image", key: "dream-entity", url: "assets/dream/shadow-sprites.png", w: 48, h: 36, cols: 2, rows: 1 }
+    {
+      kind: "image",
+      key: DREAM_CLIFF_ART.key,
+      url: "assets/dream/cliffs.png",
+      w: DREAM_CLIFF_ART.width,
+      h: DREAM_CLIFF_ART.height,
+      cols: 4,
+      rows: 1
+    },
+    {
+      kind: "image",
+      key: DREAM_LEDGE_ART.key,
+      url: "assets/dream/floating-ledges.png",
+      w: DREAM_LEDGE_ART.width,
+      h: DREAM_LEDGE_ART.height,
+      cols: 4,
+      rows: 1
+    }
   ]);
-  paintSafeLight();
+  paintDreamLight();
   paintKennelGate();
   paintPuzzleStones();
 }
-function paintSafeLight() {
+function paintDreamLight() {
   game.paint("dream-light", LIGHT_GRID, LIGHT_GRID, (ctx, frame) => {
     for (let y = 0; y < LIGHT_GRID; y++) {
       for (let x = 0; x < LIGHT_GRID; x++) {
@@ -42541,21 +42702,6 @@ function paintSafeLight() {
     ctx.fillRect(26, 13 + frame % 2, 1, 1);
     ctx.fillRect(15, 20 - frame % 2, 1, 1);
   }, { frames: 4, res: 1 });
-  game.paint("dream-shield", SHIELD_GRID, SHIELD_GRID, (ctx) => {
-    const center = SHIELD_GRID / 2;
-    for (let y = 0; y < SHIELD_GRID; y++) {
-      for (let x = 0; x < SHIELD_GRID; x++) {
-        const radius = deterministicMath.hypot(x + 0.5 - center, y + 0.5 - center);
-        if (radius < 12) ctx.fillStyle = "#ffdf8520";
-        else if (radius < 13.6) ctx.fillStyle = "#ffdb8480";
-        else if (radius < 14.3) ctx.fillStyle = "#da9c4c48";
-        else continue;
-        ctx.fillRect(x, y, 1, 1);
-      }
-    }
-    ctx.fillStyle = "#fff3c6";
-    for (const [x, y] of [[4, 8], [20, 3], [26, 19], [9, 26]]) ctx.fillRect(x, y, 1, 1);
-  }, { res: 1 });
 }
 function paintKennelGate() {
   game.paint("dream-gate", 27, 42, (ctx, frame) => {
@@ -42655,20 +42801,21 @@ function paintPuzzleStones() {
 
 // game/journey.ts
 var DREAM_LEVELS = [
-  { number: 1, name: "The Dark Place", title: "FOLLOW THE VOICE", background: "dream-dark", family: null },
-  { number: 2, name: "The Kennel", title: "FIND THE OPEN GATE", background: "dream-kennel", family: "sandesh" },
-  { number: 3, name: "The First House", title: "FIND THE WAY OUT", background: "dream-night-house", family: "sushil" },
-  { number: 4, name: "The Dark Forest", title: "FOLLOW THE FIREFLIES", background: "dream-forest", family: "dad" },
-  { number: 5, name: "The Grassland", title: "CROSS THE WIDE FIELD", background: "dream-grassland", family: "mom" },
-  { number: 6, name: "The City", title: "MAKE TWO NEW FRIENDS", background: "dream-city", family: "reshika" },
-  { number: 7, name: "The Puzzle House", title: "FOLLOW THE PAWPRINTS", background: "home-room", family: "senny" },
-  { number: 8, name: "The Toy World", title: "FIND YOUR PLUSHIE", background: "dream-toys", family: null },
-  { number: 9, name: "The Spring Outdoors", title: "BRING EVERYONE TOGETHER", background: "dream-spring", family: null }
+  { number: 1, name: "The Dark Place", background: "dream-dark", family: null },
+  { number: 2, name: "The Kennel", background: "dream-kennel", family: "sandesh" },
+  { number: 3, name: "The First House", background: "dream-night-house", family: "sushil" },
+  { number: 4, name: "The Dark Forest", background: "dream-forest", family: "dad" },
+  { number: 5, name: "The Grassland", background: "dream-grassland", family: "mom" },
+  { number: 6, name: "The City", background: "dream-city", family: "reshika" },
+  { number: 7, name: "The Puzzle House", background: "home-room", family: "senny" },
+  { number: 8, name: "The Toy World", background: "dream-toys", family: null },
+  { number: 9, name: "The Spring Outdoors", background: "dream-spring", family: null }
 ];
 var journey = { stage: 1, rescued: [], visitedCats: [], plushie: false, puzzleStep: 0 };
 async function loadJourneyArt() {
   await game.assets.load([
-    { kind: "image", key: "dream-dark", url: "assets/dream/dark.png" },
+    // Use the sky above the horizon and the doorway painted into the original backdrop.
+    { kind: "image", key: "dream-dark", url: "assets/dream/dark.png", w: 1280, h: 404 },
     { kind: "image", key: "dream-kennel", url: "assets/dream/kennel.png" },
     { kind: "image", key: "dream-night-house", url: "assets/dream/night-house.png" },
     { kind: "image", key: "dream-forest", url: "assets/dream/forest.png" },
@@ -42714,6 +42861,1012 @@ function completeDreamStage() {
   game.scenes.go("journey");
 }
 
+// game/homePrompt.ts
+var HOME_PROMPT_HEIGHT = 48;
+var BISCUIT_TEXTURE_WIDTH = 320;
+var BISCUIT_SHADOW_DEPTH = 4;
+var BISCUIT_END = [
+  [25, 11],
+  [22, 5],
+  [17, 2],
+  [10, 2],
+  [5, 6],
+  [2, 11],
+  [2, 18],
+  [7, 24],
+  [2, 29],
+  [2, 36],
+  [5, 41],
+  [10, 45],
+  [17, 45],
+  [22, 42],
+  [25, 36]
+];
+var KEY_GLYPHS = {
+  F: ["####", "#...", "###.", "#...", "#..."],
+  Y: ["#..#", "#..#", ".##.", ".#..", ".#.."]
+};
+function paintHomePromptKeys() {
+  for (const [key, glyph] of Object.entries(KEY_GLYPHS)) {
+    game.paint(`home-prompt-key-${key}`, 12, 12, (ctx) => {
+      ctx.fillStyle = "#593822";
+      ctx.fillRect(1, 2, 10, 8);
+      ctx.fillRect(2, 1, 8, 10);
+      ctx.fillStyle = "#825431";
+      ctx.fillRect(2, 2, 8, 1);
+      ctx.fillStyle = "#fff1ce";
+      for (const [y, row] of glyph.entries()) {
+        for (const [x, pixel] of [...row].entries()) {
+          if (pixel === "#") ctx.fillRect(4 + x, 4 + y, 1, 1);
+        }
+      }
+    }, { res: 1 });
+  }
+}
+function spawnHomePrompt(onClick, id2 = "home-interact") {
+  const biscuit = game.graphics({
+    id: id2 + "-biscuit",
+    width: BISCUIT_TEXTURE_WIDTH,
+    height: HOME_PROMPT_HEIGHT + BISCUIT_SHADOW_DEPTH,
+    layer: "hud"
+  });
+  biscuit.handle.visible = false;
+  const button = game.ui.button({
+    id: id2 + "-button",
+    h: HOME_PROMPT_HEIGHT,
+    iconSize: 24,
+    z: 3,
+    hidden: true,
+    safeArea: false,
+    tabIndex: -1,
+    bounce: false,
+    onClick,
+    style: {
+      designHeight: HOME_PROMPT_HEIGHT,
+      font: "bold 18px sans",
+      textColor: "#382415",
+      fill: "#00000000",
+      fillTo: "#00000000",
+      border: 0,
+      depth: 0,
+      shadow: 0,
+      gloss: 0,
+      bevel: 0,
+      textStroke: 0,
+      textOutline: 0,
+      textShadowX: 0,
+      textShadowY: 0
+    }
+  });
+  let paintedWidth = 0;
+  let paintedState = "";
+  return {
+    measure(label, input) {
+      const icon = input === "touch" ? "paw" : `home-prompt-key-${input}`;
+      if (button.ui.icon !== icon) button.ui.icon = icon;
+      if (button.ui.text !== label) button.ui.text = label;
+      button.ui.hidden = false;
+      return button.ui.rect.w;
+    },
+    place(x, y, width) {
+      button.ui.x = x;
+      button.ui.y = y;
+      biscuit.handle.x = x + biscuit.width / 2;
+      biscuit.handle.y = y + biscuit.height / 2;
+      biscuit.handle.visible = width > 0;
+      const state = button.ui.pressed ? "pressed" : button.ui.hover ? "hover" : "normal";
+      if (width === paintedWidth && state === paintedState) return;
+      paintedWidth = width;
+      paintedState = state;
+      biscuit.clear().draw((ctx) => {
+        ctx.beginPath();
+        ctx.moveTo(...BISCUIT_END[0]);
+        for (const [endX, endY] of BISCUIT_END.slice(1)) ctx.lineTo(endX, endY);
+        for (let i = BISCUIT_END.length - 1; i >= 0; i--) {
+          const [endX, endY] = BISCUIT_END[i];
+          ctx.lineTo(width - endX, endY);
+        }
+        ctx.closePath();
+        const bakedColor = ctx.createLinearGradient(0, 2, 0, 45);
+        bakedColor.addColorStop(0, state === "hover" ? "#ffe6b4" : "#f7d7a1");
+        bakedColor.addColorStop(1, state === "pressed" ? "#cf9256" : "#e2ab70");
+        ctx.fillStyle = bakedColor;
+        ctx.shadowColor = "#30201866";
+        ctx.shadowOffsetY = 3;
+        ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.strokeStyle = "#65402a";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = "#a96f4199";
+        for (const lobe of [13, width - 13]) {
+          ctx.fillRect(lobe - 3, 11, 3, 2);
+          ctx.fillRect(lobe + 2, 8, 2, 2);
+          ctx.fillRect(lobe, 36, 3, 2);
+          ctx.fillRect(lobe - 5, 34, 2, 2);
+        }
+      });
+    },
+    hide() {
+      button.ui.hidden = true;
+      biscuit.handle.visible = false;
+    },
+    secondaryTouchPressed() {
+      const input = game.kernel.input;
+      const primary = input.pointer;
+      const { x, y, w, h } = button.ui.rect;
+      return input.pointers.some((pointer2) => pointer2.id !== primary?.id && pointer2.isTouch && pointer2.pressed && pointer2.startX >= x && pointer2.startX < x + w && pointer2.startY >= y && pointer2.startY < y + h);
+    }
+  };
+}
+
+// game/dreamPresentation.ts
+var TITLE_Y = 124;
+var TITLE_RISE = 27;
+var TITLE_ENTER = 0.55;
+var TITLE_HOLD = 1.25;
+var TITLE_EXIT = 0.48;
+var PROMPT_EDGE = 16;
+var PROMPT_GAP = 12;
+var PROMPT_BOB = 5;
+var PROMPT_PERIOD = 1.65;
+function showDreamTitle(name) {
+  const title = game.text(name.toUpperCase(), game.screen.width / 2, TITLE_Y, {
+    size: 46,
+    font: "mono-bold",
+    color: "#fff1d1",
+    stroke: { color: "#201b31", width: 2 },
+    shadow: { color: "#201b31", x: 1, y: 4 }
+  });
+  game.tween.from(
+    title,
+    { y: TITLE_Y + TITLE_RISE, alpha: 0, scale: 0.94 },
+    { duration: TITLE_ENTER, ease: "easeOutCubic" }
+  );
+  game.after(TITLE_ENTER + TITLE_HOLD, () => {
+    game.tween.to(
+      title,
+      { y: TITLE_Y - TITLE_RISE / 2, alpha: 0 },
+      { duration: TITLE_EXIT, ease: "easeInSine", onComplete: () => title.destroy() }
+    );
+  });
+}
+function spawnDreamPrompt(onClick) {
+  const biscuit = spawnHomePrompt(onClick, "dream-interact");
+  let elapsed = 0;
+  return {
+    show(label, worldX, worldTop, dt) {
+      elapsed += dt;
+      const key = game.input.gamepads.some((pad) => pad.connected) ? "Y" : "F";
+      const width = biscuit.measure(label, game.touch.visible ? "touch" : key);
+      const point = game.camera.toScreen(worldX, worldTop);
+      const x = deterministicMath.max(
+        PROMPT_EDGE,
+        deterministicMath.min(point.x - width / 2, game.screen.width - width - PROMPT_EDGE)
+      );
+      const bob = PROMPT_BOB * deterministicMath.sin(elapsed * 2 * deterministicMath.PI / PROMPT_PERIOD);
+      const y = deterministicMath.max(PROMPT_EDGE, point.y - HOME_PROMPT_HEIGHT - PROMPT_GAP + bob);
+      biscuit.place(x, y, width);
+      return game.touch.visible && biscuit.secondaryTouchPressed();
+    },
+    hide() {
+      elapsed = 0;
+      biscuit.hide();
+    }
+  };
+}
+
+// game/dialogueAudio.ts
+var BASE_BEEPS = 3;
+var WORDS_PER_BEEP = 3;
+var BEEP_SECONDS = 0.052;
+var BEEP_INTERVAL = 0.15;
+var PITCH_PATTERN = [0, 1, 0, 2];
+var VOICES = {
+  dialogue: { pitches: [440, 494, 392], volume: 0.26 },
+  dream: { pitches: [330, 392, 294], volume: 0.32 }
+};
+function beepKey(voice, pitch) {
+  return voice + "-beep-" + (pitch + 1);
+}
+function prepareDialogueAudio() {
+  for (const voice of ["dialogue", "dream"]) {
+    const { pitches, volume } = VOICES[voice];
+    for (const [pitch, freq] of pitches.entries()) {
+      game.sound.define(beepKey(voice, pitch), {
+        type: "triangle",
+        freq,
+        duration: BEEP_SECONDS,
+        attack: 8e-3,
+        release: 0.027,
+        volume
+      });
+    }
+  }
+}
+function createDialogueVoice(voice = "dialogue") {
+  let pending = [];
+  function stop() {
+    for (const timer of pending) timer.cancel();
+    pending = [];
+  }
+  return {
+    stop,
+    speak(line, visibleSeconds) {
+      stop();
+      const words2 = line.match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+      if (words2 === 0) return;
+      const count = BASE_BEEPS + deterministicMath.ceil(words2 / WORDS_PER_BEEP);
+      const duration = (count - 1) * BEEP_INTERVAL + BEEP_SECONDS;
+      const interval = BEEP_INTERVAL * deterministicMath.min(1, visibleSeconds / duration);
+      for (let index = 0; index < count; index++) {
+        const pitch = PITCH_PATTERN[index % PITCH_PATTERN.length];
+        const play2 = () => game.sound.play(beepKey(voice, pitch));
+        if (index === 0) play2();
+        else pending.push(game.after(index * interval, play2));
+      }
+    }
+  };
+}
+
+// game/dreamWake.ts
+var SLEEP_POSE = 0;
+var LISTEN_POSE = 1;
+var FIRST_RISE_POSE = 6;
+var RISE_FPS = 15;
+var FOOT_ANCHOR = 21;
+var BREATH_PERIOD = 0.94;
+var BREATH_SCALE = 0.053;
+var INTRO_ZOOM = 1.36;
+var FADE_SECONDS = 0.43;
+var CALL_AT = 0.96;
+var LISTEN_AT = CALL_AT + 0.17;
+var RISE_AT = CALL_AT + 1.06;
+var STAND_AT = RISE_AT + 0.63;
+var FOLLOW_AT = STAND_AT + 0.12;
+var FOLLOW_SECONDS = 1.8;
+var RELEASE_AT = FOLLOW_AT + FOLLOW_SECONDS;
+var CALL_ECHO_AT = CALL_AT + 0.39;
+var WAVE_SECONDS = 0.46;
+var DIALOGUE_X_OFFSET = 187;
+var DIALOGUE_Y_OFFSET = 103;
+var FOLLOW_DIALOGUE_RIGHT_MARGIN = 24;
+var FOLLOW_DIALOGUE_Y_OFFSET = 140;
+var WAKE_WAVE = { x: 58, y: 2 };
+var FOLLOW_WAVES = [
+  { delay: 0.16, x: 146, y: -25 },
+  { delay: 0.44, x: 199, y: -59 },
+  { delay: 0.72, x: 366, y: -109 }
+];
+var DIALOGUE_DEPTH = 15;
+var DIALOGUE_TEXTURE = "home-dialogue-box";
+var DIALOGUE_FADE_IN = 0.18;
+var DIALOGUE_FADE_OUT = 0.24;
+var DIALOGUE_BOB = 3;
+var DIALOGUE_BOB_PERIOD = 2.6;
+var SPEAKER_OFFSET = -13;
+var LINE_OFFSET = 8;
+var WAKE_LINE = "Tokyo\u2026 wake up.";
+var FOLLOW_LINE = "Follow my voice.";
+function showSennyDialogue(x, y, caption, duration, layer = "world") {
+  const bubble = game.spawn({
+    id: "dream-senny-dialogue",
+    texture: DIALOGUE_TEXTURE,
+    x,
+    y,
+    sx: -1,
+    alpha: 0,
+    layer,
+    z: DIALOGUE_DEPTH
+  });
+  const speaker = game.text("Senny", x, y + SPEAKER_OFFSET, {
+    size: 13,
+    font: "sans-bold",
+    color: "#704651",
+    layer,
+    z: DIALOGUE_DEPTH + 1
+  });
+  const line = game.text(caption, x, y + LINE_OFFSET, {
+    size: 18,
+    font: "sans-bold",
+    color: "#392b26",
+    layer,
+    z: DIALOGUE_DEPTH + 1
+  });
+  speaker.alpha = line.alpha = 0;
+  let elapsed = 0;
+  const motion = game.step("dream-senny-dialogue-motion", (dt) => {
+    elapsed += dt;
+    const alpha = deterministicMath.max(0, deterministicMath.min(1, elapsed / DIALOGUE_FADE_IN, (duration - elapsed) / DIALOGUE_FADE_OUT));
+    bubble.y = y + DIALOGUE_BOB * deterministicMath.sin(elapsed * 2 * deterministicMath.PI / DIALOGUE_BOB_PERIOD);
+    speaker.y = bubble.y + SPEAKER_OFFSET;
+    line.y = bubble.y + LINE_OFFSET;
+    bubble.alpha = speaker.alpha = line.alpha = alpha;
+  });
+  game.after(duration, () => {
+    motion.cancel();
+    bubble.destroy();
+    speaker.destroy();
+    line.destroy();
+  });
+}
+function showCallWave(x, y) {
+  const wave = game.spawn({
+    id: "dream-call-wave",
+    texture: "particle:ring",
+    x,
+    y,
+    width: 16,
+    tint: "#c9b5ff",
+    alpha: 0.64,
+    layer: "front",
+    blend: "add"
+  });
+  game.tween.to(wave, { x: x - 14, sx: wave.sx * 2.1, sy: wave.sy * 2.1, alpha: 0 }, {
+    duration: WAVE_SECONDS,
+    ease: "easeOutSine",
+    onComplete: () => wave.destroy()
+  });
+}
+function playDreamWake(tokyo, onReady) {
+  const { width, height } = game.screen;
+  const { x, y, sx, sy } = tokyo;
+  const voice = createDialogueVoice("dream");
+  tokyo.visible = false;
+  game.camera.snap(width / (2 * INTRO_ZOOM), y, INTRO_ZOOM);
+  const pose = game.spawn({
+    id: "dream-wake-tokyo",
+    texture: TOKYO_SLEEP_TEXTURE,
+    frame: SLEEP_POSE,
+    x,
+    y,
+    sx,
+    sy,
+    layer: "world",
+    z: tokyo.z,
+    data: { phase: "sleeping" }
+  });
+  const fade = game.spawn({
+    id: "dream-wake-fade",
+    texture: "white",
+    x: width / 2,
+    y: height / 2,
+    width,
+    height,
+    tint: "#10111e",
+    alpha: 1,
+    layer: "hud",
+    z: 1e3
+  });
+  game.tween.to(fade, { alpha: 0 }, { duration: FADE_SECONDS, ease: "easeOutSine", onComplete: () => fade.destroy() });
+  let breathing = 0;
+  let rising = 0;
+  const animation = game.step("dream-wake-pose", (dt) => {
+    if (pose.data.phase === "sleeping") {
+      breathing += dt;
+      pose.sy = sy * (1 + BREATH_SCALE * deterministicMath.sin(breathing * 2 * deterministicMath.PI / BREATH_PERIOD));
+      pose.y = y - (pose.sy - sy) * FOOT_ANCHOR;
+    } else if (pose.data.phase === "rising") {
+      rising += dt;
+      pose.setFrame(deterministicMath.max(0, FIRST_RISE_POSE - deterministicMath.floor(rising * RISE_FPS)));
+    }
+  });
+  game.after(CALL_AT, () => {
+    const duration = STAND_AT - CALL_AT;
+    showSennyDialogue(x + DIALOGUE_X_OFFSET, y - DIALOGUE_Y_OFFSET, WAKE_LINE, duration);
+    voice.speak(WAKE_LINE, duration);
+    showCallWave(x + WAKE_WAVE.x, y + WAKE_WAVE.y);
+  });
+  game.after(CALL_ECHO_AT, () => showCallWave(x + WAKE_WAVE.x, y + WAKE_WAVE.y));
+  game.after(LISTEN_AT, () => {
+    pose.data.phase = "listening";
+    pose.y = y;
+    pose.sy = sy;
+    pose.setFrame(LISTEN_POSE);
+  });
+  game.after(RISE_AT, () => {
+    pose.data.phase = "rising";
+    pose.setTexture("tokyo-crouch", FIRST_RISE_POSE);
+    game.tween.to(game.camera, { zoom: 1 }, { duration: STAND_AT - RISE_AT, ease: "easeInOutSine" });
+  });
+  game.after(STAND_AT, () => {
+    animation.cancel();
+    pose.destroy();
+    tokyo.data.grounded = true;
+    tokyo.setTexture("tokyo", 0);
+    tokyo.visible = true;
+  });
+  game.after(FOLLOW_AT, () => {
+    const bubbleX = width - FOLLOW_DIALOGUE_RIGHT_MARGIN - game.assets.frame(DIALOGUE_TEXTURE).width / 2;
+    const bubbleY = game.camera.toScreen(x, y - FOLLOW_DIALOGUE_Y_OFFSET).y;
+    showSennyDialogue(bubbleX, bubbleY, FOLLOW_LINE, FOLLOW_SECONDS, "hud");
+    voice.speak(FOLLOW_LINE, FOLLOW_SECONDS);
+  });
+  for (const wave of FOLLOW_WAVES) {
+    game.after(FOLLOW_AT + wave.delay, () => showCallWave(x + wave.x, y + wave.y));
+  }
+  game.after(RELEASE_AT, onReady);
+}
+
+// game/dreamFall.ts
+var FALL_SECONDS = 0.46;
+var FALL_OFFSCREEN = 42;
+var FALL_DRIFT = 27;
+var FALL_ROLL = 1.14;
+var SCRAMBLE_FPS = 16;
+var SCRAMBLE_SWAY = 5;
+var SCRAMBLE_ROLL = 0.18;
+var FALL_SCALE = 0.68;
+var FALL_FINAL_ALPHA = 0.46;
+var FADE_DELAY = 0.18;
+var RESPAWN_SECONDS = 0.32;
+var FADE_COLOR = "#0d0b25";
+var FADE_DEPTH = 1e3;
+function spawnCurtain(alpha) {
+  const { width, height } = game.screen;
+  return game.spawn({
+    id: "dream-fall-curtain",
+    texture: "white",
+    x: width / 2,
+    y: height / 2,
+    width,
+    height,
+    tint: FADE_COLOR,
+    alpha,
+    layer: "hud",
+    z: FADE_DEPTH
+  });
+}
+function playDreamFall(tokyo, restart) {
+  const { x, y, sx, sy, z } = tokyo;
+  const facing = tokyo.data.facing;
+  tokyo.visible = false;
+  game.rig.follow(null);
+  game.sound.play(FALL_SOUND);
+  const fall = game.spawn({
+    id: "dream-falling-tokyo",
+    texture: TOKYO_FALL_TEXTURE,
+    x,
+    y,
+    sx,
+    sy,
+    z,
+    layer: "world"
+  });
+  const curtain = spawnCurtain(0);
+  const drop = game.screen.height + FALL_OFFSCREEN - y;
+  game.particles.burst({
+    x,
+    y,
+    layer: "front",
+    frame: "particle:spark",
+    count: 9,
+    angle: -90,
+    spread: 75,
+    color: ["#aa91eb", "#d8c7ff"],
+    alpha: [0.64, 0],
+    speed: [25, 95],
+    lifespan: [0.22, 0.43]
+  });
+  let elapsed = 0;
+  game.step("dream-fall-motion", (dt) => {
+    elapsed = deterministicMath.min(FALL_SECONDS, elapsed + dt);
+    const progress = elapsed / FALL_SECONDS;
+    const depth = deterministicMath.pow(progress, 2);
+    const scale2 = 1 - (1 - FALL_SCALE) * depth;
+    const frame = elapsed * SCRAMBLE_FPS;
+    const sway = deterministicMath.sin(frame / TOKYO_FALL_FRAMES * 2 * deterministicMath.PI) * (1 - progress);
+    fall.setFrame(deterministicMath.floor(frame) % TOKYO_FALL_FRAMES);
+    fall.x = x + facing * (FALL_DRIFT * depth + SCRAMBLE_SWAY * sway);
+    fall.y = y + drop * depth;
+    fall.rot = facing * (FALL_ROLL * progress + SCRAMBLE_ROLL * sway);
+    fall.sx = sx * scale2;
+    fall.sy = sy * scale2;
+    fall.alpha = 1 - (1 - FALL_FINAL_ALPHA) * depth;
+    const fade = deterministicMath.max(0, (elapsed - FADE_DELAY) / (FALL_SECONDS - FADE_DELAY));
+    curtain.alpha = 1 - deterministicMath.cos(fade * deterministicMath.PI / 2);
+    if (elapsed === FALL_SECONDS) restart();
+  });
+}
+function playDreamRespawn(tokyo, onReady) {
+  const curtain = spawnCurtain(1);
+  tokyo.data.grounded = true;
+  game.sound.play(RESPAWN_SOUND);
+  game.particles.burst({
+    x: tokyo.x,
+    y: tokyo.y + 16,
+    layer: "front",
+    frame: "particle:flare",
+    count: 8,
+    color: ["#e2d2ff", "#9d8be3"],
+    blend: "add",
+    speed: [25, 82],
+    lifespan: [0.28, 0.5]
+  });
+  let elapsed = 0;
+  const reveal = game.step("dream-respawn-motion", (dt) => {
+    elapsed = deterministicMath.min(RESPAWN_SECONDS, elapsed + dt);
+    curtain.alpha = 1 - deterministicMath.sin(elapsed / RESPAWN_SECONDS * deterministicMath.PI / 2);
+    if (elapsed === RESPAWN_SECONDS) {
+      reveal.cancel();
+      curtain.destroy();
+      onReady();
+    }
+  });
+}
+
+// game/riftPortal.ts
+var RIFT_PORTAL_ART = {
+  kind: "image",
+  key: "rift-portal",
+  url: "assets/rift-portal.png",
+  w: 64,
+  h: 80,
+  cols: 4,
+  rows: 1
+};
+var ART_HEIGHT = 74;
+var BASELINE = 76;
+var PULSE_FPS = 5;
+var PORTAL_DEPTH = 4;
+var TURN = deterministicMath.PI * 2;
+var HOVER_PERIOD = 2.65;
+var HOVER_CLEARANCE = 0.05;
+var HOVER_TRAVEL = 0.1;
+var HOVER_TILT = 0.035;
+var HALO_SIZE = 1.32;
+var HALO_TINT = "#74eccf";
+var HALO_ALPHA = 0.36;
+var HALO_PULSE = 0.18;
+var FLOW_PERIOD = 1.55;
+var FLOW_TRAVEL_X = 0.16;
+var FLOW_TRAVEL_Y = 0.45;
+var FLOW_BEND = 0.054;
+var FLOWS = [
+  { phase: 0, offset: -0.055, width: 0.29, height: 0.065, angle: -0.65, tint: "#b6fff1" },
+  { phase: 0.49, offset: 0.055, width: 0.21, height: 0.042, angle: -0.85, tint: "#fff0b3" }
+];
+var MOTES = [
+  { period: 3.5, phase: 0.1, rx: 0.34, ry: 0.42, size: 0.063, tint: "#ffdf96" },
+  { period: 3.9, phase: 0.63, rx: 0.33, ry: 0.39, size: 0.05, tint: "#abfff0" }
+];
+function spawnRiftPortal(id2, x, groundY, artHeight) {
+  const scale2 = artHeight / ART_HEIGHT;
+  const restY = groundY - (BASELINE - RIFT_PORTAL_ART.h / 2) * scale2;
+  const y = restY - artHeight * HOVER_CLEARANCE;
+  const first = game.assets.frames(RIFT_PORTAL_ART.key);
+  const halo = game.spawn({
+    id: id2 + "-halo",
+    texture: "particle:soft",
+    x,
+    y,
+    width: artHeight * HALO_SIZE,
+    layer: "world",
+    z: PORTAL_DEPTH - 1,
+    tint: HALO_TINT,
+    alpha: HALO_ALPHA,
+    blend: "add",
+    visible: false
+  });
+  const portal = game.spawn({
+    id: id2,
+    texture: RIFT_PORTAL_ART.key,
+    x,
+    y,
+    scale: scale2,
+    layer: "world",
+    z: PORTAL_DEPTH,
+    data: { open: false },
+    anims: {
+      sealed: { frames: [first], fps: PULSE_FPS, hold: true },
+      open: { frames: [first + 1, first + 2, first + 3, first + 2], fps: PULSE_FPS }
+    }
+  });
+  const effects = { x, y, layer: "world", z: PORTAL_DEPTH + 1, alpha: 0, blend: "add", visible: false };
+  const flows = FLOWS.map((flow, index) => ({
+    ...flow,
+    sprite: game.spawn({
+      ...effects,
+      id: id2 + "-flow-" + index,
+      texture: "particle:soft",
+      tint: flow.tint,
+      width: artHeight * flow.width,
+      height: artHeight * flow.height,
+      rot: flow.angle
+    })
+  }));
+  const motes = MOTES.map((mote, index) => ({
+    ...mote,
+    sprite: game.spawn({
+      ...effects,
+      id: id2 + "-mote-" + index,
+      texture: "particle:flare",
+      tint: mote.tint,
+      width: artHeight * mote.size
+    })
+  }));
+  let elapsed = 0;
+  game.step(id2 + "-hover", (dt) => {
+    elapsed += dt;
+    const hoverAngle = elapsed * TURN / HOVER_PERIOD;
+    const rise = (1 - deterministicMath.cos(hoverAngle)) / 2;
+    portal.y = restY - artHeight * (HOVER_CLEARANCE + HOVER_TRAVEL * rise);
+    portal.rot = HOVER_TILT * deterministicMath.sin(hoverAngle);
+    if (!portal.data.open) return;
+    halo.y = portal.y;
+    halo.alpha = HALO_ALPHA + HALO_PULSE * rise;
+    for (const { sprite, phase, offset, angle } of flows) {
+      const progress = (elapsed / FLOW_PERIOD + phase) % 1;
+      const bend = deterministicMath.sin(progress * TURN);
+      sprite.x = portal.x + artHeight * (offset + (progress - 0.5) * FLOW_TRAVEL_X + bend * FLOW_BEND);
+      sprite.y = portal.y + artHeight * (0.5 - progress) * FLOW_TRAVEL_Y;
+      sprite.rot = angle + 0.17 * bend + portal.rot;
+      sprite.alpha = 0.74 * deterministicMath.pow(deterministicMath.sin(progress * deterministicMath.PI), 2);
+    }
+    for (const { sprite, period, phase, rx, ry: ry2 } of motes) {
+      const angle = (elapsed / period + phase) * TURN;
+      sprite.x = portal.x + artHeight * rx * deterministicMath.cos(angle);
+      sprite.y = portal.y + artHeight * ry2 * deterministicMath.sin(angle);
+      sprite.rot = angle / 2;
+      sprite.alpha = 0.24 + 0.5 * deterministicMath.pow(deterministicMath.sin(angle * 2), 2);
+    }
+  });
+  return Object.assign(portal, {
+    setOpen(open) {
+      if (portal.data.open === open) return;
+      portal.data.open = open;
+      halo.y = portal.y;
+      halo.visible = open;
+      for (const { sprite } of flows) sprite.visible = open;
+      for (const { sprite } of motes) sprite.visible = open;
+      portal.play(open ? "open" : "sealed");
+    }
+  });
+}
+
+// game/darkPlaceTerrain.ts
+var SECTION_WIDTH = 1280;
+var START_BANK = { id: "start", left: 0, right: 144, top: 440, cliff: "bank" };
+var DESCENT_BANK = { id: "descent-bank", left: -108, right: 102, top: 388, cliff: "bank" };
+var FAR_BANK = { id: "far-bank", left: -50, right: 96, top: 360, cliff: "outcrop" };
+var EXIT_BANK = { id: "exit", left: 1192, right: SECTION_WIDTH, top: 388, cliff: "shoulder" };
+var LIGHT_LEDGE = { id: "light", left: 512, right: 572, top: 200, ledge: "split" };
+var DARK_PLACE_SECTIONS = [
+  {
+    name: "The Ledges",
+    entry: { x: 72, top: START_BANK.top },
+    stoneTint: "#cfb9ff",
+    landings: [
+      START_BANK,
+      { id: "first-step", left: 230, right: 314, top: 391, cliff: "needle" },
+      { id: "first-stone", left: 410, right: 480, top: 331, ledge: "taper" },
+      { id: "middle-bank", left: 571, right: 737, top: 417, cliff: "outcrop" },
+      { id: "second-stone", left: 836, right: 907, top: 350, ledge: "split" },
+      { id: "third-stone", left: 1005, right: 1081, top: 315, ledge: "ridge" }
+    ]
+  },
+  {
+    name: "The Descent",
+    entry: { x: 32, top: DESCENT_BANK.top },
+    stoneTint: "#bce9ff",
+    landings: [
+      DESCENT_BANK,
+      { id: "descent-upper", left: 200, right: 290, top: 349, ledge: "shelf" },
+      { id: "descent-middle", left: 386, right: 480, top: 394, ledge: "ridge" },
+      { id: "descent-low", left: 588, right: 718, top: 438, cliff: "shoulder" },
+      { id: "descent-rise", left: 829, right: 925, top: 377, ledge: "split" },
+      { id: "descent-high", left: 1023, right: 1119, top: 322, ledge: "shelf" }
+    ]
+  },
+  {
+    name: "The Far Side",
+    entry: { x: 30, top: FAR_BANK.top },
+    stoneTint: "#ffdeb8",
+    landings: [
+      FAR_BANK,
+      { id: "far-low", left: 204, right: 314, top: 408, cliff: "shoulder" },
+      { id: "far-rise", left: 430, right: 522, top: 352, ledge: "shelf" },
+      { id: "far-high", left: 639, right: 720, top: 297, ledge: "ridge" },
+      LIGHT_LEDGE,
+      { id: "far-landing", left: 835, right: 914, top: 370, cliff: "needle" },
+      { id: "far-last-stone", left: 1023, right: 1096, top: 326, ledge: "taper" },
+      EXIT_BANK
+    ]
+  }
+];
+var LEDGE_COLLISION_DEPTH = 30;
+var CLIFF_COLLISION_DEPTH = 38;
+var CLIFF_BELOW_SCREEN = 48;
+var PIT_FADE_HEIGHT = 72;
+var EDGE_THICKNESS = 32;
+var DARK_PLACE_WIDTH = SECTION_WIDTH * DARK_PLACE_SECTIONS.length;
+var LOWEST_DARK_PLACE_LANDING = deterministicMath.max(...DARK_PLACE_SECTIONS.flatMap((section) => section.landings.map((landing) => landing.top)));
+var DARK_PLACE_EXIT = { x: DARK_PLACE_WIDTH - 48, top: EXIT_BANK.top };
+var DARK_PLACE_LIGHT = {
+  x: 2 * SECTION_WIDTH + (LIGHT_LEDGE.left + LIGHT_LEDGE.right) / 2,
+  top: LIGHT_LEDGE.top
+};
+function darkPlaceEntry(index) {
+  const { entry } = DARK_PLACE_SECTIONS[index];
+  return { x: index * SECTION_WIDTH + entry.x, top: entry.top };
+}
+function spawnDarkPlaceTerrain() {
+  const { height } = game.screen;
+  const skyHeight = game.assets.frame("dream-dark").height;
+  const landings = DARK_PLACE_SECTIONS.flatMap(({ landings: landings2, stoneTint }, index) => landings2.map((landing) => ({
+    ...landing,
+    left: landing.left + index * SECTION_WIDTH,
+    right: landing.right + index * SECTION_WIDTH,
+    stoneTint
+  })));
+  for (const [index] of DARK_PLACE_SECTIONS.entries()) {
+    const leftEdge = index * SECTION_WIDTH;
+    const x = leftEdge + SECTION_WIDTH / 2;
+    game.spawn({
+      id: "dark-place-sky-" + index,
+      texture: "dream-dark",
+      x,
+      y: skyHeight / 2,
+      sx: index % 2 === 0 ? 1 : -1,
+      layer: "back"
+    });
+    game.graphics({
+      id: "dark-place-mist-" + index,
+      x,
+      y: height / 2,
+      width: SECTION_WIDTH,
+      height,
+      layer: "back"
+    }).draw((ctx) => {
+      const mistTop = skyHeight - PIT_FADE_HEIGHT;
+      const fog = ctx.createLinearGradient(0, mistTop, 0, height);
+      fog.addColorStop(0, "#15134000");
+      fog.addColorStop(PIT_FADE_HEIGHT / (height - mistTop), "#131037");
+      fog.addColorStop(1, "#09081d");
+      ctx.fillStyle = fog;
+      ctx.fillRect(0, mistTop, SECTION_WIDTH, height - mistTop);
+    });
+  }
+  for (const landing of landings) {
+    const { id: id2, left, right, top, stoneTint } = landing;
+    const x = (left + right) / 2;
+    const span = right - left;
+    const isCliff = "cliff" in landing;
+    const depth = isCliff ? CLIFF_COLLISION_DEPTH : LEDGE_COLLISION_DEPTH;
+    game.spawn({
+      id: "dark-place-platform-" + id2,
+      x,
+      y: top + depth / 2,
+      width: span,
+      height: depth,
+      visible: false,
+      layer: "world",
+      tags: isCliff ? ["terrain"] : ["terrain", UPWARD_PLATFORM_TAG],
+      body: { type: "static", friction: 0, oneWay: isCliff ? void 0 : "up" }
+    });
+    const art = isCliff ? DREAM_CLIFF_ART : DREAM_LEDGE_ART;
+    const variant = isCliff ? DREAM_CLIFF_ART.variants[landing.cliff] : DREAM_LEDGE_ART.variants[landing.ledge];
+    const scale2 = span / variant.rimWidth;
+    const artHeight = isCliff ? (height + CLIFF_BELOW_SCREEN - top) * art.height / (art.height - art.surfaceY) : art.height * scale2;
+    const rimOffset = art.surfaceY / art.height * artHeight;
+    game.spawn({
+      id: "dark-place-" + (isCliff ? "cliff-" : "ledge-") + id2,
+      texture: art.key,
+      frame: variant.frame,
+      x,
+      y: top - rimOffset + artHeight / 2,
+      width: art.width * scale2,
+      height: artHeight,
+      layer: "world",
+      z: isCliff ? -1 : 0,
+      tint: stoneTint
+    });
+  }
+  for (const [side2, x] of [["left", -EDGE_THICKNESS / 2], ["right", DARK_PLACE_WIDTH + EDGE_THICKNESS / 2]]) {
+    game.spawn({
+      id: "dark-place-edge-" + side2,
+      x,
+      y: height / 2,
+      width: EDGE_THICKNESS,
+      height,
+      visible: false,
+      layer: "world",
+      body: { type: "static", friction: 0 }
+    });
+  }
+}
+
+// game/scenes/DreamStart.ts
+var GRAVITY = 1500;
+var TOKYO_SCALE = 1.42;
+var JUMP = { launchSpeed: 610, releaseSpeed: 440 };
+var FALL_BELOW_LANDING = 90;
+var EXIT_RANGE = 54;
+var SURFACE_TOLERANCE = 8;
+var PORTAL_HEIGHT = 132;
+var LIGHT_PICKUP_RANGE = 28;
+var LIGHT_HEIGHT = 38;
+var LIGHT_GLOW_SIZE = 116;
+var LIGHT_GLOW_CENTER_OFFSET = 8;
+var LIGHT_SIZE = 26;
+var TOKYO_HALO_WIDTH = 152;
+var TOKYO_HALO_HEIGHT = 116;
+var TOKYO_HALO_Y_OFFSET = 6;
+var TOKYO_HALO_TINT = "#ffc76c";
+var TOKYO_HALO_ALPHA = 0.58;
+var TOKYO_HALO_LOW_ALPHA = 0.42;
+var TOKYO_HALO_PULSE_SECONDS = 0.8;
+var TOKYO_HIGHLIGHT_TINT = "#ffe3ad";
+var TOKYO_HIGHLIGHT_ALPHA = 0.23;
+var previewSection = 0;
+var retryAfterFall = false;
+function openDarkPlaceSection(number) {
+  const index = number - 1;
+  const section = DARK_PLACE_SECTIONS[index];
+  if (!section) return "Choose section 1, 2, or 3.";
+  previewSection = index;
+  prepareDreamStage(1);
+  return "Started " + section.name;
+}
+function showTokyoLight(tokyo) {
+  const halo = game.spawn({
+    id: "dark-place-tokyo-halo",
+    texture: "particle:soft",
+    x: tokyo.x,
+    y: tokyo.y + TOKYO_HALO_Y_OFFSET,
+    width: TOKYO_HALO_WIDTH,
+    height: TOKYO_HALO_HEIGHT,
+    layer: "world",
+    z: tokyo.z - 1,
+    tint: TOKYO_HALO_TINT,
+    alpha: TOKYO_HALO_ALPHA,
+    blend: "add"
+  });
+  const highlight = game.spawn({
+    id: "dark-place-tokyo-highlight",
+    frame: tokyo.frame,
+    x: tokyo.x,
+    y: tokyo.y,
+    sx: tokyo.sx,
+    sy: tokyo.sy,
+    layer: "world",
+    z: tokyo.z + 1,
+    tint: TOKYO_HIGHLIGHT_TINT,
+    alpha: TOKYO_HIGHLIGHT_ALPHA,
+    blend: "add"
+  });
+  game.tween.to(
+    halo,
+    { alpha: TOKYO_HALO_LOW_ALPHA },
+    { duration: TOKYO_HALO_PULSE_SECONDS, ease: "easeInOutSine", yoyo: true, loop: true }
+  );
+  game.step("dark-place-tokyo-light", () => {
+    halo.x = highlight.x = tokyo.x;
+    halo.y = tokyo.y + TOKYO_HALO_Y_OFFSET;
+    highlight.y = tokyo.y;
+    highlight.frame = tokyo.frame;
+    highlight.sx = tokyo.sx;
+    highlight.sy = tokyo.sy;
+    halo.visible = highlight.visible = tokyo.visible;
+  }, { after: "tokyo-visual" });
+}
+var DreamStart = {
+  name: "dream-start",
+  enter() {
+    const { width, height } = game.screen;
+    const entry = darkPlaceEntry(previewSection);
+    let phase = retryAfterFall ? "respawning" : previewSection === 0 ? "intro" : "playing";
+    previewSection = 0;
+    retryAfterFall = false;
+    run.scene = "journey";
+    const halfWidth = width / 2;
+    game.camera.snap(deterministicMath.max(halfWidth, deterministicMath.min(DARK_PLACE_WIDTH - halfWidth, entry.x)), height / 2, 1);
+    game.rig.bounds({ x: 0, y: 0, w: DARK_PLACE_WIDTH, h: height });
+    game.background.color("#131037");
+    game.physics.gravity(0, GRAVITY);
+    game.touch.visible = phase === "playing" && (getTouchOverride() ?? isMobileView());
+    game.ui.pauseButton();
+    game.ui.muteButton();
+    spawnDarkPlaceTerrain();
+    const tokyo = spawnTokyo(entry.x, entry.top, () => phase === "playing", TOKYO_SCALE, JUMP);
+    game.rig.follow(tokyo);
+    const portal = spawnRiftPortal("dark-place-portal", DARK_PLACE_EXIT.x, DARK_PLACE_EXIT.top, PORTAL_HEIGHT);
+    const lightY = DARK_PLACE_LIGHT.top - LIGHT_HEIGHT;
+    const glow = game.spawn({
+      id: "dark-place-light-glow",
+      texture: "dream-light",
+      x: DARK_PLACE_LIGHT.x,
+      y: lightY + LIGHT_GLOW_CENTER_OFFSET,
+      width: LIGHT_GLOW_SIZE,
+      layer: "world",
+      z: 5,
+      anims: { pulse: { strip: "dream-light", fps: 5 } }
+    });
+    glow.play("pulse");
+    const light = game.spawn({
+      id: "dark-place-light",
+      texture: "dream-star",
+      x: DARK_PLACE_LIGHT.x,
+      y: lightY,
+      width: LIGHT_SIZE,
+      layer: "world",
+      z: 6
+    });
+    function startPlaying() {
+      phase = "playing";
+      game.touch.visible = getTouchOverride() ?? isMobileView();
+      showDreamTitle(DREAM_LEVELS[0].name);
+    }
+    if (phase === "intro") {
+      playDreamWake(tokyo, startPlaying);
+    } else if (phase === "respawning") {
+      playDreamRespawn(tokyo, startPlaying);
+    } else {
+      showDreamTitle(DREAM_LEVELS[0].name);
+    }
+    let interactRequested = false;
+    const prompt = spawnDreamPrompt(() => {
+      interactRequested = true;
+    });
+    let wasInteract = false;
+    game.step("dream-start", (dt) => {
+      if (phase !== "playing") {
+        game.touch.visible = false;
+        if (game.controls.justPressed("pause")) game.scenes.push("pause");
+        return;
+      }
+      const { x, feet, grounded } = tokyo.data;
+      const interact = game.controls.pressed("interact");
+      const interactPressed = interactRequested || game.controls.justPressed("interact") || interact && !wasInteract;
+      interactRequested = false;
+      wasInteract = interact;
+      if (!grounded && feet > LOWEST_DARK_PLACE_LANDING + FALL_BELOW_LANDING) {
+        phase = "falling";
+        prompt.hide();
+        game.touch.visible = false;
+        playDreamFall(tokyo, () => {
+          retryAfterFall = true;
+          game.scenes.go("dream-start");
+        });
+        return;
+      }
+      if (!portal.data.open && grounded && deterministicMath.abs(feet - DARK_PLACE_LIGHT.top) <= SURFACE_TOLERANCE && deterministicMath.abs(x - DARK_PLACE_LIGHT.x) <= LIGHT_PICKUP_RANGE) {
+        portal.setOpen(true);
+        game.sound.play(PICKUP_SOUND);
+        glow.destroy();
+        light.destroy();
+        showTokyoLight(tokyo);
+        game.particles.burst({
+          x: DARK_PLACE_LIGHT.x,
+          y: lightY,
+          count: 14,
+          layer: "front",
+          frame: "particle:spark",
+          color: ["#fff0ae", "#ffc76c"],
+          blend: "add",
+          speed: [40, 135],
+          lifespan: [0.25, 0.55]
+        });
+      }
+      const atExit = grounded && deterministicMath.abs(feet - DARK_PLACE_EXIT.top) <= SURFACE_TOLERANCE && deterministicMath.abs(x - DARK_PLACE_EXIT.x) <= EXIT_RANGE;
+      if (atExit && portal.data.open) {
+        const tapped = prompt.show("Enter the rift", portal.x, portal.y - PORTAL_HEIGHT / 2, dt);
+        if (interactPressed || tapped) {
+          game.sound.play(RIFT_SOUND);
+          completeDreamStage();
+          return;
+        }
+      } else {
+        prompt.hide();
+      }
+      if (game.controls.justPressed("pause")) game.scenes.push("pause");
+    }, { after: "rig-follow.camera" });
+  },
+  exit() {
+    game.touch.visible = false;
+  }
+};
+
 // game/debug.ts
 function addDebugControls() {
   game.inspect.state(() => ({
@@ -42735,10 +43888,10 @@ function addDebugControls() {
   }));
   game.cheats.add({
     name: "screen",
-    does: "Open title, play, meadow, story, home, dream-start, parkmap, celebration, pause, or settings",
+    does: "Open title, play, meadow, story, level-select, home, dream-start, parkmap, celebration, pause, or settings",
     args: "name",
     run: (name) => {
-      const target = ["touch-settings", "settings", "play", "pause", "story", "home", "dream-start", "journey", "ending", "meadow", "parkmap", "celebration"].includes(name ?? "") ? name : "title";
+      const target = ["touch-settings", "settings", "play", "pause", "story", "level-select", "home", "dream-start", "journey", "ending", "meadow", "parkmap", "celebration"].includes(name ?? "") ? name : "title";
       game.scenes.go(target);
       return `Switched to screen: ${target}`;
     }
@@ -42777,6 +43930,12 @@ function addDebugControls() {
       prepareDreamStage(stage);
       return "Started dream level " + stage;
     }
+  });
+  game.cheats.add({
+    name: "dream-section",
+    does: "Start Level 1 at the ledges, the descent, or the far side",
+    args: "1-3",
+    run: (number) => openDarkPlaceSection(Number(number))
   });
   game.cheats.add({
     name: "dream-win",
@@ -42938,8 +44097,8 @@ var STORY_BUTTON_Y = 346;
 var PLAYGROUND_BUTTON_Y = 466;
 var TOKYO_X = 878;
 var TOKYO_FEET_Y = 581;
-var TOKYO_SCALE = 4;
-var SEATED_FOOT_OFFSET = 21 * TOKYO_SCALE;
+var TOKYO_SCALE2 = 4;
+var SEATED_FOOT_OFFSET = 21 * TOKYO_SCALE2;
 var SEATED_FIRST_FRAME = 42;
 var SEATED_FRAME_COUNT = 4;
 function openStory() {
@@ -43047,7 +44206,7 @@ var Title = {
       frame: SEATED_FIRST_FRAME,
       x: TOKYO_X,
       y: TOKYO_FEET_Y - SEATED_FOOT_OFFSET,
-      scale: TOKYO_SCALE,
+      scale: TOKYO_SCALE2,
       layer: "world",
       z: 1
     });
@@ -43198,6 +44357,7 @@ var Pause = {
     game.ui.button({ parent: menu, h: 72, text: "Restart", icon: "restart", onClick: () => {
       if (run.scene === "play") startPlayground();
       else if (run.scene === "home") game.scenes.go("home");
+      else if (run.scene === "journey") game.scenes.go(journey.stage === 1 ? "dream-start" : "journey");
       else {
         run.spawnX = 220;
         game.scenes.go("meadow");
@@ -43929,7 +45089,7 @@ function spawnParkWildlife(interactions) {
       act: () => {
         if (!run.tokyo?.seated && !dog.data.friendly) {
           say(`${DOG_NAMES[i]} is shy. Sit with E, then press F to say hello.`);
-          return;
+          return false;
         }
         if (!dog.data.friendly) {
           park.friends.push(i);
@@ -43997,6 +45157,8 @@ function spawnParkWildlife(interactions) {
 // game/entities/ParkActivities.ts
 var INTERACTION_RANGE = 92;
 var REST_SECONDS = 2;
+var PORTAL_X = 6210;
+var PORTAL_HEIGHT2 = 235;
 var TREAT_POSITIONS = [
   [470, 515],
   [1190, 510],
@@ -44022,6 +45184,8 @@ var FOOD_NAMES = ["kibble bowl", "roast", "sausage links", "cheese", "fish plate
 var BUSH_X = [3250, 3370, 3500, 3620, 3750, 3880];
 function spawnParkActivities() {
   const interactions = [];
+  const voice = createDialogueVoice();
+  let spokenLine = null;
   let nearest;
   let hidingTime = 0, restTime = 0;
   const restSpots = [350, 710, 4530, 5740];
@@ -44045,7 +45209,7 @@ function spawnParkActivities() {
     parkProp(`park-bed-${i + 1}`, "beds", i, x, i === 2 ? 94 : 58);
     interactions.push({ x: () => x, y: PARK_GROUND - 25, prompt: () => "F: curl up / E: get up", act: () => {
       const d = run.tokyo;
-      if (!d || !d.grounded) return;
+      if (!d || !d.grounded) return false;
       d.seated = true;
       d.sitPhase = "down";
       d.sitTime = 0;
@@ -44059,14 +45223,19 @@ function spawnParkActivities() {
       x: () => x,
       y: PARK_GROUND - 35,
       prompt: () => i === 1 && park.carrying >= 0 ? "F: return the fetch stick" : "F: say hello",
+      sound: null,
       act: () => {
         if (!park.greeted.includes(i)) park.greeted.push(i);
+        let line = PEOPLE_LINES[i];
         if (i === 1 && park.carrying >= 0) {
           park.carrying = -1;
           park.fetched = true;
-          say("Perfect fetch! The mail carrier cheers for Tokyo. Fetch star earned!");
+          line = "Perfect fetch! The mail carrier cheers for Tokyo. Fetch star earned!";
           parkSparkles(x, PARK_GROUND - 80);
-        } else say(PEOPLE_LINES[i]);
+        }
+        say(line);
+        spokenLine = line;
+        voice.speak(line, park.messageTime);
         game.tween.to(person, { y: person.y - 8 }, { duration: 0.2, yoyo: true });
       }
     });
@@ -44078,6 +45247,7 @@ function spawnParkActivities() {
       x: () => x,
       y: PARK_GROUND - 20,
       available: () => park.carrying !== i,
+      sound: PICKUP_SOUND,
       prompt: () => park.carrying >= 0 ? "F: swap fetch sticks" : "F: pick up a fetch stick",
       act: () => {
         park.carrying = i;
@@ -44132,7 +45302,7 @@ function spawnParkActivities() {
   interactions.push({ x: () => 1930, y: PARK_GROUND - 25, prompt: () => "DOWN + F: hide in the open box", act: () => {
     if (!run.tokyo?.crouched) {
       say("Hold DOWN or C to crouch, then press F to hide in the open box.");
-      return;
+      return false;
     }
     hidingTime = 1.4;
     park.hidden = true;
@@ -44149,19 +45319,21 @@ function spawnParkActivities() {
     parkSparkles(2980, 500);
     say("A shower of golden stars! The mystery crate says: follow your nose into the garden.");
   } });
-  const portal = parkProp("park-portal", "portal", 0, 6210, 235, PARK_GROUND, true);
+  const portal = spawnRiftPortal("park-portal", PORTAL_X, PARK_GROUND, PORTAL_HEIGHT2);
+  portal.setOpen(badges().every(Boolean));
   interactions.push({
-    x: () => 6210,
+    x: () => PORTAL_X,
     y: PARK_GROUND - 50,
     radius: 145,
-    prompt: () => badges().every(Boolean) ? "F: celebrate a perfect park day!" : "F: inspect the magical gateway",
+    sound: RIFT_SOUND,
+    prompt: () => portal.data.open ? "F: enter the rift to celebrate" : "Rift sealed. Earn all 8 activity badges.",
     act: () => {
-      if (!badges().every(Boolean)) {
-        say(`The portal glows with friendship. Find all 8 activity badges! Check your Park map.`);
-        return;
+      if (!portal.data.open) {
+        say("Check the Park map for badge activities.");
+        return false;
       }
       park.celebrated = true;
-      parkSparkles(6210, 400);
+      parkSparkles(PORTAL_X, 400);
       game.scenes.push("celebration");
     }
   });
@@ -44189,6 +45361,7 @@ function spawnParkActivities() {
         treat.data.collected = true;
         park.treats.push(i);
         parkSparkles(x, treat.y);
+        game.sound.play(PICKUP_SOUND);
         say(`Tasty discovery! Treats ${park.treats.length}/12${park.treats.length === 12 ? " - Treat explorer earned!" : "."}`);
         game.tween.to(treat, { y: treat.y - 30, alpha: 0 }, { duration: 0.25, onComplete: () => treat.destroy() });
       }
@@ -44198,9 +45371,12 @@ function spawnParkActivities() {
   const interact = () => {
     const d = run.tokyo;
     if (!d) return;
-    if (nearest) nearest.act();
-    else if (park.carrying >= 0) {
+    if (nearest) {
+      const sound = nearest.sound === void 0 ? INTERACT_SOUND : nearest.sound;
+      if (nearest.act() !== false && sound) game.sound.play(sound);
+    } else if (park.carrying >= 0) {
       const thrown = parkProp("thrown-stick", "sticks", park.carrying, d.x + d.facing * 50, 40, d.feet - 50);
+      game.sound.play(INTERACT_SOUND);
       park.carrying = -1;
       game.tween.to(
         thrown,
@@ -44223,15 +45399,19 @@ function spawnParkActivities() {
       say("Cozy paws earned! Tokyo is ready for another adventure.");
       parkSparkles(d.x, d.feet - 40);
     }
+    if (spokenLine !== null && (park.message !== spokenLine || park.messageTime === 0)) {
+      voice.stop();
+      spokenLine = null;
+    }
     nearest = interactions.filter((item) => (item.available?.() ?? true) && deterministicMath.abs(d.x - item.x()) < (item.radius ?? INTERACTION_RANGE) && deterministicMath.abs(d.feet - 25 - item.y) < 95).sort((a, b) => deterministicMath.abs(d.x - a.x()) - deterministicMath.abs(d.x - b.x()))[0];
+    portal.setOpen(badges().every(Boolean));
     if (game.controls.justPressed("interact")) interact();
-    portal.setFrame(badges().every(Boolean) ? 1 + deterministicMath.floor(game.clock.time * 3) % 3 : 0);
   }, { after: "tokyo-visual" });
   return { interact, prompt: () => nearest?.prompt() ?? (park.carrying >= 0 ? "F: toss stick / return it to the mail carrier" : "Explore freely - M opens your park map") };
 }
 
 // game/scenes/Playground.ts
-var GRAVITY = 1500;
+var GRAVITY2 = 1500;
 var Playground = {
   name: "play",
   enter() {
@@ -44239,7 +45419,7 @@ var Playground = {
     game.camera.snap(deterministicMath.max(640, deterministicMath.min(PARK_WIDTH - 640, run.spawnX + 90)), 360, 1);
     game.touch.visible = getTouchOverride() ?? isMobileView();
     spawnParkMap();
-    game.physics.gravity(0, GRAVITY);
+    game.physics.gravity(0, GRAVITY2);
     const tokyo = spawnTokyo(run.spawnX, PARK_GROUND);
     const activities = spawnParkActivities();
     game.rig.follow(tokyo);
@@ -44415,11 +45595,12 @@ var ParkMap = {
 // game/scenes/Story.ts
 var MENU_LEFT2 = 88;
 var HOME_BUTTON_Y = 352;
+var LEVEL_SELECT_X = 366;
 var MEADOW_BUTTON_Y = 467;
 var TOKYO_X2 = 917;
 var TOKYO_FEET_Y2 = 614;
-var TOKYO_SCALE2 = 4;
-var CARRY_FOOT_OFFSET = 21 * TOKYO_SCALE2;
+var TOKYO_SCALE3 = 4;
+var CARRY_FOOT_OFFSET = 21 * TOKYO_SCALE3;
 var IDLE_FRAME_COUNT = 8;
 function startHome() {
   game.scenes.go("home");
@@ -44464,6 +45645,18 @@ var Story = {
       iconSize: 29,
       style: menuButtonStyles.primary,
       onClick: startHome
+    });
+    game.ui.button({
+      id: "story-level-select",
+      anchor: "top-left",
+      x: LEVEL_SELECT_X,
+      y: HOME_BUTTON_Y,
+      h: MENU_BUTTON_HEIGHT,
+      text: "Level Select",
+      icon: "levels",
+      iconSize: 29,
+      style: menuButtonStyles.secondary,
+      onClick: () => game.scenes.go("level-select")
     });
     game.ui.button({
       id: "story-chapter",
@@ -44520,7 +45713,7 @@ var Story = {
       texture: "tokyo-carry-plushie",
       x: TOKYO_X2,
       y: TOKYO_FEET_Y2 - CARRY_FOOT_OFFSET,
-      scale: TOKYO_SCALE2,
+      scale: TOKYO_SCALE3,
       layer: "world",
       z: 1
     });
@@ -44533,6 +45726,93 @@ var Story = {
       } else if (!game.ui.focus && game.input.keyPressed("Enter")) {
         startHome();
       }
+    });
+  }
+};
+
+// game/scenes/LevelSelect.ts
+var GRID_WIDTH = 832;
+var GRID_TOP = 216;
+var GRID_PADDING = 24;
+var COLUMN_GAP = 20;
+var ROW_GAP = 13;
+var LEVELS = [{ number: 0, name: "Home Before the Dream" }, ...DREAM_LEVELS];
+function returnToStory() {
+  game.scenes.go("story");
+}
+var LevelSelect = {
+  name: "level-select",
+  enter() {
+    const { width, height } = game.screen;
+    game.touch.visible = false;
+    game.camera.snap(width / 2, height / 2, 1);
+    game.background.picture("story-living-room", "stretch");
+    game.spawn({
+      id: "level-select-shade",
+      x: width / 2,
+      y: height / 2,
+      width,
+      height,
+      layer: "hud",
+      z: -1,
+      tint: "#171d19",
+      alpha: 0.71
+    });
+    game.ui.button({
+      id: "level-select-back",
+      anchor: "top-left",
+      x: 88,
+      y: 44,
+      h: 46,
+      text: "Back to Story",
+      icon: "back",
+      iconSize: 20,
+      style: menuButtonStyles.secondary,
+      onClick: returnToStory
+    });
+    game.text("Select a Level", width / 2, 149, {
+      size: 64,
+      font: "serif-bold",
+      color: "#fff4d9",
+      shadow: { color: "#241b15", x: 3, y: 4 }
+    });
+    const rows = deterministicMath.ceil(LEVELS.length / 2);
+    const gridHeight = GRID_PADDING * 2 + rows * MENU_BUTTON_HEIGHT + (rows - 1) * ROW_GAP;
+    const grid = game.ui.panel({
+      id: "story-level-grid",
+      anchor: "top",
+      y: GRID_TOP,
+      w: GRID_WIDTH,
+      h: gridHeight,
+      style: { fill: "#1c2a25", border: 2, borderColor: "#697b68", radius: 8 }
+    });
+    const columnWidth = (GRID_WIDTH - GRID_PADDING * 2 - COLUMN_GAP) / 2;
+    const columns = [0, 1].map((column) => game.ui.panel({
+      parent: grid,
+      anchor: "top-left",
+      x: GRID_PADDING + column * (columnWidth + COLUMN_GAP),
+      y: GRID_PADDING,
+      w: columnWidth,
+      h: "auto",
+      layout: { padding: 0, gap: ROW_GAP, align: "stretch" },
+      style: { fill: "#00000000", border: 0, shadow: 0, depth: 0 }
+    }));
+    for (const [index, { number, name }] of LEVELS.entries()) {
+      game.ui.button({
+        id: `story-level-${number}`,
+        parent: columns[index % columns.length],
+        h: MENU_BUTTON_HEIGHT,
+        text: `${number} \xB7 ${name}`,
+        accessibleLabel: `Level ${number}, ${name}`,
+        style: number === 0 ? menuButtonStyles.primary : menuButtonStyles.secondary,
+        onClick: () => {
+          if (number === 0) game.scenes.go("home");
+          else prepareDreamStage(number);
+        }
+      });
+    }
+    game.step("level-select", () => {
+      if (game.input.keyPressed("Escape")) returnToStory();
     });
   }
 };
@@ -44663,139 +45943,6 @@ function spawnHomeDoors() {
       { from: right, to: left, facing: -1 }
     ];
   });
-}
-
-// game/homePrompt.ts
-var HOME_PROMPT_HEIGHT = 48;
-var BISCUIT_TEXTURE_WIDTH = 320;
-var BISCUIT_SHADOW_DEPTH = 4;
-var BISCUIT_END = [
-  [25, 11],
-  [22, 5],
-  [17, 2],
-  [10, 2],
-  [5, 6],
-  [2, 11],
-  [2, 18],
-  [7, 24],
-  [2, 29],
-  [2, 36],
-  [5, 41],
-  [10, 45],
-  [17, 45],
-  [22, 42],
-  [25, 36]
-];
-var KEY_GLYPHS = {
-  F: ["####", "#...", "###.", "#...", "#..."],
-  Y: ["#..#", "#..#", ".##.", ".#..", ".#.."]
-};
-function paintHomePromptKeys() {
-  for (const [key, glyph] of Object.entries(KEY_GLYPHS)) {
-    game.paint(`home-prompt-key-${key}`, 12, 12, (ctx) => {
-      ctx.fillStyle = "#593822";
-      ctx.fillRect(1, 2, 10, 8);
-      ctx.fillRect(2, 1, 8, 10);
-      ctx.fillStyle = "#825431";
-      ctx.fillRect(2, 2, 8, 1);
-      ctx.fillStyle = "#fff1ce";
-      for (const [y, row] of glyph.entries()) {
-        for (const [x, pixel] of [...row].entries()) {
-          if (pixel === "#") ctx.fillRect(4 + x, 4 + y, 1, 1);
-        }
-      }
-    }, { res: 1 });
-  }
-}
-function spawnHomePrompt(onClick) {
-  const biscuit = game.graphics({
-    id: "home-interact-biscuit",
-    width: BISCUIT_TEXTURE_WIDTH,
-    height: HOME_PROMPT_HEIGHT + BISCUIT_SHADOW_DEPTH,
-    layer: "hud"
-  });
-  biscuit.handle.visible = false;
-  const button = game.ui.button({
-    id: "home-interact-button",
-    h: HOME_PROMPT_HEIGHT,
-    iconSize: 24,
-    z: 3,
-    hidden: true,
-    safeArea: false,
-    tabIndex: -1,
-    bounce: false,
-    onClick,
-    style: {
-      designHeight: HOME_PROMPT_HEIGHT,
-      font: "bold 18px sans",
-      textColor: "#382415",
-      fill: "#00000000",
-      fillTo: "#00000000",
-      border: 0,
-      depth: 0,
-      shadow: 0,
-      gloss: 0,
-      bevel: 0,
-      textStroke: 0,
-      textOutline: 0,
-      textShadowX: 0,
-      textShadowY: 0
-    }
-  });
-  let paintedWidth = 0;
-  let paintedState = "";
-  return {
-    measure(label, input) {
-      const icon = input === "touch" ? "paw" : `home-prompt-key-${input}`;
-      if (button.ui.icon !== icon) button.ui.icon = icon;
-      if (button.ui.text !== label) button.ui.text = label;
-      button.ui.hidden = false;
-      return button.ui.rect.w;
-    },
-    place(x, y, width) {
-      button.ui.x = x;
-      button.ui.y = y;
-      biscuit.handle.x = x + biscuit.width / 2;
-      biscuit.handle.y = y + biscuit.height / 2;
-      biscuit.handle.visible = width > 0;
-      const state = button.ui.pressed ? "pressed" : button.ui.hover ? "hover" : "normal";
-      if (width === paintedWidth && state === paintedState) return;
-      paintedWidth = width;
-      paintedState = state;
-      biscuit.clear().draw((ctx) => {
-        ctx.beginPath();
-        ctx.moveTo(...BISCUIT_END[0]);
-        for (const [endX, endY] of BISCUIT_END.slice(1)) ctx.lineTo(endX, endY);
-        for (let i = BISCUIT_END.length - 1; i >= 0; i--) {
-          const [endX, endY] = BISCUIT_END[i];
-          ctx.lineTo(width - endX, endY);
-        }
-        ctx.closePath();
-        const bakedColor = ctx.createLinearGradient(0, 2, 0, 45);
-        bakedColor.addColorStop(0, state === "hover" ? "#ffe6b4" : "#f7d7a1");
-        bakedColor.addColorStop(1, state === "pressed" ? "#cf9256" : "#e2ab70");
-        ctx.fillStyle = bakedColor;
-        ctx.shadowColor = "#30201866";
-        ctx.shadowOffsetY = 3;
-        ctx.fill();
-        ctx.shadowColor = "transparent";
-        ctx.strokeStyle = "#65402a";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.fillStyle = "#a96f4199";
-        for (const lobe of [13, width - 13]) {
-          ctx.fillRect(lobe - 3, 11, 3, 2);
-          ctx.fillRect(lobe + 2, 8, 2, 2);
-          ctx.fillRect(lobe, 36, 3, 2);
-          ctx.fillRect(lobe - 5, 34, 2, 2);
-        }
-      });
-    },
-    hide() {
-      button.ui.hidden = true;
-      biscuit.handle.visible = false;
-    }
-  };
 }
 
 // game/homeInterior.ts
@@ -45200,10 +46347,10 @@ function spawnHomeFootShadow(x, width) {
 // game/scenes/Home.ts
 var WALL_WIDTH = 28;
 var ROOM_FADE_TIME = 0.22;
-var GRAVITY2 = 1500;
+var GRAVITY3 = 1500;
 var INTERACT_RANGE = 72;
 var INTERACT_HEIGHT = 32;
-var TOKYO_SCALE3 = 1.95;
+var TOKYO_SCALE4 = 1.95;
 var HOME_JUMP = { launchSpeed: 748, releaseSpeed: 730 };
 var TOKYO_SHADOW_WIDTH = 89;
 var SURFACE_PROBE_OFFSET = 4;
@@ -45231,7 +46378,7 @@ var BALL_SIZE = 25;
 var PLUSHIE_SIZE = 42;
 var BOWL_SIZE = 60;
 var TOY_DROP_OFFSET = 44;
-var RESTING_FOOT_OFFSET = 21 * TOKYO_SCALE3 * TOKYO_ART_SCALE;
+var RESTING_FOOT_OFFSET = 21 * TOKYO_SCALE4 * TOKYO_ART_SCALE;
 var EAT_MUZZLE_OFFSET = 53;
 var EAT_TIME = 1.05;
 var EAT_FRAMES = [48, 49, 50, 51, 52, 51, 52, 53, 54, 55];
@@ -45303,14 +46450,14 @@ var Home = {
       game.camera.snap(cameraX, height / 2, 1);
     }
     frameRoom(home.room, entry);
-    game.physics.gravity(0, GRAVITY2);
+    game.physics.gravity(0, GRAVITY3);
     game.touch.visible = getTouchOverride() ?? isMobileView();
     const { lamp, shade: shade2 } = spawnHomeInterior();
     const doors = spawnHomeDoors();
     spawnRoomBounds();
     let enteringRoom = false;
     const busy = () => enteringRoom || home.phase === "eating" || home.phase === "sleeping";
-    const tokyo = spawnTokyo(entry, HOME_WALK_Y, () => !busy(), TOKYO_SCALE3, HOME_JUMP);
+    const tokyo = spawnTokyo(entry, HOME_WALK_Y, () => !busy(), TOKYO_SCALE4, HOME_JUMP);
     game.rig.follow(tokyo);
     const tokyoShadow = spawnHomeFootShadow(entry, TOKYO_SHADOW_WIDTH);
     const members = HOME_FAMILY.map(({ id: id2 }, i) => {
@@ -45389,7 +46536,7 @@ var Home = {
       frame: LOW_TOKYO_FRAME,
       x: 0,
       y: 0,
-      scale: TOKYO_SCALE3 * TOKYO_ART_SCALE,
+      scale: TOKYO_SCALE4 * TOKYO_ART_SCALE,
       layer: "world",
       z: 10,
       visible: false
@@ -45443,8 +46590,10 @@ var Home = {
     let eatingSince = 0;
     let messageUntil = 0;
     let messageAnchor = null;
+    const voice = createDialogueVoice();
     let flight = null;
     function say2(line, anchor) {
+      voice.speak(line, MESSAGE_TIME);
       dialogue.set({ text: line });
       messageUntil = elapsed + MESSAGE_TIME;
       messageAnchor = anchor;
@@ -45582,7 +46731,7 @@ var Home = {
       quietTokyo.visible = true;
       quietTokyo.x = x;
       quietTokyo.y = y;
-      quietTokyo.sx = facing * TOKYO_SCALE3 * TOKYO_ART_SCALE;
+      quietTokyo.sx = facing * TOKYO_SCALE4 * TOKYO_ART_SCALE;
     }
     function eatTreats() {
       home.phase = "eating";
@@ -45603,7 +46752,7 @@ var Home = {
     function goToSleep() {
       home.phase = "sleeping";
       dropToy();
-      quietTokyo.setFrame(LOW_TOKYO_FRAME);
+      quietTokyo.setTexture(TOKYO_SLEEP_TEXTURE, 0);
       restPose(HOME_DOG_BED, HOME_DOG_BED_TOP - RESTING_FOOT_OFFSET, 1);
       setLight(false);
       game.touch.visible = false;
@@ -45640,6 +46789,7 @@ var Home = {
         },
         y: () => member.promptAnchor.y,
         gap: FAMILY_PROMPT_GAP,
+        sound: null,
         label: () => member.onSofa ? "Play" : member.id === "senny" && home.holding === "ball" ? "Return ball" : member.prompt,
         act: () => playWith(member)
       })),
@@ -45655,6 +46805,7 @@ var Home = {
         y: () => plushie.y - 44,
         gap: PROP_PROMPT_GAP,
         surface: () => plushie.y + plushie.height / 2,
+        sound: PICKUP_SOUND,
         label: () => "Pick up plushie",
         act: () => pickUp("plushie")
       },
@@ -45663,6 +46814,7 @@ var Home = {
         y: () => ball.y - 44,
         gap: PROP_PROMPT_GAP,
         surface: () => ball.y + ball.height / 2,
+        sound: null,
         label: () => "Pick up ball",
         act: () => pickUp("ball")
       },
@@ -45670,6 +46822,7 @@ var Home = {
         at: () => home.phase === "treats" ? HOME_TREATS : Infinity,
         y: () => bowl.y - 44,
         gap: PROP_PROMPT_GAP,
+        sound: PICKUP_SOUND,
         label: () => "Eat treats",
         act: eatTreats
       },
@@ -45733,6 +46886,7 @@ var Home = {
         dialogue.object.y = centerY - textHeight / 2;
         dialogue.object.visible = true;
       } else {
+        if (dialogueBox.visible) voice.stop();
         dialogueBox.visible = false;
         dialogue.object.visible = false;
       }
@@ -45774,7 +46928,11 @@ var Home = {
       }
       if (interactRequested || game.controls.justPressed("interact")) {
         interactRequested = false;
-        chosen?.act();
+        if (chosen) {
+          const sound = chosen.sound === void 0 ? INTERACT_SOUND : chosen.sound;
+          if (sound) game.sound.play(sound);
+          chosen.act();
+        }
       }
     }, { after: "rig-follow.camera" });
   },
@@ -45783,196 +46941,9 @@ var Home = {
   }
 };
 
-// game/scenes/DreamStart.ts
-var WIDTH3 = 1280;
-var FLOOR = 540;
-var SAFE_LIGHTS = [204, 467, 730, 993, 1174];
-var SAFE_RADIUS = 86;
-var BUFFER_RADIUS = 120;
-var ENTITY_SPEED = 194;
-var DreamStart = {
-  name: "dream-start",
-  enter() {
-    let stopped = false;
-    let caughtAlready = false;
-    let elapsed = 0;
-    game.camera.snap(WIDTH3 / 2, 360, 1);
-    game.background.picture("dream-dark", "stretch");
-    game.physics.gravity(0, 1500);
-    game.touch.visible = getTouchOverride() ?? isMobileView();
-    game.ui.pauseButton();
-    game.ui.muteButton();
-    for (const [id2, x, y, w, h] of [
-      ["dream-floor", WIDTH3 / 2, FLOOR + 24, WIDTH3, 48],
-      ["dream-left-edge", 0, 360, 32, 720],
-      ["dream-right-edge", WIDTH3, 360, 32, 720]
-    ]) {
-      game.spawn({
-        id: id2,
-        x,
-        y,
-        width: w,
-        height: h,
-        visible: false,
-        layer: "world",
-        body: { type: "static", friction: 0 }
-      });
-    }
-    run.scene = "journey";
-    const tokyo = spawnTokyo(120, FLOOR, () => !stopped, 1.42);
-    const lights = [];
-    for (let i = 0; i < SAFE_LIGHTS.length; i++) {
-      const x = SAFE_LIGHTS[i];
-      const sprite = game.spawn({
-        id: "dark-place-light-" + (i + 1),
-        texture: "dream-light",
-        x,
-        y: FLOOR - 42,
-        width: 170,
-        height: 170,
-        layer: "world",
-        z: 2,
-        frame: i % 4
-      });
-      lights.push({ x, sprite });
-    }
-    const aura = game.spawn({
-      id: "dream-light-around-tokyo",
-      texture: "dream-shield",
-      x: 120,
-      y: FLOOR - 34,
-      width: 120,
-      layer: "world",
-      z: 9,
-      alpha: 0.82
-    });
-    const shadow = game.spawn({
-      id: "dream-roaming-shadow",
-      texture: "dream-entity",
-      x: 852,
-      y: FLOOR - DREAM_SHADOW_FOOT_OFFSET,
-      width: DREAM_SHADOW_WIDTH,
-      layer: "world",
-      z: 8,
-      frame: 0
-    });
-    game.text(
-      "THE DARK PLACE",
-      WIDTH3 / 2,
-      94,
-      { size: 30, font: "mono-bold", color: "#eee2ff", shadow: { color: "#171323", x: 2, y: 3 } }
-    );
-    game.text(
-      "A voice calls from a little light in the distance\u2026",
-      WIDTH3 / 2,
-      132,
-      { size: 16, font: "mono", color: "#d4c6f2" }
-    );
-    const voice = game.text(
-      "\u201CTokyo? I\u2019m over here\u2026\u201D  \u2014  Senny",
-      1051,
-      357,
-      {
-        size: 17,
-        font: "mono-bold",
-        color: "#fff0d1",
-        shadow: { color: "#3b2670", x: 2, y: 2 }
-      }
-    );
-    const objective = game.text(
-      "Find the glowing doorway.",
-      WIDTH3 / 2,
-      615,
-      { size: 18, font: "mono-bold", color: "#f7eacc", shadow: { color: "#171323", x: 2, y: 2 } }
-    );
-    const prompt = game.text(
-      "",
-      WIDTH3 / 2,
-      675,
-      { size: 14, font: "mono-bold", color: "#f0e5ff", shadow: { color: "#171323", x: 1, y: 2 } }
-    );
-    function caught() {
-      if (caughtAlready) return;
-      stopped = true;
-      caughtAlready = true;
-      game.ui.panel({ anchor: "center", w: 608, h: 298, z: 30, safeArea: false, style: "dark" });
-      game.text(
-        "THE SHADOW FOUND TOKYO",
-        WIDTH3 / 2,
-        237,
-        { z: 31, size: 32, font: "mono-bold", color: "#edbdd6" }
-      );
-      game.text(
-        "The warm light will protect her next time.",
-        WIDTH3 / 2,
-        294,
-        { z: 31, size: 18, font: "mono", color: "#f4e8d0" }
-      );
-      game.ui.button({
-        id: "dark-place-retry",
-        anchor: "center",
-        y: 170,
-        z: 31,
-        h: 58,
-        text: "Try this dream again",
-        icon: "restart",
-        style: "good",
-        onClick: () => game.scenes.go("dream-start")
-      });
-      game.ui.button({
-        id: "dark-place-home",
-        anchor: "center",
-        y: 239,
-        z: 31,
-        h: 50,
-        text: "Wake up at home",
-        icon: "home",
-        style: "flat",
-        onClick: () => game.scenes.go("home")
-      });
-    }
-    game.step("dream-start", (dt) => {
-      if (stopped) return;
-      elapsed += dt;
-      const playerX = tokyo.data.x;
-      const nearestLight = lights.reduce((best, light) => deterministicMath.min(best, deterministicMath.abs(playerX - light.x)), Infinity);
-      const protectedNow = nearestLight <= SAFE_RADIUS;
-      aura.visible = protectedNow;
-      aura.x = playerX;
-      aura.y = tokyo.data.feet - 34;
-      aura.alpha = 0.65 + deterministicMath.sin(elapsed * 3) * 0.12;
-      if (nearestLight <= BUFFER_RADIUS && deterministicMath.abs(shadow.x - playerX) < BUFFER_RADIUS + 10) {
-        shadow.x = playerX < shadow.x ? playerX + BUFFER_RADIUS + 10 : playerX - BUFFER_RADIUS - 10;
-      } else {
-        shadow.x += (playerX < shadow.x ? -1 : 1) * ENTITY_SPEED * dt;
-      }
-      shadow.x = deterministicMath.max(40, deterministicMath.min(WIDTH3 - 40, shadow.x));
-      shadow.y = FLOOR - DREAM_SHADOW_FOOT_OFFSET + deterministicMath.sin(elapsed * 4) * 5;
-      shadow.sx = playerX < shadow.x ? -1 : 1;
-      shadow.setFrame(deterministicMath.floor(elapsed * 3) % 2);
-      const gap = deterministicMath.abs(shadow.x - playerX);
-      if (gap < 54 && !protectedNow) caught();
-      const nearPortal = playerX >= 1116;
-      objective.text = protectedNow ? "The patch of light protects Tokyo." : "Move from light to light. The shadow is roaming.";
-      prompt.text = nearPortal ? game.touch.visible ? "Enter the light portal" : "F  ENTER THE LIGHT PORTAL" : game.touch.visible ? "Move with the stick \xB7 Jump to dodge \xB7 Find Senny\u2019s light" : "\u2190 \u2192 MOVE   \xB7   SPACE JUMP   \xB7   SHIFT RUN   \xB7   F INTERACT";
-      if (nearPortal && game.controls.justPressed("interact")) {
-        journey.stage = 2;
-        journey.visitedCats = [];
-        journey.puzzleStep = 0;
-        game.scenes.go("journey");
-      }
-      voice.text = elapsed < 5 ? "\u201CTokyo? I\u2019m over here\u2026\u201D  \u2014  Senny" : "SENNY\u2019S VOICE  \u2192";
-      if (game.controls.justPressed("pause")) game.scenes.push("pause");
-    }, { after: "tokyo-visual" });
-  },
-  exit() {
-    game.touch.visible = false;
-  }
-};
-
 // game/scenes/Journey.ts
 var SCREEN_W = 1280;
-var FLOOR2 = 576;
+var FLOOR = 576;
 var LEVEL_FLOORS = {
   2: 570,
   3: 522,
@@ -45984,45 +46955,45 @@ var LEVEL_FLOORS = {
   9: 560
 };
 var FLOOR_HEIGHT = 48;
-var GRAVITY3 = 1500;
+var GRAVITY4 = 1500;
 var WALKING_START = 120;
 var EXIT_X = 1172;
-var EXIT_RANGE = 62;
+var EXIT_RANGE2 = 62;
+var PORTAL_HEIGHT3 = 142;
 var CHAT_RANGE = 68;
+var ACTION_HEIGHT = 68;
 var LIGHTS = [204, 467, 730, 993, 1174];
-var LIGHT_SAFE_RADIUS = 116;
-var LIGHT_BUFFER_RADIUS = 128;
-var SHADOW_SPEED = 194;
-var SHADOW_TOUCH_DISTANCE = 54;
 var HAZARD_TOUCH_X = 48;
 var HAZARD_TOUCH_Y = 45;
 var FAMILY_SCALE = 1.48;
+var FAMILY_ACTION_HEIGHT = 130;
+var KENNEL_LATCH_X = 424;
+var WAKE_X = 1040;
+var REUNION_SECONDS = 2.8;
 var FAMILY = [
-  { id: "sandesh", name: "Sandesh", line: "Sandesh: \u201CYou found your way out!\u201D" },
-  { id: "sushil", name: "Sushil", line: "Sushil: \u201CI knew you would find me.\u201D" },
-  { id: "dad", name: "Dad", line: "Dad: \u201CThe forest could not hide you from us.\u201D" },
-  { id: "mom", name: "Mom", line: "Mom: \u201CI knew you would find your way.\u201D" },
-  { id: "reshika", name: "Reshika", line: "Reshika: \u201CCome on, Tokyo. Everyone is waiting.\u201D" },
-  { id: "senny", name: "Senny", line: "Senny: \u201CI have been calling you, little one.\u201D" }
+  { id: "sandesh", name: "Sandesh" },
+  { id: "sushil", name: "Sushil" },
+  { id: "dad", name: "Dad" },
+  { id: "mom", name: "Mom" },
+  { id: "reshika", name: "Reshika" },
+  { id: "senny", name: "Senny" }
 ];
 var Journey = {
   name: "journey",
   enter() {
     const stage = journey.stage;
     const info = DREAM_LEVELS[stage - 1] ?? DREAM_LEVELS[1];
-    const floor2 = LEVEL_FLOORS[stage] ?? FLOOR2;
-    const saved = journey.rescued.slice();
+    const floor2 = LEVEL_FLOORS[stage] ?? FLOOR;
     let elapsed = 0;
-    let messageTime = 0;
-    let stopped = false;
     let stumbleTime = 0;
     let hazardCooldown = 0;
     let doorOpen = stage !== 2;
     let reunionActive = false;
     let reunionTimer = 0;
     let wakeReady = false;
+    let wasInteract = false;
+    let interactRequested = false;
     const hazards = [];
-    const lights = [];
     const targets = [];
     if (stage === 1) {
       game.scenes.go("dream-start");
@@ -46030,7 +47001,7 @@ var Journey = {
     }
     run.scene = "journey";
     game.camera.snap(SCREEN_W / 2, 360, 1);
-    game.physics.gravity(0, GRAVITY3);
+    game.physics.gravity(0, GRAVITY4);
     game.touch.visible = getTouchOverride() ?? isMobileView();
     if (stage === 7) {
       const { lamp, shade: shade2 } = spawnHomeRoom();
@@ -46060,18 +47031,16 @@ var Journey = {
     const tokyo = spawnTokyo(
       WALKING_START,
       floor2,
-      () => !stopped && stumbleTime <= 0,
+      () => stumbleTime <= 0,
       stage === 2 ? 1.12 : 1.5
     );
     if (stage >= 8 && journey.plushie) tokyo.carry("plushie");
-    const glowSprites = lights;
     if (stage < 9) {
       for (let i = 0; i < LIGHTS.length; i++) {
-        const x = LIGHTS[i];
-        const glow = game.spawn({
-          id: "safe-light-" + (i + 1),
+        game.spawn({
+          id: "dream-light-" + (i + 1),
           texture: "dream-light",
-          x,
+          x: LIGHTS[i],
           y: floor2 - 42,
           width: 170,
           height: 170,
@@ -46079,85 +47048,13 @@ var Journey = {
           z: 2,
           frame: i % 4
         });
-        glowSprites.push({ x, sprite: glow });
       }
     }
-    const aura = game.spawn({
-      id: "tokyo-light-shield",
-      texture: "dream-shield",
-      x: WALKING_START,
-      y: floor2 - 38,
-      width: 120,
-      layer: "world",
-      z: 9,
-      alpha: 0.84
+    const portal = stage < 9 ? spawnRiftPortal("journey-exit-portal", EXIT_X, floor2, PORTAL_HEIGHT3) : null;
+    showDreamTitle(info.name);
+    const prompt = spawnDreamPrompt(() => {
+      interactRequested = true;
     });
-    aura.visible = false;
-    let entity = null;
-    if (stage < 9) {
-      entity = game.spawn({
-        id: "roaming-dream-shadow",
-        texture: "dream-entity",
-        x: 824,
-        y: floor2 - DREAM_SHADOW_FOOT_OFFSET,
-        width: DREAM_SHADOW_WIDTH,
-        layer: "world",
-        z: 8,
-        frame: 0
-      });
-    }
-    const portal = game.spawn({
-      id: "journey-exit-portal",
-      texture: "park-portal",
-      frame: 1,
-      x: EXIT_X,
-      y: floor2 - 83,
-      width: 112,
-      height: 142,
-      layer: "world",
-      z: 4
-    });
-    if (stage === 9) portal.visible = false;
-    const headline = game.text(
-      String(stage).padStart(2, "0") + " / 09     " + info.name.toUpperCase(),
-      SCREEN_W / 2,
-      37,
-      {
-        size: 20,
-        font: "mono-bold",
-        color: "#fff2c9",
-        shadow: { color: "#17202c", x: 2, y: 3 }
-      }
-    );
-    const objective = game.text(
-      info.title,
-      SCREEN_W / 2,
-      72,
-      { size: 15, font: "mono-bold", color: "#f2e9cb", shadow: { color: "#17202c", x: 1, y: 2 } }
-    );
-    const companions = game.text(
-      saved.length ? "FOUND: " + saved.map((id2) => id2.toUpperCase()).join("  \xB7  ") : "SENNY\u2019S VOICE IS FAR AWAY",
-      SCREEN_W / 2,
-      106,
-      { size: 13, font: "mono-bold", color: "#f4d88d", shadow: { color: "#17202c", x: 1, y: 2 } }
-    );
-    const message = game.text(
-      stage === 2 ? "Small paws. A long way home." : stage === 9 ? "Look\u2014your whole family is here!" : "Keep exploring. The warm light keeps Tokyo safe.",
-      SCREEN_W / 2,
-      614,
-      {
-        size: 18,
-        font: "mono-bold",
-        color: "#fff1cf",
-        shadow: { color: "#1c1825", x: 2, y: 2 }
-      }
-    );
-    const prompt = game.text(
-      "",
-      SCREEN_W / 2,
-      675,
-      { size: 14, font: "mono-bold", color: "#fff6dc", shadow: { color: "#171924", x: 1, y: 2 } }
-    );
     if (stage === 2) {
       const gate = game.spawn({
         id: "kennel-front-gate",
@@ -46182,20 +47079,17 @@ var Journey = {
       game.spawn({
         id: "kennel-gate-latch",
         texture: "dream-latch",
-        x: 424,
+        x: KENNEL_LATCH_X,
         y: floor2 - 28,
         width: 54,
         height: 58,
         layer: "world",
         z: 8
       });
-      targets.push({ x: 424, label: "Free the kennel gate", act: () => {
-        if (doorOpen) return;
+      targets.push({ x: KENNEL_LATCH_X, label: "Open gate", ready: () => !doorOpen, act: () => {
         doorOpen = true;
         gate.setFrame(1);
         gateWall.destroy();
-        message.text = "The latch turns. Tokyo can leave the kennel.";
-        messageTime = 4.2;
       } });
     }
     if (stage === 3) {
@@ -46273,13 +47167,11 @@ var Journey = {
         });
         targets.push({
           x: cat2.x,
-          label: "Say hello to " + cat2.name,
+          label: "Greet " + cat2.name,
           ready: () => !journey.visitedCats.includes(cat2.index),
           act: () => {
-            if (!journey.visitedCats.includes(cat2.index)) journey.visitedCats.push(cat2.index);
+            journey.visitedCats.push(cat2.index);
             sprite.setFrame(cat2.index * 2 + 1);
-            message.text = cat2.name + " gives Tokyo a friendly little meow.";
-            messageTime = 3.3;
           }
         });
       }
@@ -46295,7 +47187,7 @@ var Journey = {
         layer: "world",
         z: 7
       });
-      const moonMark = game.spawn({
+      game.spawn({
         id: "puzzle-moon-mark",
         texture: "dream-moon",
         x: 440,
@@ -46315,7 +47207,7 @@ var Journey = {
         layer: "world",
         z: 7
       });
-      const starMark = game.spawn({
+      game.spawn({
         id: "puzzle-star-mark",
         texture: "dream-star",
         x: 708,
@@ -46327,30 +47219,19 @@ var Journey = {
       });
       if (journey.puzzleStep > 0) moonPad.setFrame(1);
       if (journey.puzzleStep > 1) starPad.setFrame(1);
-      void moonMark;
-      void starMark;
-      targets.push({ x: 440, label: "Press the moon stone first", act: () => {
-        if (journey.puzzleStep === 0) {
-          journey.puzzleStep = 1;
-          moonPad.setFrame(1);
-          message.text = "The moon stone glows. Now find the star.";
-        } else {
-          message.text = "Moon first, then the star. Follow the picture hint.";
-        }
-        messageTime = 3.2;
+      targets.push({ x: 440, label: "Press moon first", ready: () => journey.puzzleStep === 0, act: () => {
+        journey.puzzleStep = 1;
+        moonPad.setFrame(1);
       } });
-      targets.push({ x: 708, label: "Press the star stone second", act: () => {
+      targets.push({ x: 708, label: "Press star second", act: () => {
         if (journey.puzzleStep === 1) {
           journey.puzzleStep = 2;
           starPad.setFrame(1);
-          message.text = "The hidden door swings open!";
         } else {
           journey.puzzleStep = 0;
           moonPad.setFrame(0);
           starPad.setFrame(0);
-          message.text = "The stones reset. Look at the moon and star order.";
         }
-        messageTime = 3.3;
       } });
     }
     if (stage === 8) {
@@ -46366,21 +47247,19 @@ var Journey = {
       });
       targets.push({
         x: 858,
-        label: "Pick up your favourite plushie",
+        label: "Pick up plushie",
+        sound: PICKUP_SOUND,
         ready: () => !journey.plushie,
         act: () => {
           journey.plushie = true;
           tokyo.carry("plushie");
           favoriteToy.visible = false;
-          message.text = "There you are. Tokyo has her favourite plushie again.";
-          messageTime = 4;
         }
       });
     }
-    let character = null;
     if (info.family) {
       const person = FAMILY.find((item) => item.id === info.family);
-      character = game.spawn({
+      const character = game.spawn({
         id: "dream-family-" + person.id,
         texture: "family-" + person.id,
         x: 1060,
@@ -46389,25 +47268,22 @@ var Journey = {
         layer: "world",
         z: 7
       });
-      game.text(
-        person.name,
-        1060,
-        floor2 - 126,
-        { size: 16, font: "mono-bold", color: "#fff2c9", shadow: { color: "#181923", x: 2, y: 2 } }
-      );
-      targets.push({ x: 1060, label: "Run to " + person.name, act: () => {
-        if (!journey.rescued.includes(person.id)) journey.rescued.push(person.id);
-        character?.setFrame(4);
-        companions.text = "FOUND: " + journey.rescued.map((id2) => id2.toUpperCase()).join("  \xB7  ");
-        message.text = person.line;
-        messageTime = 4.4;
-      } });
+      targets.push({
+        x: 1060,
+        height: FAMILY_ACTION_HEIGHT,
+        label: "Greet " + person.name,
+        ready: () => !journey.rescued.includes(person.id),
+        act: () => {
+          journey.rescued.push(person.id);
+          character.setFrame(4);
+        }
+      });
     }
     if (stage === 9) {
       const groupX = [481, 593, 705, 817, 929, 1041];
       for (let i = 0; i < FAMILY.length; i++) {
         const person = FAMILY[i];
-        const personSprite = game.spawn({
+        game.spawn({
           id: "spring-reunion-" + person.id,
           texture: "family-" + person.id,
           x: groupX[i],
@@ -46416,24 +47292,19 @@ var Journey = {
           layer: "world",
           z: 7
         });
-        void personSprite;
-        game.text(
-          person.name,
-          groupX[i],
-          floor2 - 117,
-          {
-            size: 12,
-            font: "mono-bold",
-            color: "#fff6de",
-            shadow: { color: "#354239", x: 1, y: 2 }
-          }
-        );
       }
-      targets.push({ x: 758, label: "Hug everyone", act: () => {
+      targets.push({ x: 758, height: FAMILY_ACTION_HEIGHT, label: "Hug everyone", ready: () => !reunionActive, act: () => {
         reunionActive = true;
-        reunionTimer = 0;
-        message.text = "Everyone cheers as petals swirl around Tokyo!";
-        messageTime = 5;
+        game.particles.burst({
+          x: tokyo.x,
+          y: floor2 - 60,
+          count: 24,
+          layer: "front",
+          frame: "particle:petal",
+          color: ["#ffdec0", "#ffb8d4", "#fff2cc"],
+          speed: [45, 145],
+          lifespan: [0.8, 1.7]
+        });
       } });
     }
     const familyGoalReady = () => {
@@ -46444,113 +47315,34 @@ var Journey = {
       if (info.family) return journey.rescued.includes(info.family);
       return true;
     };
-    if (stage !== 9) {
+    if (portal) {
+      portal.setOpen(familyGoalReady());
       targets.push({
         x: EXIT_X,
-        label: "Enter the glowing doorway",
+        label: "Enter the rift",
+        sound: RIFT_SOUND,
         ready: familyGoalReady,
-        act: () => {
-          if (!familyGoalReady()) {
-            if (stage === 2 && !doorOpen) message.text = "The kennel gate is still latched. Find the lever.";
-            else if (stage === 6 && journey.visitedCats.length < 2) message.text = "Two city cats still want to say hello.";
-            else if (stage === 7 && journey.puzzleStep < 2) message.text = "The pawprint stones need their moon-and-star order.";
-            else if (stage === 8 && !journey.plushie) message.text = "Your favourite plushie is still somewhere in the toy piles.";
-            else message.text = "There is still someone you need to find.";
-            messageTime = 3.6;
-            return;
-          }
-          completeDreamStage();
-        }
+        act: completeDreamStage
       });
     } else {
       targets.push({
-        x: 1040,
-        label: "Wake up with your family",
+        x: WAKE_X,
+        height: FAMILY_ACTION_HEIGHT,
+        label: "Wake up",
         ready: () => wakeReady,
-        act: () => completeDreamStage()
+        act: completeDreamStage
       });
-    }
-    if (stage === 9) {
-      objective.text = "EVERYONE IS HERE. GIVE THEM A HUG!";
-      companions.text = "SANDESH  \xB7  SUSHIL  \xB7  DAD  \xB7  MOM  \xB7  RESHIKA  \xB7  SENNY  \xB7  PLUSHIE";
-    } else if (stage === 6) {
-      objective.text = "FIND MIKAN AND SORA. THEN FIND RESHIKA.";
-    } else if (stage === 7) {
-      objective.text = "PUZZLE: MOON FIRST, THEN STAR.";
-    } else if (stage === 8 && journey.plushie) {
-      objective.text = "YOUR PLUSHIE IS SAFE. FIND THE LIGHT AHEAD.";
-    }
-    function caught(reason = "THE SHADOW FOUND TOKYO") {
-      if (stopped) return;
-      stopped = true;
-      game.ui.panel({ anchor: "center", w: 608, h: 298, z: 30, safeArea: false, style: "dark" });
-      game.text(
-        reason,
-        SCREEN_W / 2,
-        237,
-        { z: 31, size: 32, font: "mono-bold", color: "#edbdd6" }
-      );
-      game.text(
-        "The warm light will protect her next time.",
-        SCREEN_W / 2,
-        294,
-        { z: 31, size: 18, font: "mono", color: "#f4e8d0" }
-      );
-      game.ui.button({
-        id: "shadow-retry",
-        anchor: "center",
-        y: 170,
-        z: 31,
-        h: 58,
-        text: "Try this level again",
-        icon: "restart",
-        style: "good",
-        onClick: () => game.scenes.go("journey")
-      });
-      game.ui.button({
-        id: "shadow-home",
-        anchor: "center",
-        y: 239,
-        z: 31,
-        h: 50,
-        text: "Wake up at home",
-        icon: "home",
-        style: "flat",
-        onClick: () => game.scenes.go("home")
-      });
-      message.text = "";
-      prompt.text = "";
     }
     game.step("journey-world", (dt) => {
-      if (stopped) return;
       elapsed += dt;
-      if (messageTime > 0) messageTime = deterministicMath.max(0, messageTime - dt);
       if (stumbleTime > 0) stumbleTime = deterministicMath.max(0, stumbleTime - dt);
       if (hazardCooldown > 0) hazardCooldown = deterministicMath.max(0, hazardCooldown - dt);
       const playerX = tokyo.data.x;
-      const lightDistance = glowSprites.reduce((best, light) => deterministicMath.min(best, deterministicMath.abs(playerX - light.x)), Infinity);
-      const protectedNow = stage < 9 && lightDistance <= LIGHT_SAFE_RADIUS;
-      aura.visible = protectedNow;
-      aura.x = playerX;
-      aura.y = tokyo.data.feet - 34;
-      aura.alpha = 0.62 + deterministicMath.sin(elapsed * 3) * 0.12;
-      if (entity && stage < 9) {
-        const gap = deterministicMath.abs(entity.x - playerX);
-        const bufferNearby = lightDistance <= LIGHT_BUFFER_RADIUS;
-        if (bufferNearby && gap < LIGHT_BUFFER_RADIUS + 10) {
-          if (playerX < entity.x) entity.x = playerX + LIGHT_BUFFER_RADIUS + 10;
-          else entity.x = playerX - LIGHT_BUFFER_RADIUS - 10;
-        } else {
-          const direction2 = playerX < entity.x ? -1 : 1;
-          entity.x += direction2 * SHADOW_SPEED * dt;
-        }
-        entity.x = deterministicMath.max(40, deterministicMath.min(SCREEN_W - 40, entity.x));
-        entity.y = floor2 - DREAM_SHADOW_FOOT_OFFSET + deterministicMath.sin(elapsed * 4) * 5;
-        entity.sx = playerX < entity.x ? -1 : 1;
-        entity.setFrame(deterministicMath.floor(elapsed * 3) % 2);
-        const distanceAfterMove = deterministicMath.abs(entity.x - playerX);
-        if (distanceAfterMove < SHADOW_TOUCH_DISTANCE && !protectedNow) caught();
-      }
+      const interact = game.controls.pressed("interact");
+      const interactPressed = interactRequested || game.controls.justPressed("interact") || interact && !wasInteract;
+      interactRequested = false;
+      wasInteract = interact;
+      portal?.setOpen(familyGoalReady());
       for (const hazard of hazards) {
         hazard.sprite.x += hazard.direction * hazard.speed * dt;
         if (hazard.sprite.x <= hazard.low || hazard.sprite.x >= hazard.high) {
@@ -46563,26 +47355,37 @@ var Journey = {
         if (deterministicMath.abs(tokyo.data.x - hazard.sprite.x) < HAZARD_TOUCH_X && deterministicMath.abs(dogHeight) < HAZARD_TOUCH_Y && hazardCooldown <= 0) {
           stumbleTime = 0.38;
           hazardCooldown = 1;
-          message.text = stage === 4 ? "The owl flutters past. Follow the fireflies." : "The stray dog rushes past. Wait for a clear path.";
-          messageTime = 2.4;
         }
       }
-      if (stage === 9 && reunionActive) {
+      if (reunionActive && !wakeReady) {
         reunionTimer += dt;
-        if (reunionTimer > 2.8 && !wakeReady) {
+        if (reunionTimer >= REUNION_SECONDS) {
           wakeReady = true;
-          message.text = "Everyone is safe. Follow the morning light home.";
-          objective.text = "PRESS F TO WAKE UP";
+          const glow = game.spawn({
+            id: "spring-morning-light",
+            texture: "dream-light",
+            x: WAKE_X,
+            y: floor2 - 64,
+            width: 210,
+            alpha: 0,
+            layer: "world",
+            z: 4
+          });
+          game.tween.to(glow, { alpha: 1 }, { duration: 0.55, ease: "easeOutSine" });
         }
       }
-      const near = targets.filter((target) => !target.ready || target.ready()).map((target) => ({ target, distance: deterministicMath.abs(playerX - target.x) })).filter((entry) => entry.distance <= (entry.target.x === EXIT_X ? EXIT_RANGE : CHAT_RANGE)).sort((a, b) => a.distance - b.distance)[0]?.target;
-      prompt.text = near ? game.touch.visible ? near.label : "F  " + near.label : game.touch.visible ? "Move with the stick \xB7 Jump to dodge \xB7 Find the warm lights" : "\u2190 \u2192 MOVE   \xB7   SPACE JUMP   \xB7   SHIFT RUN   \xB7   F INTERACT";
-      if (messageTime <= 0) {
-        message.text = protectedNow ? "The patch of light protects Tokyo." : stage === 6 ? "The cats are friendly. Watch the dog\u2019s path." : stage === 7 ? "Press the moon stone, then the star stone." : stage === 8 && journey.plushie ? "Her favourite friend is beside her again." : "Keep exploring. Stay close to the warm lights.";
+      const near = targets.filter((target) => !target.ready || target.ready()).map((target) => ({ target, distance: deterministicMath.abs(playerX - target.x) })).filter((entry) => entry.distance <= (entry.target.x === EXIT_X ? EXIT_RANGE2 : CHAT_RANGE)).sort((a, b) => a.distance - b.distance)[0]?.target;
+      if (near) {
+        const top = portal && near.x === EXIT_X ? portal.y - PORTAL_HEIGHT3 / 2 : floor2 - (near.height ?? ACTION_HEIGHT);
+        const tapped = prompt.show(near.label, near.x, top, dt);
+        if (interactPressed || tapped) {
+          game.sound.play(near.sound ?? INTERACT_SOUND);
+          near.act();
+        }
+      } else {
+        prompt.hide();
       }
-      if (near && game.controls.justPressed("interact")) near.act();
       if (game.controls.justPressed("pause")) game.scenes.push("pause");
-      void headline;
     }, { after: "tokyo-visual" });
   },
   exit() {
@@ -46596,6 +47399,7 @@ var ROOM_HEIGHT = 720;
 var FAMILY_SCALE2 = 1.48;
 var GREETING_RANGE = 64;
 var ACTION_FRAME_TIME = 0.2;
+var MESSAGE_SECONDS = 3.6;
 var TOY_REACH = 38;
 var Ending = {
   name: "ending",
@@ -46709,6 +47513,7 @@ var Ending = {
         shadow: { color: "#283828", x: 1, y: 2 }
       }
     );
+    const voice = createDialogueVoice();
     game.step("morning-reunion", (dt) => {
       elapsed += dt;
       if (messageTime > 0) messageTime = deterministicMath.max(0, messageTime - dt);
@@ -46735,14 +47540,16 @@ var Ending = {
         if (distance <= GREETING_RANGE && (!closest || distance < closest.distance)) {
           closest = { label: "Greet " + member.name, distance, action: () => {
             member.actionTime = ACTION_FRAME_TIME * 5;
-            message.text = lines[member.id];
-            messageTime = 3.6;
+            const line = lines[member.id];
+            message.text = line;
+            messageTime = MESSAGE_SECONDS;
+            voice.speak(line, MESSAGE_SECONDS);
           } };
         }
       }
       const ballDistance = deterministicMath.abs(playerX - ball.x);
       if (ball.visible && !flight && ballDistance <= GREETING_RANGE && (!closest || ballDistance < closest.distance)) {
-        closest = { label: "Pick up the ball", distance: ballDistance, action: () => {
+        closest = { label: "Pick up the ball", distance: ballDistance, sound: PICKUP_SOUND, action: () => {
           if (tokyo.data.carrying === "plushie") {
             plushie.x = playerX - tokyo.data.facing * TOY_REACH;
             plushie.y = HOME_FLOOR - plushie.height / 2 + 2;
@@ -46755,20 +47562,21 @@ var Ending = {
         const receiver = family.find((member) => member.id === "senny");
         const distance = deterministicMath.abs(playerX - receiver.x);
         if (distance <= GREETING_RANGE && (!closest || distance < closest.distance)) {
-          closest = { label: "Play fetch with Senny", distance, action: () => {
+          closest = { label: "Play fetch with Senny", distance, sound: INTERACT_SOUND, action: () => {
             tokyo.carry(null);
             ball.x = playerX + tokyo.data.facing * TOY_REACH;
             ball.y = HOME_FLOOR - 15;
             ball.visible = true;
             flight = { from: ball.x, to: receiver.x, time: 0 };
             message.text = "Senny tosses the ball. Tokyo races to fetch it!";
-            messageTime = 3.6;
+            messageTime = MESSAGE_SECONDS;
+            voice.stop();
           } };
         }
       }
       const plushieDistance = deterministicMath.abs(playerX - plushie.x);
       if (plushie.visible && tokyo.data.carrying === null && plushieDistance <= GREETING_RANGE && (!closest || plushieDistance < closest.distance)) {
-        closest = { label: "Pick up your plushie", distance: plushieDistance, action: () => {
+        closest = { label: "Pick up your plushie", distance: plushieDistance, sound: PICKUP_SOUND, action: () => {
           plushie.visible = false;
           tokyo.carry("plushie");
         } };
@@ -46778,7 +47586,10 @@ var Ending = {
         message.text = "That was a big adventure. Go play with everyone!";
         prompt.text = "\u2190 \u2192 MOVE   \xB7   F GREET OR PLAY   \xB7   SHIFT RUN";
       }
-      if (closest && game.controls.justPressed("interact")) closest.action();
+      if (closest && game.controls.justPressed("interact")) {
+        if (closest.sound) game.sound.play(closest.sound);
+        closest.action();
+      }
       if (game.controls.justPressed("pause")) game.scenes.push("pause");
     }, { after: "tokyo-visual" });
   },
@@ -46941,8 +47752,10 @@ var TouchSettings = {
 };
 
 // game/main.ts
-var PIXEL_PARK_STRIPS = /* @__PURE__ */ new Set(["beds", "boxes", "food", "houses", "people", "portal", "rocks", "villain-dogs"]);
+var PIXEL_PARK_STRIPS = /* @__PURE__ */ new Set(["beds", "boxes", "food", "houses", "people", "rocks", "villain-dogs"]);
 paintArt();
+prepareDialogueAudio();
+prepareActionAudio();
 game.ui.theme = "block";
 game.controls.bind("jump", { keys: ["Space", "ArrowUp", "KeyW", "Touch:jump"], pad: ["a"] });
 game.controls.bind("run", { keys: ["ShiftLeft", "ShiftRight", "Touch:run"], pad: ["x"] });
@@ -46978,7 +47791,6 @@ for (const [key, w, h, cols] of [
   ["sticks", 64, 64, 6],
   ["bushes", 128, 112, 6],
   ["rocks", 160, 112, 7],
-  ["portal", 192, 240, 4],
   ["villain-dogs", 112, 112, 8],
   ["treats", 48, 48, 4],
   ["clouds", 192, 128, 6]
@@ -46987,6 +47799,7 @@ for (const [key, w, h, cols] of [
   await game.assets.load([{ kind: "image", key: `park-${key}`, url: `assets/park-${key}${suffix}.png`, w, h, cols, rows: 1 }]);
 }
 await game.assets.load([
+  RIFT_PORTAL_ART,
   { kind: "image", key: "sky-sun", url: "assets/sky-sun.png" },
   { kind: "image", key: "sky-moon", url: "assets/sky-moon.png" },
   { kind: "image", key: "sky-cloud", url: "assets/sky-cloud.png" },
@@ -47003,6 +47816,7 @@ game.scenes.register(TouchSettings);
 game.scenes.register(Playground);
 game.scenes.register(ParkMap);
 game.scenes.register(Story);
+game.scenes.register(LevelSelect);
 game.scenes.register(Home);
 game.scenes.register(DreamStart);
 game.scenes.register(Journey);

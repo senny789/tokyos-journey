@@ -10,4 +10,4 @@ Tokyo is a tiny puppy again, back in the kennel where she was born and raised. D
 
 ## Implemented playthrough
 
-Tokyo appears as a smaller puppy in a cage-filled kennel. Walk to the wall latch and press F to open the front gate, then cross the room to find Sandesh and use the far portal. The shadow and warm lights carry over from the first dream stage.
+Tokyo appears as a smaller puppy in a cage-filled kennel. Walk to the wall latch and press F to open the front gate, then cross the room to find Sandesh and use the far portal.

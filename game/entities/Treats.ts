@@ -1,4 +1,5 @@
 import { game } from '../engine.js';
+import { PICKUP_SOUND } from '../actionAudio.js';
 import { run } from './Tokyo.js';
 import { GROUND_Y } from '../meadow.js';
 
@@ -142,6 +143,7 @@ export function spawnTreats(onCollect?: (collected: number, total: number) => vo
 function collectTreat(item: TreatItem, onCollect?: (collected: number, total: number) => void): void {
     item.collected = true;
     currentTreats.collected++;
+    game.sound.play(PICKUP_SOUND);
 
     // Collection pop animation
     game.tween.to(item.sprite, { y: item.y - 36, scale: 1.7, alpha: 0 }, {

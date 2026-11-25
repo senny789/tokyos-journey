@@ -1,6 +1,6 @@
 # Sprite style guide
 
-Use this guide for every new or revised sprite in Tokyo's Journey, including characters, props, environment pieces, and animation variants.
+Use this guide for the production workflow for every new or revised sprite in Tokyo's Journey. Follow the [graphic style reference](graphic-style.md) for perspective, pixels, lighting, materials, and palettes.
 
 ## Visual references
 
@@ -10,7 +10,7 @@ Use this guide for every new or revised sprite in Tokyo's Journey, including cha
 
 ## Match the art in the scene
 
-- Draw crisp 16-bit side-view pixel art with square pixels, warm dark outlines, and connected clusters of flat color. Use a few shades per material and sparse highlights. Keep contours and interior features readable against the destination background.
+- Draw crisp 16-bit side-view pixel art with square pixels, outlines in the material’s shadow colors, and connected clusters of flat color. Use a few shades per material and sparse highlights. Keep contours and interior features readable against the destination background.
 - Match the camera, light direction, and apparent pixel size of neighboring sprites at their actual display scale. In Level 0, Tokyo and the family use roughly 2.3–2.6 screen units per art pixel. The room and furniture use roughly four. Use nearest-neighbor sampling for crisp edges.
 - Keep transparent padding around the full silhouette. Put ground shadows, scenery, and interface text on separate layers. Inspect the exported alpha on both light and dark backgrounds to catch fringes and stray pixels.
 

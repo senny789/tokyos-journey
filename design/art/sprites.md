@@ -12,7 +12,7 @@ The [main-menu background](../../game/assets/title-home-dusk.png) was generated 
 
 The [Story Mode background](../../game/assets/story-living-room.png) uses the dusk exterior and the in-game living room as references. The prompt asked for an olive sofa, terracotta curtains, and a floor lamp on the right, with a quiet shaded wall for the menu on the left. The 640 × 360 plate leaves the rug clear for Tokyo’s existing plushie-carry animation.
 
-The [Sprite Cast PixelKit packer](../../scripts/prepare-pixel-sprites.py) prepares the new home props and the `park-*-pixel.png` runtime strips for the portal, dogs, people, houses, beds, boxes, rocks, and food. It retains the source strips and preserves each frame's bounds and ground anchor.
+The [Sprite Cast PixelKit packer](../../scripts/prepare-pixel-sprites.py) prepares the new home props and the `park-*-pixel.png` strips for dogs, people, houses, beds, boxes, rocks, and food. It retains the source strips and preserves each frame's bounds and ground anchor.
 
 The [dream creature source](dream-creatures-source.png) was made with built-in ImageGen using Tokyo's game sprite for pixel size and shape language and the forest and city scenes for palette. The prompt asked for a transparent four-column, two-row sheet with a folded and flapping owl, alert and blinking poses for ginger Mikan and blue-gray Sora, and two stalking poses for the plum-colored shadow. The same packer exports the creature sheets with transparent backgrounds and shared baselines. The kennel gate, latch, light patches, and puzzle tokens are drawn on small pixel grids in [dreamArt.ts](../../game/dreamArt.ts).
 
@@ -26,14 +26,19 @@ The [dream creature source](dream-creatures-source.png) was made with built-in I
   4. Savory dried meat strip treat
 - **Visuals:** Warm amber/honey palette, soft glowing sparkles, floating aura.
 
-## 2. Glowing Portal
-- **Source:** `design/art/sources/portal-source.jpg`
-- **Runtime Asset:** `game/assets/portal.png`
-- **Description:** 4-frame animation / state progression for an ancient magical portal:
-  1. Dormant carved stone archway with subtle glowing runes
-  2. Awakening portal with a spiraling violet and cyan vortex
-  3. Fully active swirling portal vortex radiating energy rings and golden flecks
-  4. Radiant pulsing dimensional gateway with flared cosmic auras
+## 2. Rift Portal
+
+Built-in ImageGen used a Level 1 game frame as a pixel-scale reference for the amber-and-aqua portal. Sprite Cast PixelKit reduced the two states into 64 × 80 px transparent frames with a common ground anchor at row 76. Frame 0 is the muted ring. The next three frames share a luminous turquoise center and gold ribbons with a palette pulse. The game plays frames 1, 2, 3, 2 at 5 FPS using zero-based indices. Both states hover above the ground with a gentle sway. The open state adds a halo that follows the ring, light that sweeps upward through its center, and two sparks orbiting the rim. [Portal sprite sheet](../../game/assets/rift-portal.png) · [Animation and anchor](../../game/riftPortal.ts)
+
+<details>
+<summary>ImageGen prompt</summary>
+
+```text
+Generate one transparent RGBA sprite sheet for a friendly glowing portal in Tokyo's Journey, a crisp 16-bit pixel-art side-view platformer. Use the supplied game screenshot ONLY as reference for pixel scale, art direction and the dark blue scene. Invent a warm, magical visual with a smooth vertical oval of airborne light. The portal is two flowing ribbons of amber and aqua energy that curl together around a brightly illuminated turquoise center, like wisps of sunlight catching on a swirl of water. The open oval is widest at the middle, about 0.60 times as wide as it is tall. All edges and arcs are soft in shape but rendered with crisply stepped square pixel clusters. A thin blue-teal shadow edge separates the outer ribbons from bright grass as well as midnight blue. Large coherent clusters of saturated teal, turquoise, buttery gold and small near-white highlights. A few rounded luminous flecks close to the rim.
+Lay out exactly two states in equal side-by-side panels, with the complete transparent cutouts comfortably inside each panel and generous separation. LEFT: the sealed state is a dim hovering oval traced by two broken amber arcs and a small bronze-teal shadow rim, like a sleeping ring of light. Genuine transparent empty interior. It remains clearly visible in the dark. RIGHT: the open state has the same width, centerline and height, with a broad bright aqua interior formed by flowing diagonal ribbons and a radiant cream-gold and teal rim. Add a restrained handful of warm star flecks around the rim. The open center is completely filled with light in several broad value bands. Put the strongest pale colors near the center and upper arc. The open state should feel cheerful, magical and safe to approach. No cracks, points, eye or pupil, stone arch, metallic frame, pedestal, black void, characters, landscape, dark backdrop, interface, grid, divider, labels, typography or watermark. Use true transparent alpha around both sprites and keep any soft glow tight to the rim. The main forms should read at a display size of around 80 by 130 logical pixels.
+```
+
+</details>
 
 ## 3. Villain Dogs
 - **Source:** `design/art/sources/villain-dogs-source.jpg`

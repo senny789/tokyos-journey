@@ -5,6 +5,7 @@ import { isMobileView } from '../mobile.js';
 
 const MENU_LEFT = 88;
 const HOME_BUTTON_Y = 352;
+const LEVEL_SELECT_X = 366;
 const MEADOW_BUTTON_Y = 467;
 const TOKYO_X = 917;
 const TOKYO_FEET_Y = 614;
@@ -42,6 +43,11 @@ export const Story = {
             id: 'story-home', anchor: 'top-left', x: MENU_LEFT, y: HOME_BUTTON_Y,
             h: MENU_BUTTON_HEIGHT, text: 'Start at Home', icon: 'play', iconSize: 29,
             style: menuButtonStyles.primary, onClick: startHome,
+        });
+        game.ui.button({
+            id: 'story-level-select', anchor: 'top-left', x: LEVEL_SELECT_X, y: HOME_BUTTON_Y,
+            h: MENU_BUTTON_HEIGHT, text: 'Level Select', icon: 'levels', iconSize: 29,
+            style: menuButtonStyles.secondary, onClick: () => game.scenes.go('level-select'),
         });
         game.ui.button({
             id: 'story-chapter', anchor: 'top-left', x: MENU_LEFT, y: MEADOW_BUTTON_Y,

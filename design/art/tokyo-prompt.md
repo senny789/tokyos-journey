@@ -8,6 +8,21 @@ Production prompt: Create a sprite sheet with exactly eight equal columns and si
 
 `tokyo-source.png` preserves the generated original. `scripts/prepare-sprites.ps1` slices and samples that sheet into the runtime atlas at 64 pixels per frame with a shared foot baseline and binary alpha. The atlas is `game/assets/tokyo.png`.
 
+## Bedtime and dream wake-up
+
+Built-in ImageGen used [Tokyo's standing reference](tokyo-family-style-guide.png) to create two right-facing poses on the [source sheet](tokyo-sleep-source.png). Sprite Cast PixelKit sampled them onto the family atlas palette with binary transparency. The [runtime strip](../../game/assets/tokyo-sleep.png) has two 52 × 52 cells with a common foot baseline at row 47. Frame 0 is sleep and frame 1 is listening. Home bedtime uses frame 0. The dream opening uses both frames before playing Tokyo's existing stand-up poses.
+
+<details>
+<summary>ImageGen prompt</summary>
+
+```text
+Create one transparent RGBA two-frame game sprite sheet for Tokyo's Journey, a crisp 16-bit side-view pixel-art platformer. Input Image 1 is the approved standing character and palette reference. Depict the same named dog Tokyo with her rich golden-orange fur, cream cheeks and chest, long floppy ears, low feathered tail with cream tip, and warm dark-brown one-pixel outline. Use the same head-to-body scale and leg and muzzle shape. Direction is strict right-facing orthographic profile.
+
+Place exactly two separate full-body Tokyo sprites side by side at the same scale and on one common ground baseline, with plenty of clear space between the two silhouettes and around all sides. Left pose: clearly sound asleep in a relaxed shallow curl, eyes visibly CLOSED as dark curved eyelids, mouth shut, cheek and chin resting ON both tucked front paws. The long soft ear hangs down onto the foreleg, the back forms a gentle rounded mound and the tail curls close to the hind legs. Right pose: she has just heard her name. Keep her body and paws in precisely the same spot; lift her chin a little above her forepaws, open the visible eye, keep the mouth closed and let her floppy ear lean forward subtly. The hips and feathered tail stay low and relaxed in both poses. Each pose should be roughly 1.9 times as wide as tall, with a readable face and clear paw contact at about 43 pixels wide by 22 pixels high. Use connected clusters of flat gold and cream shades, minimal antialiasing, unmistakable hard square pixel steps and the simple warm ochre shadowing of the reference. One global light from upper left. Preserve transparent alpha. Omit collars, speech, Z symbols, carpet, props, floor, scene, cast shadows, secondary graphics, cell borders, dividers and labels.
+```
+
+</details>
+
 ## Lower crouch revision
 
 This resting-only revision is retained as a source reference. The active posture/crawl animation and full prompt are documented in `tokyo-crawl-prompt.md`.
@@ -42,6 +57,25 @@ The active lowering and crawl rows use the walking and sitting sprites as the re
 
 - **Lowering**. Draw precisely SIX phases of slowly lowering the same adult dog from her upright walking reference into a crouched walk stance. Start close to the upright height, then naturally bend the knees, hocks and front elbows in gradual increments, lower the chest and hips, tuck the head slightly toward the shoulders, and finish at roughly two-thirds of standing height, with the head held at shoulder level. The last dog has four visibly bent weight-bearing legs and its chest and belly hover over the floor. Keep its head, muzzle, ear, torso and tail volume exactly the same in every frame. All feet stay near their standing-contact locations, with no lateral travel. Natural balanced lowering, rather than a reclining or lying-down pose.
 - **Crawling**. Draw precisely EIGHT phases of a natural low crouched walk cycle. Tokyo ducks her head slightly in line with her shoulders, lowers her hips by bending rear hocks, folds front elbows low, and keeps her chest and belly raised a little above the ground. Keep her head the same size as the walking reference, with full muzzle, visible eye, and floppy ear. Keep the tail long and softly trailing low, not tucked under. Show clear, DIFFERENT grounded paw contacts across eight images: near forepaw reaches forward, plants, bears weight while the far rear paw advances, then the far front paw reaches and bears weight while the near rear paw steps. Use subtle weight transfer but keep the silhouette size and eye height consistent. Eight sequential low walking phases with discernible bent foreleg and hind-leg steps. She looks relaxed and alert, mouth gently closed or slightly open.
+
+## Falling scramble
+
+Built-in ImageGen used [Tokyo's standing reference](tokyo-family-style-guide.png) to draw the [four falling poses](tokyo-fall-source.png). Sprite Cast PixelKit sampled the cutouts at a shared scale onto the family atlas palette and centered each torso in a 52 × 52 cell. The [runtime strip](../../game/assets/tokyo-fall.png) shows a reach, two alternating paw kicks, and a tuck in reading order. Level 1 loops them at 16 FPS and mirrors them for left-facing falls.
+
+<details>
+<summary>ImageGen prompt</summary>
+
+```text
+Make a four-frame sprite sheet for a nonviolent falling animation in Tokyo's Journey, a crisp 16-bit side-view pixel-art platformer. Reference Image 1 is the approved standing Tokyo and her exact art direction. It is an identity reference. Tokyo is the same female golden retriever with golden-orange coat, pale cream chest and muzzle, floppy ears, fluffy cream-tipped tail, short dark-brown stepped outline, and a dark little nose. Use the same length of torso, muzzle, and limbs as the reference. All four frames have strict right-facing side-view perspective.
+
+Composition: exactly four separate full-body sprite cutouts in a clean 2 by 2 grid of equal quadrants in reading order, one silhouette per quadrant, same size and center of ribcage in each cell, generous transparent gutters and transparent padding on every side. No lines marking the grid. She is midair, startled, frantically paddling to recover from a fall. No visible surface. Arrange the sequence as follows:
+Top left: wide worried eye, ears flutter backward, front paws suddenly reach a long way forward at two different heights, rear paws kick back, tail lifts.
+Top right: near front elbow folds inward as the far front paw reaches down, near hind paw tucks under the belly and far hind paw kicks back. Ear flips upward to show the speed.
+Bottom left: opposite part of the scramble, far forepaw folds and near forepaw extends down and forward, far hind paw tucks while near hind paw kicks out, tail flicks. The eye is wide and the small mouth opens briefly in surprise.
+Bottom right: both forepaws briefly tuck close beneath her chest before the next reach, one hind paw extends downward and one bends, ears and tail rise in the air. Keep her chest and hips centered and recognizably at the same scale. A quick two-beat flail, with clearly different long and bent paw silhouettes across the four drawings. The pose must unmistakably read as a dog scrabbling in open air, not a dog running or standing on the ground. Match the reference's chunky, warm honey and cream pixel clusters and restrained ochre shadows. Crisp flat chunky square pixel colors for a 52-by-52 runtime cell, genuine transparent RGBA. No background, ground, foothold, shadow, speed lines, captions, watermark, clothing, accessories, injury, or extra paws.
+```
+
+</details>
 
 ## Carrying the plushie and ball
 

@@ -1,14 +1,17 @@
 import { game } from '../engine.js';
+import { INTERACT_SOUND, PICKUP_SOUND } from '../actionAudio.js';
 import { run, spawnTokyo } from '../entities/Tokyo.js';
 import { HOME_FAMILY, HOME_FLOOR, FAMILY_GROUND_OFFSET, HOME_START, spawnHomeRoom } from '../home.js';
 import { isMobileView, getTouchOverride } from '../mobile.js';
 import { beginDream, journey } from '../journey.js';
+import { createDialogueVoice } from '../dialogueAudio.js';
 
 const ROOM_WIDTH = 1280;
 const ROOM_HEIGHT = 720;
 const FAMILY_SCALE = 1.48;
 const GREETING_RANGE = 64;
 const ACTION_FRAME_TIME = 0.2;
+const MESSAGE_SECONDS = 3.6;
 const TOY_REACH = 38;
 
 export const Ending = {
@@ -73,6 +76,7 @@ export const Ending = {
         const prompt = game.text('← → MOVE   ·   F GREET OR PLAY   ·   SHIFT RUN',
             ROOM_WIDTH / 2, 679, { size: 13, font: 'mono-bold', color: '#fff1d0',
                 shadow: { color: '#283828', x: 1, y: 2 } });
+        const voice = createDialogueVoice();
 
         game.step('morning-reunion', dt => {
             elapsed += dt;
@@ -95,21 +99,23 @@ export const Ending = {
             }
 
             const playerX = tokyo.data.x;
-            let closest: { label: string; action: () => void; distance: number } | null = null;
+            let closest: { label: string; action: () => void; distance: number; sound?: string } | null = null;
             for (const member of family) {
                 const distance = Math.abs(playerX - member.x);
                 if (distance <= GREETING_RANGE && (!closest || distance < closest.distance)) {
                     closest = { label: 'Greet ' + member.name, distance, action: () => {
                         member.actionTime = ACTION_FRAME_TIME * 5;
-                        message.text = lines[member.id];
-                        messageTime = 3.6;
+                        const line = lines[member.id]!;
+                        message.text = line;
+                        messageTime = MESSAGE_SECONDS;
+                        voice.speak(line, MESSAGE_SECONDS);
                     } };
                 }
             }
             const ballDistance = Math.abs(playerX - ball.x);
             if (ball.visible && !flight && ballDistance <= GREETING_RANGE
                 && (!closest || ballDistance < closest.distance)) {
-                closest = { label: 'Pick up the ball', distance: ballDistance, action: () => {
+                closest = { label: 'Pick up the ball', distance: ballDistance, sound: PICKUP_SOUND, action: () => {
                     if (tokyo.data.carrying === 'plushie') {
                         plushie.x = playerX - tokyo.data.facing * TOY_REACH;
                         plushie.y = HOME_FLOOR - plushie.height / 2 + 2;
@@ -122,21 +128,22 @@ export const Ending = {
                 const receiver = family.find(member => member.id === 'senny')!;
                 const distance = Math.abs(playerX - receiver.x);
                 if (distance <= GREETING_RANGE && (!closest || distance < closest.distance)) {
-                    closest = { label: 'Play fetch with Senny', distance, action: () => {
+                    closest = { label: 'Play fetch with Senny', distance, sound: INTERACT_SOUND, action: () => {
                         tokyo.carry(null);
                         ball.x = playerX + tokyo.data.facing * TOY_REACH;
                         ball.y = HOME_FLOOR - 15;
                         ball.visible = true;
                         flight = { from: ball.x, to: receiver.x, time: 0 };
                         message.text = 'Senny tosses the ball. Tokyo races to fetch it!';
-                        messageTime = 3.6;
+                        messageTime = MESSAGE_SECONDS;
+                        voice.stop();
                     } };
                 }
             }
             const plushieDistance = Math.abs(playerX - plushie.x);
             if (plushie.visible && tokyo.data.carrying === null && plushieDistance <= GREETING_RANGE
                 && (!closest || plushieDistance < closest.distance)) {
-                closest = { label: 'Pick up your plushie', distance: plushieDistance, action: () => {
+                closest = { label: 'Pick up your plushie', distance: plushieDistance, sound: PICKUP_SOUND, action: () => {
                     plushie.visible = false;
                     tokyo.carry('plushie');
                 } };
@@ -146,7 +153,10 @@ export const Ending = {
                 message.text = 'That was a big adventure. Go play with everyone!';
                 prompt.text = '← → MOVE   ·   F GREET OR PLAY   ·   SHIFT RUN';
             }
-            if (closest && game.controls.justPressed('interact')) closest.action();
+            if (closest && game.controls.justPressed('interact')) {
+                if (closest.sound) game.sound.play(closest.sound);
+                closest.action();
+            }
             if (game.controls.justPressed('pause')) game.scenes.push('pause');
         }, { after: 'tokyo-visual' });
     },
