@@ -1,17 +1,17 @@
 import { game } from '../engine.js';
 import { INTERACT_SOUND, PICKUP_SOUND, RIFT_SOUND } from '../actionAudio.js';
-import { DREAM_GATE_SCALE } from '../dreamArt.js';
 import { run, spawnTokyo } from '../entities/Tokyo.js';
 import { FAMILY_GROUND_OFFSET, spawnHomeRoom } from '../home.js';
 import { isMobileView, getTouchOverride } from '../mobile.js';
 import { DREAM_LEVELS, completeDreamStage, journey } from '../journey.js';
 import { spawnRiftPortal } from '../riftPortal.js';
 import { showDreamTitle, spawnDreamPrompt } from '../dreamPresentation.js';
+import { spawnDreamOrb } from '../dreamOrb.js';
 
 const SCREEN_W = 1280;
 const FLOOR = 576;
 const LEVEL_FLOORS: Record<number, number> = {
-    2: 570, 3: 522, 4: 543, 5: 558, 6: 550, 7: 593, 8: 570, 9: 560,
+    3: 522, 4: 543, 5: 558, 6: 550, 7: 593, 8: 570, 9: 560,
 };
 const FLOOR_HEIGHT = 48;
 const GRAVITY = 1500;
@@ -26,9 +26,8 @@ const HAZARD_TOUCH_X = 48;
 const HAZARD_TOUCH_Y = 45;
 const FAMILY_SCALE = 1.48;
 const FAMILY_ACTION_HEIGHT = 130;
-const KENNEL_LATCH_X = 424;
-const WAKE_X = 1040;
 const REUNION_SECONDS = 2.8;
+const ORB_LOCATIONS: Record<number, number> = { 3: 625, 4: 747, 5: 709, 6: 922, 7: 876, 8: 1002, 9: 924 };
 const FAMILY = [
     { id: 'sandesh', name: 'Sandesh' },
     { id: 'sushil', name: 'Sushil' },
@@ -57,10 +56,10 @@ export const Journey = {
         let elapsed = 0;
         let stumbleTime = 0;
         let hazardCooldown = 0;
-        let doorOpen = stage !== 2;
         let reunionActive = false;
         let reunionTimer = 0;
         let wakeReady = false;
+        let orbCollected = false;
         let wasInteract = false;
         let interactRequested = false;
         const hazards: Hazard[] = [];
@@ -68,6 +67,10 @@ export const Journey = {
 
         if (stage === 1) {
             game.scenes.go('dream-start');
+            return;
+        }
+        if (stage === 2) {
+            game.scenes.go('kennel');
             return;
         }
         run.scene = 'journey';
@@ -95,8 +98,7 @@ export const Journey = {
                 layer: 'world', body: { type: 'static', friction: 0 } });
         }
 
-        const tokyo = spawnTokyo(WALKING_START, floor,
-            () => stumbleTime <= 0, stage === 2 ? 1.12 : 1.5);
+        const tokyo = spawnTokyo(WALKING_START, floor, () => stumbleTime <= 0);
         if (stage >= 8 && journey.plushie) tokyo.carry('plushie');
         if (stage < 9) {
             for (let i = 0; i < LIGHTS.length; i++) {
@@ -105,25 +107,13 @@ export const Journey = {
             }
         }
 
-        const portal = stage < 9 ? spawnRiftPortal('journey-exit-portal', EXIT_X, floor, PORTAL_HEIGHT) : null;
+        const portal = spawnRiftPortal('journey-exit-portal', EXIT_X, floor, PORTAL_HEIGHT);
+        const orb = spawnDreamOrb('journey-orb', ORB_LOCATIONS[stage]!, floor, stage < 6);
+        const goal = game.text('', 34, 44, { size: 17, font: 'mono-bold', color: '#fff1d1',
+            align: 'left', stroke: { color: '#18121f', width: 3 } });
 
         showDreamTitle(info.name);
         const prompt = spawnDreamPrompt(() => { interactRequested = true; });
-
-        if (stage === 2) {
-            const gate = game.spawn({ id: 'kennel-front-gate', texture: 'dream-gate', x: 647,
-                y: floor - 82, scale: DREAM_GATE_SCALE, layer: 'world', z: 6, frame: 0 });
-            const gateWall = game.spawn({ id: 'kennel-gate-collision', x: 647, y: floor - 81,
-                width: 54, height: 165, visible: false, layer: 'world',
-                body: { type: 'static', friction: 0 } });
-            game.spawn({ id: 'kennel-gate-latch', texture: 'dream-latch', x: KENNEL_LATCH_X,
-                y: floor - 28, width: 54, height: 58, layer: 'world', z: 8 });
-            targets.push({ x: KENNEL_LATCH_X, label: 'Open gate', ready: () => !doorOpen, act: () => {
-                doorOpen = true;
-                gate.setFrame(1);
-                gateWall.destroy();
-            } });
-        }
 
         if (stage === 3) {
             game.spawn({ id: 'first-house-way-out', texture: 'dream-light',
@@ -235,23 +225,34 @@ export const Journey = {
             } });
         }
 
-        const familyGoalReady = (): boolean => {
-            if (stage === 2) return doorOpen && journey.rescued.includes('sandesh');
+        const storyGoalReady = (): boolean => {
             if (stage === 6) return journey.visitedCats.length >= 2 && journey.rescued.includes('reshika');
             if (stage === 7) return journey.puzzleStep >= 2 && journey.rescued.includes('senny');
             if (stage === 8) return journey.plushie;
+            if (stage === 9) return wakeReady;
             if (info.family) return journey.rescued.includes(info.family);
             return true;
         };
-
-        if (portal) {
-            portal.setOpen(familyGoalReady());
-            targets.push({ x: EXIT_X, label: 'Enter the rift', sound: RIFT_SOUND,
-                ready: familyGoalReady, act: completeDreamStage });
-        } else {
-            targets.push({ x: WAKE_X, height: FAMILY_ACTION_HEIGHT, label: 'Wake up', ready: () => wakeReady,
-                act: completeDreamStage });
+        function orbAvailable(): boolean {
+            if (stage === 6) return journey.visitedCats.length >= 2;
+            if (stage === 7) return journey.puzzleStep >= 2;
+            if (stage === 8) return journey.plushie;
+            if (stage === 9) return wakeReady;
+            return true;
         }
+        function goalText(): string {
+            if (!orbAvailable()) {
+                if (stage === 6) return 'Greet both cats to reveal the orb';
+                if (stage === 7) return 'Press moon, then star to reveal the orb';
+                if (stage === 8) return 'Find the plushie to reveal the orb';
+                return reunionActive ? 'Wait for the morning light' : 'Hug the family to reveal the orb';
+            }
+            if (!orbCollected) return 'Collect the glowing orb';
+            if (!storyGoalReady() && info.family) return 'Greet ' + FAMILY.find(person => person.id === info.family)!.name;
+            return stage === 9 ? 'Enter the rift to wake up' : 'Enter the rift';
+        }
+        targets.push({ x: EXIT_X, label: stage === 9 ? 'Wake up' : 'Enter the rift', sound: RIFT_SOUND,
+            ready: () => orbCollected && storyGoalReady(), act: completeDreamStage });
 
         game.step('journey-world', dt => {
             elapsed += dt;
@@ -262,7 +263,6 @@ export const Journey = {
             const interactPressed = interactRequested || game.controls.justPressed('interact') || (interact && !wasInteract);
             interactRequested = false;
             wasInteract = interact;
-            portal?.setOpen(familyGoalReady());
 
             for (const hazard of hazards) {
                 hazard.sprite.x += hazard.direction * hazard.speed * dt;
@@ -285,10 +285,17 @@ export const Journey = {
                 if (reunionTimer >= REUNION_SECONDS) {
                     wakeReady = true;
                     const glow = game.spawn({ id: 'spring-morning-light', texture: 'dream-light',
-                        x: WAKE_X, y: floor - 64, width: 210, alpha: 0, layer: 'world', z: 4 });
+                        x: EXIT_X, y: floor - 64, width: 210, alpha: 0, layer: 'world', z: 4 });
                     game.tween.to(glow, { alpha: 1 }, { duration: 0.55, ease: 'easeOutSine' });
                 }
             }
+            orb.setVisible(orbAvailable());
+            if (orb.tryCollect(tokyo)) {
+                orbCollected = true;
+                portal.setOpen(true);
+            }
+            const hint = goalText();
+            if (goal.text !== hint) goal.text = hint;
 
             const near = targets
                 .filter(target => !target.ready || target.ready())
@@ -297,7 +304,7 @@ export const Journey = {
                 .sort((a, b) => a.distance - b.distance)[0]?.target;
 
             if (near) {
-                const top = portal && near.x === EXIT_X
+                const top = near.x === EXIT_X
                     ? portal.y - PORTAL_HEIGHT / 2
                     : floor - (near.height ?? ACTION_HEIGHT);
                 const tapped = prompt.show(near.label, near.x, top, dt);

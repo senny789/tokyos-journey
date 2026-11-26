@@ -12,6 +12,12 @@
     "assets/dream/floating-ledges.png": "bf5d18316da27d90b6276dda8c681e07ade49ff9cd6a67a7ba258cf039b93833",
     "assets/dream/forest.png": "b5653099a515123b1197cc28261dcd3b302b1adb613c2e8ceaf6c18b41d1ae77",
     "assets/dream/grassland.png": "edc824eca3346a013bec8a6b434e067c18353860a38f5da04cff81cfff16e4c7",
+    "assets/dream/kennel-lever.png": "a69e318672ec4d7b5a5853f120fac73b679832a5cf2fff64dbb7e2e3ffb6f097",
+    "assets/dream/kennel-platform.png": "280a5e31644d11654ad9949aa31bebe857d5a48fba44df0e716723b69abac7ff",
+    "assets/dream/kennel-room-0.png": "d1ae2de3a9fe5c689d9fb844e17d8d55ceec146ef802f267c77cf722a365f402",
+    "assets/dream/kennel-room-1.png": "76c1d0893eff9749ef7b395a77d3606e1d079bd971f41a30b53403b5ac1e927b",
+    "assets/dream/kennel-room-2.png": "2803328f4f33683147b519e0732cb2e7e85cc368d1b9a474d713336e8db6ef8f",
+    "assets/dream/kennel-timber-ledge.png": "f261c5e3c27c5d7fbe705ed528b7a1d9ec4bf375740438d1e6df5b9ec8c27840",
     "assets/dream/kennel.png": "e43728c44dfaf8ab83a0d162e4b72a3566d4cb8b8e793b54cdf9c2e0cbd956d6",
     "assets/dream/night-house.png": "784436a371c9f56d0c0687bcf9ef2eabf9ee3cf30f9b0d0e29d764c9fe5caf8d",
     "assets/dream/owl-sprites.png": "14ccf65894b07372a1a8187a7962f2c0a56c90db9a0ccbbd731c5ff64634edc8",
@@ -104,8 +110,8 @@
     "assets/treats.png": "ea062af459436d6b2e95d7e50b9335f2dbb9469a6fec4f798eb8ad2907885b9d",
     "assets/trees.png": "8f03aeabfb126c441be0b98c272579a1b2ef2eb5aef2917d85a868bd2835cd6f",
     "assets/villain-dogs.png": "8fb9dc3e3c5171a46592df0a7b78ba27e6161cefb22d9e15c0381d1561089ce8",
-    "build.json": "ba7c94a91d80742fb5d8a6f529e5699ef65763dbde920082b0416b3d4f14472a",
-    "game.js": "b50b755441eca0fb887fc2df5706eeb0f3cab250ea0c38447d24ac48ce581e47",
+    "build.json": "fb990e77de394a7f9fcaac04b4e297ff7f3101b46eb9ebaeec94119ec8e7c6ee",
+    "game.js": "8c62e565f493b7965cba9a9f9ac45d3ae29c611ff76869a42ad5ae8dfdd57b32",
     "index.html": "e6000fc5f397ce749ff1f1242da947e94b4cade79cef46e95c9d9e72f221b4bb",
     "text-shaper.wasm": "67cf5be0116894e5b38038ddbd4fc9b0bf979317b3ecdbd0ece2d67edc960f7d"
   }

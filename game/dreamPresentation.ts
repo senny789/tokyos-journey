@@ -10,6 +10,27 @@ const PROMPT_EDGE = 16;
 const PROMPT_GAP = 12;
 const PROMPT_BOB = 5;
 const PROMPT_PERIOD = 1.65;
+const DIALOGUE_FADE = 0.16;
+const DIALOGUE_DEPTH = 16;
+
+export function showDreamDialogue(id: string, x: number, y: number, words: string, seconds: number, speaker?: string): void {
+    const bubble = game.spawn({ id, texture: 'home-dialogue-box',
+        x, y, sx: -1.12, sy: 1, alpha: 0, layer: 'world', z: DIALOGUE_DEPTH });
+    const line = game.text(words, x, y + (speaker ? 8 : 0),
+        { size: 17, font: 'sans-bold', color: '#392b26', layer: 'world', z: DIALOGUE_DEPTH + 1 });
+    const name = speaker ? game.text(speaker, x, y - 13,
+        { size: 12, font: 'sans-bold', color: '#704651', layer: 'world', z: DIALOGUE_DEPTH + 1 }) : null;
+    const objects = name ? [bubble, line, name] : [bubble, line];
+    for (const object of objects) {
+        object.alpha = 0;
+        game.tween.to(object, { alpha: 1 }, { duration: DIALOGUE_FADE });
+    }
+    game.after(seconds - DIALOGUE_FADE, () => {
+        for (const object of objects) {
+            game.tween.to(object, { alpha: 0 }, { duration: DIALOGUE_FADE, onComplete: () => object.destroy() });
+        }
+    });
+}
 
 export function showDreamTitle(name: string): void {
     const title = game.text(name.toUpperCase(), game.screen.width / 2, TITLE_Y, {

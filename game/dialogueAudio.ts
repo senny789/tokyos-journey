@@ -8,6 +8,7 @@ const PITCH_PATTERN = [0, 1, 0, 2] as const;
 const VOICES = {
     dialogue: { pitches: [440, 494, 392], volume: 0.26 },
     dream: { pitches: [330, 392, 294], volume: 0.32 },
+    'kennel-voice': { pitches: [246, 294, 220], volume: 0.29 },
 } as const;
 
 type Voice = keyof typeof VOICES;
@@ -17,12 +18,13 @@ function beepKey(voice: Voice, pitch: number): string {
 }
 
 export function prepareDialogueAudio(): void {
-    for (const voice of ['dialogue', 'dream'] as const) {
+    for (const voice of Object.keys(VOICES) as Voice[]) {
         const { pitches, volume } = VOICES[voice];
         for (const [pitch, freq] of pitches.entries()) {
             game.sound.define(beepKey(voice, pitch), {
                 type: 'triangle', freq, duration: BEEP_SECONDS,
                 attack: 0.008, release: 0.027, volume,
+                echo: voice === 'kennel-voice' ? { time: 0.18, feedback: 0.31, mix: 0.27 } : undefined,
             });
         }
     }

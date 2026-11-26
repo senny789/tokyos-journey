@@ -1,0 +1,81 @@
+{
+  "kind": "sprite-gen-slice-sheet",
+  "version": 1,
+  "sheet": "kennel-switch-source.png",
+  "grid": [
+    2,
+    1
+  ],
+  "canvas": {
+    "w": 38,
+    "h": 36
+  },
+  "baseline_y": 35.0,
+  "target_height": 32.0,
+  "scale": "sheet",
+  "fit": "contain",
+  "factor": 0.0428380187416332,
+  "factor_from": {
+    "rule": "target_height",
+    "cell": "off"
+  },
+  "alpha_cleanup": "alpha-cleanup.json",
+  "cells": [
+    {
+      "name": "off",
+      "file": "off.png",
+      "factor": 0.0428380187416332,
+      "factor_from": "target_height",
+      "subject": {
+        "sheet": {
+          "w": 762,
+          "h": 747
+        },
+        "canvas": {
+          "w": 33,
+          "h": 32
+        }
+      },
+      "box": {
+        "x": 3,
+        "y": 3,
+        "w": 33,
+        "h": 32
+      },
+      "anchor": [
+        19.5,
+        35.0
+      ],
+      "clipped_px": 0,
+      "parts": 2
+    },
+    {
+      "name": "on",
+      "file": "on.png",
+      "factor": 0.0428380187416332,
+      "factor_from": "target_height",
+      "subject": {
+        "sheet": {
+          "w": 762,
+          "h": 746
+        },
+        "canvas": {
+          "w": 33,
+          "h": 32
+        }
+      },
+      "box": {
+        "x": 3,
+        "y": 3,
+        "w": 33,
+        "h": 32
+      },
+      "anchor": [
+        19.5,
+        35.0
+      ],
+      "clipped_px": 0,
+      "parts": 1
+    }
+  ]
+}

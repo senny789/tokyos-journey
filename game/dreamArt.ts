@@ -1,6 +1,5 @@
 import { game } from './engine.js';
 
-export const DREAM_GATE_SCALE = 4;
 export const DREAM_CLIFF_ART = {
     key: 'dream-cliff',
     width: 160,
@@ -107,11 +106,6 @@ function paintKennelGate(): void {
         ctx.fillRect(panelX + panelWidth - 4, 24, 3, 2);
     }, { frames: 2, res: 1 });
 
-    game.pixels('dream-latch', [
-        '............', '.....OOO....', '....OGGO....', '....OGO.....', '....OGO.....',
-        '..OOOOOOOO..', '.OSGGGGGSO..', '.OGGLOOGSO..', '.OGGLOOGSO..', '.OGGGGGSSO..',
-        '..OOOOOOOO..', '............', '............',
-    ], RUNE_COLORS, 1);
 }
 
 function paintPuzzleStones(): void {

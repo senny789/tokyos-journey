@@ -1,5 +1,6 @@
 import { game } from './engine.js';
 import { loadDreamSprites } from './dreamArt.js';
+import { paintKennelFloors } from './kennelTerrain.js';
 
 export type FamilyName = 'sandesh' | 'sushil' | 'dad' | 'mom' | 'reshika' | 'senny';
 
@@ -28,6 +29,12 @@ export async function loadJourneyArt(): Promise<void> {
         // Use the sky above the horizon and the doorway painted into the original backdrop.
         { kind: 'image', key: 'dream-dark', url: 'assets/dream/dark.png', w: 1280, h: 404 },
         { kind: 'image', key: 'dream-kennel', url: 'assets/dream/kennel.png' },
+        { kind: 'image', key: 'kennel-platform', url: 'assets/dream/kennel-platform.png' },
+        { kind: 'image', key: 'kennel-timber-ledge', url: 'assets/dream/kennel-timber-ledge.png' },
+        { kind: 'image', key: 'kennel-lever', url: 'assets/dream/kennel-lever.png', w: 38, h: 36, cols: 2, rows: 1 },
+        { kind: 'image', key: 'kennel-room-0', url: 'assets/dream/kennel-room-0.png' },
+        { kind: 'image', key: 'kennel-room-1', url: 'assets/dream/kennel-room-1.png' },
+        { kind: 'image', key: 'kennel-room-2', url: 'assets/dream/kennel-room-2.png' },
         { kind: 'image', key: 'dream-night-house', url: 'assets/dream/night-house.png' },
         { kind: 'image', key: 'dream-forest', url: 'assets/dream/forest.png' },
         { kind: 'image', key: 'dream-grassland', url: 'assets/dream/grassland.png' },
@@ -36,6 +43,7 @@ export async function loadJourneyArt(): Promise<void> {
         { kind: 'image', key: 'dream-spring', url: 'assets/dream/spring.png' },
     ]);
     await loadDreamSprites();
+    paintKennelFloors();
 }
 
 export function beginDream(): void {

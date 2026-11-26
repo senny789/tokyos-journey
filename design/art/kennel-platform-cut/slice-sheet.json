@@ -1,0 +1,53 @@
+{
+  "kind": "sprite-gen-slice-sheet",
+  "version": 1,
+  "sheet": "kennel-platform-generated.png",
+  "grid": [
+    1,
+    1
+  ],
+  "canvas": {
+    "w": 128,
+    "h": 48
+  },
+  "baseline_y": 46.0,
+  "target_height": 42.0,
+  "scale": "sheet",
+  "fit": "contain",
+  "factor": 0.06029203956665097,
+  "factor_from": {
+    "rule": "fit",
+    "cell": "platform"
+  },
+  "alpha_cleanup": "alpha-cleanup.json",
+  "cells": [
+    {
+      "name": "platform",
+      "file": "platform.png",
+      "factor": 0.06029203956665097,
+      "factor_from": "fit",
+      "subject": {
+        "sheet": {
+          "w": 2120,
+          "h": 392
+        },
+        "canvas": {
+          "w": 128,
+          "h": 24
+        }
+      },
+      "box": {
+        "x": 0,
+        "y": 22,
+        "w": 128,
+        "h": 24
+      },
+      "anchor": [
+        64.06,
+        46.0
+      ],
+      "clipped_px": 0,
+      "parts": 3
+    }
+  ]
+}

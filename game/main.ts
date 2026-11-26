@@ -18,6 +18,7 @@ import { Celebration } from './scenes/Celebration.js';
 import { Home } from './scenes/Home.js';
 import { DreamStart } from './scenes/DreamStart.js';
 import { Journey } from './scenes/Journey.js';
+import { Kennel } from './scenes/Kennel.js';
 import { Ending } from './scenes/Ending.js';
 import { loadHomeArt } from './home.js';
 import { paintHomeInterior } from './homeInterior.js';
@@ -28,6 +29,7 @@ import { RIFT_PORTAL_ART } from './riftPortal.js';
 import { prepareDialogueAudio } from './dialogueAudio.js';
 import { prepareActionAudio } from './actionAudio.js';
 import { configureLoadingScreen } from './preloadScreen.js';
+import { prepareDreamMusic } from './dreamMusic.js';
 
 const PIXEL_PARK_STRIPS = new Set(['beds', 'boxes', 'food', 'houses', 'people', 'rocks', 'villain-dogs']);
 
@@ -35,6 +37,7 @@ configureLoadingScreen();
 paintArt();
 prepareDialogueAudio();
 prepareActionAudio();
+prepareDreamMusic();
 // Load the pixel-friendly menu skin and character art before either scene.
 game.ui.theme = 'block';
 game.controls.bind('jump', { keys: ['Space', 'ArrowUp', 'KeyW', 'Touch:jump'], pad: ['a'] });
@@ -96,6 +99,7 @@ game.scenes.register(LevelSelect);
 game.scenes.register(Home);
 game.scenes.register(DreamStart);
 game.scenes.register(Journey);
+game.scenes.register(Kennel);
 game.scenes.register(Ending);
 game.scenes.register(Celebration);
 addDebugControls();

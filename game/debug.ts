@@ -8,12 +8,14 @@ import { HOME_FAMILY, home, homePreview } from './home.js';
 import { HOME_ROOMS } from './homeRooms.js';
 import { completeDreamStage, journey, prepareDreamStage } from './journey.js';
 import { openDarkPlaceSection } from './scenes/DreamStart.js';
+import { kennelProgress, openKennelSection } from './scenes/Kennel.js';
 
 export function addDebugControls(): void {
     game.inspect.state(() => ({
         ...run,
         home,
         journey: { ...journey },
+        kennel: { ...kennelProgress },
         playground: { ...park, badges: badges() },
         mobileView: isMobileView(),
         touchVisible: game.touch?.visible ?? false,
@@ -81,6 +83,12 @@ export function addDebugControls(): void {
         does: 'Start Level 1 at the ledges, the descent, or the far side',
         args: '1-3',
         run: number => openDarkPlaceSection(Number(number)),
+    });
+    game.cheats.add({
+        name: 'kennel-section',
+        does: 'Start at the Intake, Feed Loft, or Drain Room with its switch off',
+        args: '1-3',
+        run: number => openKennelSection(Number(number)),
     });
     game.cheats.add({
         name: 'dream-win',

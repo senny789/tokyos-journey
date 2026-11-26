@@ -41213,6 +41213,9 @@ var RESPAWN_SOUND = "tokyo-respawn";
 var INTERACT_SOUND = "interact-click";
 var PICKUP_SOUND = "pickup-chime";
 var RIFT_SOUND = "rift-chime";
+var KENNEL_LOCK_SOUND = "kennel-locked-clank";
+var KENNEL_SWITCH_SOUND = "kennel-switch-throw";
+var KENNEL_FAREWELL_SOUND = "kennel-sandesh-farewell";
 function prepareActionAudio() {
   game.sound.defineAll({
     [JUMP_SOUND]: {
@@ -41305,6 +41308,55 @@ function prepareActionAudio() {
       release: 0.09,
       volume: 0.28,
       echo: { time: 0.13, feedback: 0.24, mix: 0.18 }
+    },
+    [KENNEL_LOCK_SOUND]: {
+      type: "triangle",
+      freq: 276,
+      freqEnd: 128,
+      duration: 0.1,
+      attack: 3e-3,
+      release: 0.07,
+      volume: 0.32,
+      echo: { time: 0.12, feedback: 0.29, mix: 0.24 }
+    },
+    [KENNEL_SWITCH_SOUND]: [
+      {
+        type: "noise",
+        noise: "pink",
+        duration: 0.08,
+        attack: 3e-3,
+        release: 0.05,
+        volume: 0.39,
+        filter: { type: "bandpass", freq: 1850, freqEnd: 620, q: 1.8 }
+      },
+      {
+        type: "triangle",
+        freq: 165,
+        freqEnd: 95,
+        duration: 0.13,
+        attack: 4e-3,
+        release: 0.08,
+        volume: 0.34
+      },
+      {
+        type: "sine",
+        notes: "E5 B5",
+        step: 0.09,
+        delay: 0.09,
+        attack: 0.012,
+        release: 0.1,
+        volume: 0.19,
+        echo: { time: 0.16, feedback: 0.25, mix: 0.2 }
+      }
+    ],
+    [KENNEL_FAREWELL_SOUND]: {
+      type: "sine",
+      notes: "G4 B4 E5:2",
+      step: 0.13,
+      attack: 0.022,
+      release: 0.18,
+      volume: 0.25,
+      echo: { time: 0.18, feedback: 0.34, mix: 0.24 }
     }
   });
 }
@@ -42626,7 +42678,6 @@ var HOME_STATIONS = {
 };
 
 // game/dreamArt.ts
-var DREAM_GATE_SCALE = 4;
 var DREAM_CLIFF_ART = {
   key: "dream-cliff",
   width: 160,
@@ -42741,21 +42792,6 @@ function paintKennelGate() {
     ctx.fillStyle = "#c69851";
     ctx.fillRect(panelX + panelWidth - 4, 24, 3, 2);
   }, { frames: 2, res: 1 });
-  game.pixels("dream-latch", [
-    "............",
-    ".....OOO....",
-    "....OGGO....",
-    "....OGO.....",
-    "....OGO.....",
-    "..OOOOOOOO..",
-    ".OSGGGGGSO..",
-    ".OGGLOOGSO..",
-    ".OGGLOOGSO..",
-    ".OGGGGGSSO..",
-    "..OOOOOOOO..",
-    "............",
-    "............"
-  ], RUNE_COLORS, 1);
 }
 function paintPuzzleStones() {
   game.paint("dream-puzzle-pad", 17, 17, (ctx, frame) => {
@@ -42802,6 +42838,192 @@ function paintPuzzleStones() {
   ], RUNE_COLORS, 1);
 }
 
+// game/kennelRooms.ts
+var KENNEL_ROOM_WIDTH = 1664;
+var KENNEL_HEIGHT = 720;
+var KENNEL_FLOOR = 550;
+var KENNEL_ENTRY_X = 100;
+var KENNEL_ROOMS = [
+  {
+    name: "Intake",
+    banks: [[0, 500], [785, 1030], [1270, KENNEL_ROOM_WIDTH]],
+    ledges: [[230, 441, 105], [640, 457, 82], [1150, 465, 80]],
+    switchLedge: [405, 333, 103],
+    gateX: 1515,
+    stone: ["#b78862", "#503b3d", "#30252c"]
+  },
+  {
+    name: "Feed Loft",
+    banks: [[0, 285], [512, 740], [1260, KENNEL_ROOM_WIDTH]],
+    ledges: [[210, 442, 100], [385, 334, 80], [875, 466, 82], [1065, 390, 78]],
+    switchLedge: [530, 224, 92],
+    gateX: 1505,
+    stone: ["#b29774", "#494038", "#2c2529"]
+  },
+  {
+    name: "Drain Room",
+    banks: [[0, 206], [564, 650], [975, 1070], [1470, KENNEL_ROOM_WIDTH]],
+    ledges: [[172, 456, 100], [331, 354, 78], [492, 251, 72]],
+    longJumpLedge: [1172, 446, 68],
+    orbLedge: [960, 229, 104],
+    switchLedge: [652, 150, 84],
+    stone: ["#9cb5a8", "#35474f", "#202c38"]
+  }
+];
+
+// game/kennelTerrain.ts
+var ART_SCALE = 2;
+var PLATFORM_DEPTH = 18;
+var BANK_DEPTH = 76;
+var EDGE_WIDTH = 32;
+var LEDGE_W = 128;
+var LEDGE_H = 34;
+var LEDGE_SURFACE = 3;
+var UNDERFLOOR = KENNEL_HEIGHT - KENNEL_FLOOR;
+function paintKennelFloors() {
+  game.paint("kennel-door-frame", 65, 275, (ctx) => {
+    ctx.fillStyle = "#17121b";
+    ctx.fillRect(17, 0, 31, 179);
+    ctx.fillRect(7, 177, 51, 98);
+    ctx.fillStyle = "#463139";
+    ctx.fillRect(18, 0, 7, 179);
+    ctx.fillRect(40, 0, 7, 179);
+    ctx.fillStyle = "#634839";
+    ctx.fillRect(18, 0, 2, 179);
+    ctx.fillStyle = "#2d232a";
+    for (let y = 18; y < 170; y += 41) ctx.fillRect(19, y, 27, 5);
+  }, { res: 1 });
+  for (const [index, room] of KENNEL_ROOMS.entries()) {
+    game.paint("kennel-floor-art-" + index, KENNEL_ROOM_WIDTH / ART_SCALE, UNDERFLOOR / ART_SCALE, (ctx) => {
+      const h = UNDERFLOOR / ART_SCALE;
+      const w = KENNEL_ROOM_WIDTH / ART_SCALE;
+      const [rim, face, seam] = room.stone;
+      ctx.fillStyle = index === 2 ? "#172b34" : "#231923";
+      ctx.fillRect(0, 0, w, h);
+      for (let row = 0; row < h; row += 14) {
+        ctx.fillStyle = row < h / 2 ? "#121119" : "#100e16";
+        ctx.fillRect(0, row, w, 3);
+        for (let x = row % 4 ? 22 : 0; x < w; x += 44) ctx.fillRect(x, row, 2, 14);
+      }
+      for (const [left, right] of room.banks) {
+        const x = deterministicMath.floor(left / ART_SCALE);
+        const width = deterministicMath.ceil(right / ART_SCALE) - x;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, 0, width, h);
+        ctx.clip();
+        ctx.fillStyle = face;
+        ctx.fillRect(x, 0, width, h);
+        for (let row = 13; row < h; row += 13) {
+          ctx.fillStyle = seam;
+          ctx.fillRect(x, row, width, 2);
+          for (let joint = x + (row % 2 ? 14 : 30); joint < x + width; joint += 37) {
+            ctx.fillRect(joint, row, 2, 13);
+          }
+        }
+        ctx.fillStyle = seam;
+        ctx.fillRect(x + 3, 11, 3, h);
+        ctx.fillRect(x + width - 6, 11, 3, h);
+        ctx.fillStyle = rim;
+        ctx.fillRect(x, 0, width, 3);
+        ctx.fillRect(x, 3, 4, 11);
+        ctx.fillRect(x + width - 4, 3, 4, 11);
+        ctx.fillStyle = seam;
+        ctx.fillRect(x, 7, width, 4);
+        ctx.restore();
+      }
+      const depth = ctx.createLinearGradient(0, 14, 0, h);
+      depth.addColorStop(0, "#0b0d1700");
+      depth.addColorStop(1, "#0b0d17dd");
+      ctx.fillStyle = depth;
+      ctx.fillRect(0, 14, w, h - 14);
+      if (index === 2) {
+        room.banks.slice(0, -1).forEach(([, right], gap) => {
+          const left = deterministicMath.ceil(right / ART_SCALE), end = deterministicMath.floor(room.banks[gap + 1][0] / ART_SCALE);
+          ctx.fillStyle = "#17303d";
+          ctx.fillRect(left, h - 13, end - left, 13);
+          ctx.fillStyle = "#345663";
+          for (let x = left + 6; x + 16 < end; x += 27) ctx.fillRect(x, h - 12, 16, 1);
+        });
+      }
+    }, { res: 1 });
+  }
+}
+function spawnKennelTerrain(index) {
+  const room = KENNEL_ROOMS[index];
+  game.background.color("#100e16");
+  game.spawn({
+    id: "kennel-background",
+    texture: "kennel-room-" + index,
+    x: KENNEL_ROOM_WIDTH / 2,
+    y: KENNEL_FLOOR / 2,
+    width: KENNEL_ROOM_WIDTH,
+    height: KENNEL_FLOOR,
+    layer: "back"
+  });
+  game.spawn({
+    id: "kennel-floor-art",
+    texture: "kennel-floor-art-" + index,
+    x: KENNEL_ROOM_WIDTH / 2,
+    y: KENNEL_FLOOR + UNDERFLOOR / 2,
+    width: KENNEL_ROOM_WIDTH,
+    height: UNDERFLOOR,
+    layer: "world"
+  });
+  for (const [i, [left, right]] of room.banks.entries()) {
+    game.spawn({
+      id: "kennel-bank-" + (i + 1),
+      x: (left + right) / 2,
+      y: KENNEL_FLOOR + BANK_DEPTH / 2,
+      width: right - left,
+      height: BANK_DEPTH,
+      visible: false,
+      layer: "world",
+      body: { type: "static", friction: 0 }
+    });
+  }
+  const ledges = [...room.ledges];
+  if (room.longJumpLedge) ledges.push(room.longJumpLedge);
+  if (room.orbLedge) ledges.push(room.orbLedge);
+  ledges.push(room.switchLedge);
+  for (const [index2, [x, top, width]] of ledges.entries()) {
+    const id2 = index2 === ledges.length - 1 ? "switch" : String(index2 + 1);
+    game.spawn({
+      id: "kennel-platform-" + id2,
+      x,
+      y: top + PLATFORM_DEPTH / 2,
+      width,
+      height: PLATFORM_DEPTH,
+      visible: false,
+      layer: "world",
+      tags: [UPWARD_PLATFORM_TAG],
+      body: { type: "static", friction: 0, oneWay: "up" }
+    });
+    const scale2 = width / (LEDGE_W - 8);
+    game.spawn({
+      id: "kennel-ledge-" + id2,
+      texture: "kennel-timber-ledge",
+      x,
+      y: top + (LEDGE_H / 2 - LEDGE_SURFACE) * scale2,
+      width: LEDGE_W * scale2,
+      height: LEDGE_H * scale2,
+      layer: "world",
+      z: 3
+    });
+  }
+  for (const x of [-EDGE_WIDTH / 2, KENNEL_ROOM_WIDTH + EDGE_WIDTH / 2]) {
+    game.spawn({
+      x,
+      y: KENNEL_HEIGHT / 2,
+      width: EDGE_WIDTH,
+      height: KENNEL_HEIGHT,
+      visible: false,
+      layer: "world",
+      body: { type: "static", friction: 0 }
+    });
+  }
+}
+
 // game/journey.ts
 var DREAM_LEVELS = [
   { number: 1, name: "The Dark Place", background: "dream-dark", family: null },
@@ -42820,6 +43042,12 @@ async function loadJourneyArt() {
     // Use the sky above the horizon and the doorway painted into the original backdrop.
     { kind: "image", key: "dream-dark", url: "assets/dream/dark.png", w: 1280, h: 404 },
     { kind: "image", key: "dream-kennel", url: "assets/dream/kennel.png" },
+    { kind: "image", key: "kennel-platform", url: "assets/dream/kennel-platform.png" },
+    { kind: "image", key: "kennel-timber-ledge", url: "assets/dream/kennel-timber-ledge.png" },
+    { kind: "image", key: "kennel-lever", url: "assets/dream/kennel-lever.png", w: 38, h: 36, cols: 2, rows: 1 },
+    { kind: "image", key: "kennel-room-0", url: "assets/dream/kennel-room-0.png" },
+    { kind: "image", key: "kennel-room-1", url: "assets/dream/kennel-room-1.png" },
+    { kind: "image", key: "kennel-room-2", url: "assets/dream/kennel-room-2.png" },
     { kind: "image", key: "dream-night-house", url: "assets/dream/night-house.png" },
     { kind: "image", key: "dream-forest", url: "assets/dream/forest.png" },
     { kind: "image", key: "dream-grassland", url: "assets/dream/grassland.png" },
@@ -42828,6 +43056,7 @@ async function loadJourneyArt() {
     { kind: "image", key: "dream-spring", url: "assets/dream/spring.png" }
   ]);
   await loadDreamSprites();
+  paintKennelFloors();
 }
 function beginDream() {
   journey.stage = 1;
@@ -43013,6 +43242,43 @@ var PROMPT_EDGE = 16;
 var PROMPT_GAP = 12;
 var PROMPT_BOB = 5;
 var PROMPT_PERIOD = 1.65;
+var DIALOGUE_FADE = 0.16;
+var DIALOGUE_DEPTH = 16;
+function showDreamDialogue(id2, x, y, words2, seconds, speaker) {
+  const bubble = game.spawn({
+    id: id2,
+    texture: "home-dialogue-box",
+    x,
+    y,
+    sx: -1.12,
+    sy: 1,
+    alpha: 0,
+    layer: "world",
+    z: DIALOGUE_DEPTH
+  });
+  const line = game.text(
+    words2,
+    x,
+    y + (speaker ? 8 : 0),
+    { size: 17, font: "sans-bold", color: "#392b26", layer: "world", z: DIALOGUE_DEPTH + 1 }
+  );
+  const name = speaker ? game.text(
+    speaker,
+    x,
+    y - 13,
+    { size: 12, font: "sans-bold", color: "#704651", layer: "world", z: DIALOGUE_DEPTH + 1 }
+  ) : null;
+  const objects = name ? [bubble, line, name] : [bubble, line];
+  for (const object of objects) {
+    object.alpha = 0;
+    game.tween.to(object, { alpha: 1 }, { duration: DIALOGUE_FADE });
+  }
+  game.after(seconds - DIALOGUE_FADE, () => {
+    for (const object of objects) {
+      game.tween.to(object, { alpha: 0 }, { duration: DIALOGUE_FADE, onComplete: () => object.destroy() });
+    }
+  });
+}
 function showDreamTitle(name) {
   const title = game.text(name.toUpperCase(), game.screen.width / 2, TITLE_Y, {
     size: 46,
@@ -43067,13 +43333,14 @@ var BEEP_INTERVAL = 0.15;
 var PITCH_PATTERN = [0, 1, 0, 2];
 var VOICES = {
   dialogue: { pitches: [440, 494, 392], volume: 0.26 },
-  dream: { pitches: [330, 392, 294], volume: 0.32 }
+  dream: { pitches: [330, 392, 294], volume: 0.32 },
+  "kennel-voice": { pitches: [246, 294, 220], volume: 0.29 }
 };
 function beepKey(voice, pitch) {
   return voice + "-beep-" + (pitch + 1);
 }
 function prepareDialogueAudio() {
-  for (const voice of ["dialogue", "dream"]) {
+  for (const voice of Object.keys(VOICES)) {
     const { pitches, volume } = VOICES[voice];
     for (const [pitch, freq] of pitches.entries()) {
       game.sound.define(beepKey(voice, pitch), {
@@ -43082,7 +43349,8 @@ function prepareDialogueAudio() {
         duration: BEEP_SECONDS,
         attack: 8e-3,
         release: 0.027,
-        volume
+        volume,
+        echo: voice === "kennel-voice" ? { time: 0.18, feedback: 0.31, mix: 0.27 } : void 0
       });
     }
   }
@@ -43141,7 +43409,7 @@ var FOLLOW_WAVES = [
   { delay: 0.44, x: 199, y: -59 },
   { delay: 0.72, x: 366, y: -109 }
 ];
-var DIALOGUE_DEPTH = 15;
+var DIALOGUE_DEPTH2 = 15;
 var DIALOGUE_TEXTURE = "home-dialogue-box";
 var DIALOGUE_FADE_IN = 0.18;
 var DIALOGUE_FADE_OUT = 0.24;
@@ -43160,21 +43428,21 @@ function showSennyDialogue(x, y, caption, duration, layer = "world") {
     sx: -1,
     alpha: 0,
     layer,
-    z: DIALOGUE_DEPTH
+    z: DIALOGUE_DEPTH2
   });
   const speaker = game.text("Senny", x, y + SPEAKER_OFFSET, {
     size: 13,
     font: "sans-bold",
     color: "#704651",
     layer,
-    z: DIALOGUE_DEPTH + 1
+    z: DIALOGUE_DEPTH2 + 1
   });
   const line = game.text(caption, x, y + LINE_OFFSET, {
     size: 18,
     font: "sans-bold",
     color: "#392b26",
     layer,
-    z: DIALOGUE_DEPTH + 1
+    z: DIALOGUE_DEPTH2 + 1
   });
   speaker.alpha = line.alpha = 0;
   let elapsed = 0;
@@ -43527,6 +43795,214 @@ function spawnRiftPortal(id2, x, groundY, artHeight) {
   });
 }
 
+// game/dreamMusic.ts
+var DREAM_MUSIC = "dark-place-melody";
+var STEP_SECONDS = 0.48;
+var KENNEL_MUSIC = "kennel-night-theme";
+var KENNEL_STEP = 0.28;
+function prepareDreamMusic() {
+  game.sound.define(DREAM_MUSIC, [
+    {
+      type: "sine",
+      step: STEP_SECONDS,
+      notes: "D5:2 - A4:2 C5:2 - F5:3 E5:2 D5:3 -:2 A4:2 C5:2 D5:3 -:2 G4:2 A4:3 -:2",
+      volume: 0.21,
+      attack: 0.16,
+      release: 0.32,
+      gate: 0.9,
+      vibrato: { freq: 4, depth: 4e-3 },
+      echo: { time: 0.35, feedback: 0.34, mix: 0.3 }
+    },
+    {
+      type: "triangle",
+      step: STEP_SECONDS,
+      notes: "D3+A3:8 F3+C4:8 Bb2+F3:8 A2+E3:8",
+      volume: 0.055,
+      attack: 0.8,
+      release: 0.8,
+      gate: 0.95,
+      filter: { freq: 500 }
+    },
+    {
+      type: "noise",
+      noise: "pink",
+      step: STEP_SECONDS,
+      notes: "x:8 x:8 x:8 x:8",
+      volume: 0.035,
+      attack: 1.3,
+      release: 1.3,
+      gate: 0.95,
+      filter: { type: "bandpass", freq: 460, freqEnd: 900, sweep: "linear", q: 0.6 }
+    }
+  ]);
+  game.sound.define(KENNEL_MUSIC, [
+    {
+      type: "triangle",
+      step: KENNEL_STEP,
+      notes: [
+        "E4:2 - B4 A4:2 G4 -",
+        "F#4:2 - A4 G4:2 E4 -",
+        "G4:2 - D5 B4:2 A4 -",
+        "F#4:2 E4:2 - B3:2 -",
+        "E4:2 - B4 D5:2 B4 -",
+        "A4:2 - C5 B4:2 G4 -",
+        "F#4:2 - A4 G4:2 F#4 -",
+        "E4:3 - B3:2 -:2"
+      ].join(" "),
+      volume: 0.12,
+      attack: 0.018,
+      release: 0.27,
+      gate: 0.56,
+      filter: { freq: 1850 },
+      echo: { time: 0.28, feedback: 0.2, mix: 0.22 }
+    },
+    {
+      type: "sine",
+      step: KENNEL_STEP,
+      notes: "E3+B3:8 C3+G3:8 G2+D3:8 B2+F#3:8 E3+B3:8 C3+G3:8 A2+E3:8 B2+F#3:8",
+      volume: 0.065,
+      attack: 0.39,
+      release: 0.55,
+      gate: 0.8
+    },
+    {
+      type: "triangle",
+      step: KENNEL_STEP,
+      notes: "E2:2 -:2 B2 -:3 C3:2 -:2 G2 -:3 G2:2 -:2 D3 -:3 B2:2 -:2 F#3 -:3 E2:2 -:2 B2 -:3 C3:2 -:2 G2 -:3 A2:2 -:2 E3 -:3 B2:2 -:6",
+      volume: 0.07,
+      attack: 0.035,
+      release: 0.26,
+      gate: 0.7,
+      filter: { freq: 450 }
+    }
+  ]);
+}
+function startDreamMusic() {
+  return game.sound.loop(DREAM_MUSIC);
+}
+function startKennelMusic() {
+  return game.sound.loop(KENNEL_MUSIC);
+}
+
+// game/dreamOrb.ts
+var ORB_HEIGHT = 38;
+var PICKUP_RANGE = 30;
+var SURFACE_TOLERANCE = 9;
+var FLOAT_DISTANCE = 5;
+var FLOAT_SECONDS = 0.85;
+var TOKYO_HALO_WIDTH = 152;
+var TOKYO_HALO_HEIGHT = 116;
+var TOKYO_HALO_Y_OFFSET = 6;
+var TOKYO_HALO_TINT = "#ffc76c";
+var TOKYO_HALO_ALPHA = 0.58;
+var TOKYO_HALO_LOW_ALPHA = 0.42;
+var TOKYO_HALO_PULSE_SECONDS = 0.8;
+var TOKYO_HIGHLIGHT_TINT = "#ffe3ad";
+var TOKYO_HIGHLIGHT_ALPHA = 0.23;
+function showTokyoOrbLight(tokyo, id2) {
+  const halo = game.spawn({
+    id: id2 + "-tokyo-halo",
+    texture: "particle:soft",
+    x: tokyo.x,
+    y: tokyo.y + TOKYO_HALO_Y_OFFSET,
+    width: TOKYO_HALO_WIDTH,
+    height: TOKYO_HALO_HEIGHT,
+    layer: "world",
+    z: tokyo.z - 1,
+    tint: TOKYO_HALO_TINT,
+    alpha: TOKYO_HALO_ALPHA,
+    blend: "add"
+  });
+  const highlight = game.spawn({
+    id: id2 + "-tokyo-highlight",
+    frame: tokyo.frame,
+    x: tokyo.x,
+    y: tokyo.y,
+    sx: tokyo.sx,
+    sy: tokyo.sy,
+    layer: "world",
+    z: tokyo.z + 1,
+    tint: TOKYO_HIGHLIGHT_TINT,
+    alpha: TOKYO_HIGHLIGHT_ALPHA,
+    blend: "add"
+  });
+  game.tween.to(
+    halo,
+    { alpha: TOKYO_HALO_LOW_ALPHA },
+    { duration: TOKYO_HALO_PULSE_SECONDS, ease: "easeInOutSine", yoyo: true, loop: true }
+  );
+  game.step(id2 + "-tokyo-light", () => {
+    halo.x = highlight.x = tokyo.x;
+    halo.y = tokyo.y + TOKYO_HALO_Y_OFFSET;
+    highlight.y = tokyo.y;
+    highlight.frame = tokyo.frame;
+    highlight.sx = tokyo.sx;
+    highlight.sy = tokyo.sy;
+    halo.visible = highlight.visible = tokyo.visible;
+  }, { after: "tokyo-visual" });
+}
+function spawnDreamOrb(id2, x, top, visible = true) {
+  const y = top - ORB_HEIGHT;
+  const placement = { x, y, layer: "world", visible };
+  const halo = game.spawn({
+    ...placement,
+    id: id2 + "-halo",
+    texture: "particle:soft",
+    width: 105,
+    tint: "#ffbf55",
+    alpha: 0.66,
+    blend: "add",
+    z: 5
+  });
+  const orb = game.spawn({ ...placement, id: id2, texture: "particle:disc", width: 25, tint: "#ffc56e", z: 6 });
+  const core = game.spawn({
+    ...placement,
+    id: id2 + "-core",
+    texture: "particle:flare",
+    width: 25,
+    tint: "#fff1ba",
+    blend: "add",
+    z: 7
+  });
+  const floating = game.tween.to(
+    orb,
+    { y: y - FLOAT_DISTANCE },
+    { duration: FLOAT_SECONDS, ease: "easeInOutSine", yoyo: true, loop: true }
+  );
+  const follow2 = game.step(id2 + "-glow", () => {
+    halo.y = orb.y;
+    core.y = orb.y - 2;
+  });
+  return {
+    setVisible(value) {
+      if (orb.alive) halo.visible = orb.visible = core.visible = value;
+    },
+    tryCollect(tokyo, lightId = id2) {
+      const player = tokyo.data;
+      if (!orb.alive || !orb.visible || !player.grounded || deterministicMath.abs(player.x - x) > PICKUP_RANGE || deterministicMath.abs(player.feet - top) > SURFACE_TOLERANCE) return false;
+      game.sound.play(PICKUP_SOUND);
+      game.particles.burst({
+        x,
+        y: orb.y,
+        count: 14,
+        layer: "front",
+        frame: "particle:spark",
+        color: ["#fff0ae", "#ffc76c"],
+        blend: "add",
+        speed: [40, 135],
+        lifespan: [0.25, 0.55]
+      });
+      follow2.cancel();
+      floating.stop();
+      halo.destroy();
+      core.destroy();
+      orb.destroy();
+      showTokyoOrbLight(tokyo, lightId);
+      return true;
+    }
+  };
+}
+
 // game/darkPlaceTerrain.ts
 var SECTION_WIDTH = 1280;
 var START_BANK = { id: "start", left: 0, right: 144, top: 440, cliff: "bank" };
@@ -43685,24 +44161,11 @@ var TOKYO_SCALE = 1.42;
 var JUMP = { launchSpeed: 610, releaseSpeed: 440 };
 var FALL_BELOW_LANDING = 90;
 var EXIT_RANGE = 54;
-var SURFACE_TOLERANCE = 8;
+var SURFACE_TOLERANCE2 = 8;
 var PORTAL_HEIGHT = 132;
-var LIGHT_PICKUP_RANGE = 28;
-var LIGHT_HEIGHT = 38;
-var LIGHT_GLOW_SIZE = 116;
-var LIGHT_GLOW_CENTER_OFFSET = 8;
-var LIGHT_SIZE = 26;
-var TOKYO_HALO_WIDTH = 152;
-var TOKYO_HALO_HEIGHT = 116;
-var TOKYO_HALO_Y_OFFSET = 6;
-var TOKYO_HALO_TINT = "#ffc76c";
-var TOKYO_HALO_ALPHA = 0.58;
-var TOKYO_HALO_LOW_ALPHA = 0.42;
-var TOKYO_HALO_PULSE_SECONDS = 0.8;
-var TOKYO_HIGHLIGHT_TINT = "#ffe3ad";
-var TOKYO_HIGHLIGHT_ALPHA = 0.23;
 var previewSection = 0;
 var retryAfterFall = false;
+var stopDreamMusic;
 function openDarkPlaceSection(number) {
   const index = number - 1;
   const section = DARK_PLACE_SECTIONS[index];
@@ -43711,51 +44174,10 @@ function openDarkPlaceSection(number) {
   prepareDreamStage(1);
   return "Started " + section.name;
 }
-function showTokyoLight(tokyo) {
-  const halo = game.spawn({
-    id: "dark-place-tokyo-halo",
-    texture: "particle:soft",
-    x: tokyo.x,
-    y: tokyo.y + TOKYO_HALO_Y_OFFSET,
-    width: TOKYO_HALO_WIDTH,
-    height: TOKYO_HALO_HEIGHT,
-    layer: "world",
-    z: tokyo.z - 1,
-    tint: TOKYO_HALO_TINT,
-    alpha: TOKYO_HALO_ALPHA,
-    blend: "add"
-  });
-  const highlight = game.spawn({
-    id: "dark-place-tokyo-highlight",
-    frame: tokyo.frame,
-    x: tokyo.x,
-    y: tokyo.y,
-    sx: tokyo.sx,
-    sy: tokyo.sy,
-    layer: "world",
-    z: tokyo.z + 1,
-    tint: TOKYO_HIGHLIGHT_TINT,
-    alpha: TOKYO_HIGHLIGHT_ALPHA,
-    blend: "add"
-  });
-  game.tween.to(
-    halo,
-    { alpha: TOKYO_HALO_LOW_ALPHA },
-    { duration: TOKYO_HALO_PULSE_SECONDS, ease: "easeInOutSine", yoyo: true, loop: true }
-  );
-  game.step("dark-place-tokyo-light", () => {
-    halo.x = highlight.x = tokyo.x;
-    halo.y = tokyo.y + TOKYO_HALO_Y_OFFSET;
-    highlight.y = tokyo.y;
-    highlight.frame = tokyo.frame;
-    highlight.sx = tokyo.sx;
-    highlight.sy = tokyo.sy;
-    halo.visible = highlight.visible = tokyo.visible;
-  }, { after: "tokyo-visual" });
-}
 var DreamStart = {
   name: "dream-start",
   enter() {
+    stopDreamMusic = startDreamMusic();
     const { width, height } = game.screen;
     const entry = darkPlaceEntry(previewSection);
     let phase = retryAfterFall ? "respawning" : previewSection === 0 ? "intro" : "playing";
@@ -43774,27 +44196,7 @@ var DreamStart = {
     const tokyo = spawnTokyo(entry.x, entry.top, () => phase === "playing", TOKYO_SCALE, JUMP);
     game.rig.follow(tokyo);
     const portal = spawnRiftPortal("dark-place-portal", DARK_PLACE_EXIT.x, DARK_PLACE_EXIT.top, PORTAL_HEIGHT);
-    const lightY = DARK_PLACE_LIGHT.top - LIGHT_HEIGHT;
-    const glow = game.spawn({
-      id: "dark-place-light-glow",
-      texture: "dream-light",
-      x: DARK_PLACE_LIGHT.x,
-      y: lightY + LIGHT_GLOW_CENTER_OFFSET,
-      width: LIGHT_GLOW_SIZE,
-      layer: "world",
-      z: 5,
-      anims: { pulse: { strip: "dream-light", fps: 5 } }
-    });
-    glow.play("pulse");
-    const light = game.spawn({
-      id: "dark-place-light",
-      texture: "dream-star",
-      x: DARK_PLACE_LIGHT.x,
-      y: lightY,
-      width: LIGHT_SIZE,
-      layer: "world",
-      z: 6
-    });
+    const orb = spawnDreamOrb("dark-place-light", DARK_PLACE_LIGHT.x, DARK_PLACE_LIGHT.top);
     function startPlaying() {
       phase = "playing";
       game.touch.visible = getTouchOverride() ?? isMobileView();
@@ -43833,25 +44235,10 @@ var DreamStart = {
         });
         return;
       }
-      if (!portal.data.open && grounded && deterministicMath.abs(feet - DARK_PLACE_LIGHT.top) <= SURFACE_TOLERANCE && deterministicMath.abs(x - DARK_PLACE_LIGHT.x) <= LIGHT_PICKUP_RANGE) {
+      if (orb.tryCollect(tokyo, "dark-place")) {
         portal.setOpen(true);
-        game.sound.play(PICKUP_SOUND);
-        glow.destroy();
-        light.destroy();
-        showTokyoLight(tokyo);
-        game.particles.burst({
-          x: DARK_PLACE_LIGHT.x,
-          y: lightY,
-          count: 14,
-          layer: "front",
-          frame: "particle:spark",
-          color: ["#fff0ae", "#ffc76c"],
-          blend: "add",
-          speed: [40, 135],
-          lifespan: [0.25, 0.55]
-        });
       }
-      const atExit = grounded && deterministicMath.abs(feet - DARK_PLACE_EXIT.top) <= SURFACE_TOLERANCE && deterministicMath.abs(x - DARK_PLACE_EXIT.x) <= EXIT_RANGE;
+      const atExit = grounded && deterministicMath.abs(feet - DARK_PLACE_EXIT.top) <= SURFACE_TOLERANCE2 && deterministicMath.abs(x - DARK_PLACE_EXIT.x) <= EXIT_RANGE;
       if (atExit && portal.data.open) {
         const tapped = prompt.show("Enter the rift", portal.x, portal.y - PORTAL_HEIGHT / 2, dt);
         if (interactPressed || tapped) {
@@ -43866,6 +44253,512 @@ var DreamStart = {
     }, { after: "rig-follow.camera" });
   },
   exit() {
+    stopDreamMusic?.();
+    stopDreamMusic = void 0;
+    game.touch.visible = false;
+  }
+};
+
+// game/kennelOpening.ts
+var ARRIVAL_ZOOM = 1.2;
+var DOOR_ZOOM = 1.28;
+var ARRIVE_AT = 0.28;
+var PAN_AT = 0.9;
+var PAN_SECONDS = 1.25;
+var LOCK_AT = PAN_AT + PAN_SECONDS;
+var LOCK_SECONDS = 1.18;
+var CALL_AT2 = LOCK_AT + LOCK_SECONDS;
+var CALL_SECONDS = 1.8;
+var RETURN_AT = CALL_AT2 + CALL_SECONDS;
+var RETURN_SECONDS = 0.95;
+var CAPTION_ID = "kennel-opening-caption";
+var CALL = "Tokyo! Can you hear me?";
+function showCallWave2(x, y) {
+  const wave = game.spawn({
+    id: "kennel-call-echo",
+    texture: "particle:ring",
+    x,
+    y,
+    width: 20,
+    tint: "#b7dcff",
+    alpha: 0.64,
+    blend: "add",
+    layer: "front"
+  });
+  game.tween.to(
+    wave,
+    { x: x - 29, sx: wave.sx * 2.3, sy: wave.sy * 2.3, alpha: 0 },
+    { duration: 0.48, ease: "easeOutSine", onComplete: () => wave.destroy() }
+  );
+}
+function playKennelOpening(tokyo, doorX, doorTop, onReady) {
+  const { width, height } = game.screen;
+  const doorCameraX = KENNEL_ROOM_WIDTH - width / (2 * DOOR_ZOOM);
+  const restCamera = { x: width / 2, y: KENNEL_HEIGHT / 2, zoom: 1 };
+  const firstFrame = game.assets.frames(RIFT_PORTAL_ART.key);
+  const voice = createDialogueVoice("kennel-voice");
+  tokyo.data.grounded = true;
+  tokyo.alpha = 0;
+  game.camera.snap(width / (2 * ARRIVAL_ZOOM), 406, ARRIVAL_ZOOM);
+  const rift = game.spawn({
+    id: "kennel-arrival-rift",
+    x: tokyo.x,
+    y: KENNEL_FLOOR - 59,
+    texture: RIFT_PORTAL_ART.key,
+    frame: 1,
+    scale: 1.55,
+    alpha: 0,
+    layer: "world",
+    z: tokyo.z - 1,
+    anims: { swirl: { frames: [firstFrame + 1, firstFrame + 2, firstFrame + 3, firstFrame + 2], fps: 9 } }
+  });
+  rift.play("swirl");
+  const veil = game.spawn({
+    id: "kennel-opening-veil",
+    texture: "white",
+    x: width / 2,
+    y: height / 2,
+    width,
+    height,
+    layer: "hud",
+    z: 1e3,
+    tint: "#121626"
+  });
+  game.tween.to(veil, { alpha: 0 }, { duration: 0.42, onComplete: () => veil.destroy() });
+  game.tween.to(rift, { alpha: 1 }, { duration: ARRIVE_AT });
+  game.after(ARRIVE_AT, () => {
+    game.sound.play(RIFT_SOUND);
+    game.tween.to(tokyo, { alpha: 1 }, { duration: 0.21 });
+    game.particles.burst({
+      x: tokyo.x,
+      y: tokyo.y,
+      count: 18,
+      layer: "front",
+      frame: "particle:spark",
+      blend: "add",
+      color: ["#9cf7e5", "#ffe6aa"],
+      speed: [45, 155],
+      lifespan: [0.25, 0.61]
+    });
+    game.tween.to(
+      rift,
+      { alpha: 0, sx: rift.sx * 0.2, sy: rift.sy * 0.88 },
+      { delay: 0.16, duration: 0.33, ease: "easeInOutSine", onComplete: () => rift.destroy() }
+    );
+  });
+  game.after(PAN_AT, () => {
+    game.tween.to(
+      game.camera,
+      { x: doorCameraX, y: 365, zoom: DOOR_ZOOM },
+      { duration: PAN_SECONDS, ease: "easeInOutSine" }
+    );
+  });
+  game.after(LOCK_AT, () => {
+    game.sound.play(KENNEL_LOCK_SOUND);
+    showDreamDialogue(CAPTION_ID, doorX - 118, doorTop - 38, "The door is locked.", LOCK_SECONDS);
+  });
+  game.after(CALL_AT2, () => {
+    showDreamDialogue(CAPTION_ID, doorX - 118, doorTop - 38, CALL, CALL_SECONDS, "Voice beyond the door");
+    voice.speak(CALL, CALL_SECONDS);
+    showCallWave2(doorX - 9, doorTop + 71);
+    game.after(0.31, () => showCallWave2(doorX - 9, doorTop + 71));
+  });
+  game.after(RETURN_AT, () => {
+    game.tween.to(game.camera, restCamera, {
+      duration: RETURN_SECONDS,
+      ease: "easeInOutSine",
+      onComplete: onReady
+    });
+  });
+}
+
+// game/kennelReunion.ts
+var GREETING = "Tokyo! You heard me!";
+var FAREWELL = "See you on the other side.";
+var GREETING_SECONDS = 1.6;
+var FAREWELL_SECONDS = 1.8;
+var VANISH_SECONDS = 0.56;
+var CAPTION_X_OFFSET = 112;
+var CAPTION_Y_OFFSET = 132;
+var GREETING_SPACING = 40;
+function playKennelReunion(tokyo, sandesh, onReady) {
+  const { x, feet } = tokyo.data;
+  const direction2 = x < sandesh.x ? 1 : -1;
+  const voice = createDialogueVoice("kennel-voice");
+  const greetingX = deterministicMath.abs(x - sandesh.x) < GREETING_SPACING ? sandesh.x - direction2 * GREETING_SPACING : x;
+  tokyo.warpTo(greetingX, feet, direction2);
+  sandesh.sx = -direction2 * deterministicMath.abs(sandesh.sx);
+  sandesh.setFrame(4);
+  function say2(line, seconds) {
+    showDreamDialogue(
+      "kennel-sandesh-dialogue",
+      sandesh.x - CAPTION_X_OFFSET,
+      sandesh.y - CAPTION_Y_OFFSET,
+      line,
+      seconds,
+      "Sandesh"
+    );
+    voice.speak(line, seconds);
+  }
+  say2(GREETING, GREETING_SECONDS);
+  game.after(GREETING_SECONDS, () => {
+    sandesh.setFrame(0);
+    say2(FAREWELL, FAREWELL_SECONDS);
+  });
+  game.after(GREETING_SECONDS + FAREWELL_SECONDS, () => {
+    game.sound.play(KENNEL_FAREWELL_SOUND);
+    game.particles.burst({
+      x: sandesh.x,
+      y: sandesh.y + 8,
+      count: 24,
+      layer: "front",
+      frame: "particle:spark",
+      blend: "add",
+      angle: -90,
+      spread: 100,
+      color: ["#ffe1a3", "#a9f4ed"],
+      speed: [35, 145],
+      lifespan: [0.3, 0.8]
+    });
+    game.tween.to(sandesh, { alpha: 0, y: sandesh.y - 18, tint: "#b8fff1" }, {
+      duration: VANISH_SECONDS,
+      ease: "easeInSine",
+      onComplete: () => {
+        sandesh.destroy();
+        onReady();
+      }
+    });
+  });
+}
+
+// game/scenes/Kennel.ts
+var GRAVITY2 = 1500;
+var FALL_Y = 621;
+var RANGE = 55;
+var DOOR_RANGE = 88;
+var SURFACE_TOLERANCE3 = 10;
+var TOKYO_SCALE2 = 1.3;
+var FAMILY_SCALE = 1.4;
+var GATE_SCALE = 4.6;
+var GATE_HEIGHT = 42 * GATE_SCALE;
+var GATE_POST_HEIGHT = KENNEL_FLOOR - GATE_HEIGHT;
+var LOCKED = "#ffbb64";
+var OPEN = "#99f4cf";
+var JUMP2 = { launchSpeed: 610, releaseSpeed: 440 };
+var FAMILY_X = KENNEL_ROOM_WIDTH - 128;
+var EXIT_X = KENNEL_ROOM_WIDTH - 57;
+var PORTAL_HEIGHT2 = 122;
+var SWITCH_SCALE = 2;
+var ORB_ID = "kennel-orb";
+var FIRST_ROOM = { index: 0, switchOn: false, orbCollected: false, afterFall: false };
+var nextEntry = FIRST_ROOM;
+var carryMusic = false;
+var stopMusic;
+var kennelProgress = { room: 1, switchOn: false, orbCollected: false, phase: "playing" };
+function returnToKennel(entry) {
+  nextEntry = entry;
+  carryMusic = true;
+  game.scenes.go("kennel");
+}
+function openKennelSection(section) {
+  const room = KENNEL_ROOMS[section - 1];
+  if (!room) return "Choose room 1, 2, or 3.";
+  nextEntry = { ...FIRST_ROOM, index: section - 1 };
+  prepareDreamStage(2);
+  return "Started " + room.name;
+}
+function spawnKennelDoor(x, open) {
+  game.spawn({
+    id: "kennel-door-frame",
+    texture: "kennel-door-frame",
+    x,
+    y: KENNEL_FLOOR / 2,
+    width: 130,
+    height: KENNEL_FLOOR,
+    layer: "world",
+    z: 5
+  });
+  const gate = game.spawn({
+    id: "kennel-door",
+    texture: "dream-gate",
+    x,
+    y: KENNEL_FLOOR - GATE_HEIGHT / 2,
+    scale: GATE_SCALE,
+    layer: "world",
+    z: 6,
+    frame: open ? 1 : 0
+  });
+  const wall = open ? null : game.spawn({
+    id: "kennel-door-collision",
+    x,
+    y: KENNEL_FLOOR - GATE_HEIGHT / 2,
+    width: 32,
+    height: GATE_HEIGHT,
+    visible: false,
+    layer: "world",
+    body: { type: "static", friction: 0 }
+  });
+  game.spawn({
+    id: "kennel-door-header",
+    x,
+    y: GATE_POST_HEIGHT / 2,
+    width: 32,
+    height: GATE_POST_HEIGHT,
+    visible: false,
+    layer: "world",
+    body: { type: "static", friction: 0 }
+  });
+  const lamp = game.spawn({
+    id: "kennel-door-lamp",
+    texture: "particle:disc",
+    x,
+    y: KENNEL_FLOOR - GATE_HEIGHT - 10,
+    width: 13,
+    height: 13,
+    layer: "world",
+    z: 7,
+    tint: open ? OPEN : LOCKED
+  });
+  return {
+    x,
+    unlock() {
+      gate.setFrame(1);
+      wall?.destroy();
+      lamp.tint = OPEN;
+    }
+  };
+}
+var Kennel = {
+  name: "kennel",
+  enter() {
+    stopMusic ??= startKennelMusic();
+    const { index, switchOn, orbCollected, afterFall } = nextEntry;
+    nextEntry = FIRST_ROOM;
+    const room = KENNEL_ROOMS[index];
+    const opening = index === 0 && !afterFall;
+    Object.assign(kennelProgress, {
+      room: index + 1,
+      switchOn,
+      orbCollected,
+      phase: opening ? "opening" : afterFall ? "respawning" : "playing"
+    });
+    const [switchX, switchTop] = room.switchLedge;
+    const finalRoom = room.gateX === void 0;
+    let interactRequested = false;
+    let wasInteract = false;
+    let showLongJumpHint = false;
+    run.scene = "journey";
+    game.camera.snap(game.screen.width / 2, KENNEL_HEIGHT / 2, 1);
+    game.rig.bounds({ x: 0, y: 0, w: KENNEL_ROOM_WIDTH, h: KENNEL_HEIGHT });
+    game.physics.gravity(0, GRAVITY2);
+    game.ui.pauseButton();
+    game.ui.muteButton();
+    spawnKennelTerrain(index);
+    const tokyo = spawnTokyo(
+      KENNEL_ENTRY_X,
+      KENNEL_FLOOR,
+      () => kennelProgress.phase === "playing",
+      TOKYO_SCALE2,
+      JUMP2
+    );
+    if (orbCollected) showTokyoOrbLight(tokyo, ORB_ID);
+    const status = game.text("", 34, 68, {
+      size: 17,
+      font: "mono-bold",
+      align: "left",
+      color: LOCKED,
+      stroke: { color: "#18121f", width: 3 }
+    });
+    const roomName = game.text(room.name.toUpperCase(), 34, 38, {
+      size: 26,
+      font: "mono-bold",
+      align: "left",
+      color: "#fff0cd",
+      stroke: { color: "#18121f", width: 3 }
+    });
+    const door = room.gateX === void 0 ? null : spawnKennelDoor(room.gateX, switchOn);
+    const switchGlow = game.spawn({
+      id: "kennel-switch-glow",
+      texture: "particle:soft",
+      x: switchX,
+      y: switchTop - 33,
+      width: 128,
+      height: 111,
+      alpha: 0.48,
+      blend: "add",
+      layer: "world",
+      z: 7
+    });
+    const lever = game.spawn({
+      id: "kennel-switch",
+      texture: "kennel-lever",
+      x: switchX,
+      y: switchTop - 34,
+      scale: SWITCH_SCALE,
+      layer: "world",
+      z: 8
+    });
+    const rescued = () => journey.rescued.includes("sandesh");
+    const sandesh = finalRoom && !rescued() ? game.spawn({
+      id: "dream-family-sandesh",
+      texture: "family-sandesh",
+      x: FAMILY_X,
+      y: KENNEL_FLOOR - FAMILY_GROUND_OFFSET * FAMILY_SCALE,
+      layer: "world",
+      z: 7,
+      sx: -FAMILY_SCALE,
+      sy: FAMILY_SCALE
+    }) : null;
+    const portal = finalRoom ? spawnRiftPortal("journey-exit-portal", EXIT_X, KENNEL_FLOOR, PORTAL_HEIGHT2) : null;
+    const orbLedge = room.orbLedge;
+    const orb = orbLedge && !orbCollected ? spawnDreamOrb(ORB_ID, orbLedge[0], orbLedge[1]) : null;
+    const orbCage = orbLedge && !orbCollected ? game.spawn({
+      id: "kennel-orb-cage",
+      texture: "dream-gate",
+      x: orbLedge[0],
+      y: orbLedge[1] - 35,
+      width: 62,
+      height: 70,
+      layer: "world",
+      z: 8,
+      frame: switchOn ? 1 : 0
+    }) : null;
+    const prompt = spawnDreamPrompt(() => {
+      interactRequested = true;
+    });
+    function updateGoal() {
+      const on = kennelProgress.switchOn;
+      const color2 = on ? OPEN : LOCKED;
+      switchGlow.tint = color2;
+      lever.setFrame(on ? 1 : 0);
+      status.color = color2;
+      status.text = !on ? finalRoom ? "Flip the switch to release the orb" : "Climb to the switch" : !finalRoom ? "Door unlocked" : !kennelProgress.orbCollected ? "Run + Jump to the glowing orb" : showLongJumpHint ? "Hold Run + Jump to clear the drain" : rescued() ? "Enter the rift" : "Rift open \xB7 Find Sandesh";
+    }
+    function flipSwitch() {
+      game.sound.play(KENNEL_SWITCH_SOUND);
+      kennelProgress.switchOn = true;
+      door?.unlock();
+      orbCage?.setFrame(1);
+      updateGoal();
+      game.particles.burst({
+        x: switchX,
+        y: lever.y,
+        count: 16,
+        layer: "front",
+        frame: "particle:spark",
+        color: [LOCKED, OPEN],
+        speed: [40, 120],
+        lifespan: [0.3, 0.7]
+      });
+    }
+    function advance() {
+      returnToKennel({ ...FIRST_ROOM, index: index + 1 });
+    }
+    portal?.setOpen(orbCollected);
+    updateGoal();
+    if (opening && door) {
+      status.visible = roomName.visible = false;
+      playKennelOpening(tokyo, door.x, GATE_POST_HEIGHT, () => {
+        game.rig.follow(tokyo);
+        status.visible = roomName.visible = true;
+        showDreamTitle("The Kennel");
+        kennelProgress.phase = "playing";
+      });
+    } else {
+      game.rig.follow(tokyo);
+    }
+    if (afterFall) playDreamRespawn(tokyo, () => {
+      kennelProgress.phase = "playing";
+    });
+    game.step("kennel-world", (dt) => {
+      game.touch.visible = kennelProgress.phase === "playing" && (getTouchOverride() ?? isMobileView());
+      if (game.controls.justPressed("pause")) {
+        game.scenes.push("pause");
+        return;
+      }
+      if (kennelProgress.phase !== "playing") return;
+      const { x, feet, grounded } = tokyo.data;
+      if (feet > FALL_Y) {
+        kennelProgress.phase = "falling";
+        prompt.hide();
+        game.touch.visible = false;
+        playDreamFall(tokyo, () => {
+          returnToKennel({
+            index,
+            switchOn: kennelProgress.switchOn,
+            orbCollected: kennelProgress.orbCollected,
+            afterFall: true
+          });
+        });
+        return;
+      }
+      const pressed = game.controls.pressed("interact");
+      const interact = interactRequested || game.controls.justPressed("interact") || pressed && !wasInteract;
+      wasInteract = pressed;
+      interactRequested = false;
+      const near = (target, surface, range = RANGE) => grounded && deterministicMath.abs(x - target) <= range && deterministicMath.abs(feet - surface) <= SURFACE_TOLERANCE3;
+      const on = kennelProgress.switchOn;
+      if (on && orb?.tryCollect(tokyo)) {
+        kennelProgress.orbCollected = true;
+        orbCage?.destroy();
+        portal?.setOpen(true);
+        updateGoal();
+      }
+      const longJump = room.longJumpLedge;
+      const atLongJump = Boolean(longJump && near(longJump[0], longJump[1]));
+      if (atLongJump !== showLongJumpHint) {
+        showLongJumpHint = atLongJump;
+        updateGoal();
+      }
+      if (!on && near(switchX, switchTop)) {
+        if (prompt.show("Flip switch", switchX, switchTop - 62, dt) || interact) {
+          flipSwitch();
+        }
+      } else if (door && near(door.x, KENNEL_FLOOR, DOOR_RANGE)) {
+        const tapped = prompt.show(
+          on ? "Enter door" : "Find the switch",
+          door.x,
+          KENNEL_FLOOR - GATE_HEIGHT,
+          dt
+        );
+        if (on && (tapped || interact)) {
+          game.sound.play(INTERACT_SOUND);
+          advance();
+        }
+      } else if (sandesh && !rescued() && near(FAMILY_X, KENNEL_FLOOR)) {
+        if (prompt.show("Greet Sandesh", FAMILY_X, KENNEL_FLOOR - 135, dt) || interact) {
+          kennelProgress.phase = "reunion";
+          prompt.hide();
+          status.text = "Reunited with Sandesh";
+          playKennelReunion(tokyo, sandesh, () => {
+            journey.rescued.push("sandesh");
+            kennelProgress.phase = "playing";
+            updateGoal();
+          });
+        }
+      } else if (portal && near(EXIT_X, KENNEL_FLOOR)) {
+        const ready = kennelProgress.orbCollected && rescued();
+        const tapped = prompt.show(
+          ready ? "Enter the rift" : kennelProgress.orbCollected ? "Greet Sandesh first" : "Find the glowing orb",
+          EXIT_X,
+          KENNEL_FLOOR - PORTAL_HEIGHT2,
+          dt
+        );
+        if (ready && (tapped || interact)) {
+          game.sound.play(RIFT_SOUND);
+          completeDreamStage();
+        }
+      } else {
+        prompt.hide();
+      }
+    }, { after: "rig-follow.camera" });
+  },
+  exit() {
+    if (!carryMusic) {
+      stopMusic?.();
+      stopMusic = void 0;
+    }
+    carryMusic = false;
     game.touch.visible = false;
   }
 };
@@ -43876,6 +44769,7 @@ function addDebugControls() {
     ...run,
     home,
     journey: { ...journey },
+    kennel: { ...kennelProgress },
     playground: { ...park, badges: badges() },
     mobileView: isMobileView(),
     touchVisible: game.touch?.visible ?? false,
@@ -43939,6 +44833,12 @@ function addDebugControls() {
     does: "Start Level 1 at the ledges, the descent, or the far side",
     args: "1-3",
     run: (number) => openDarkPlaceSection(Number(number))
+  });
+  game.cheats.add({
+    name: "kennel-section",
+    does: "Start at the Intake, Feed Loft, or Drain Room with its switch off",
+    args: "1-3",
+    run: (number) => openKennelSection(Number(number))
   });
   game.cheats.add({
     name: "dream-win",
@@ -44100,8 +45000,8 @@ var STORY_BUTTON_Y = 346;
 var PLAYGROUND_BUTTON_Y = 466;
 var TOKYO_X = 878;
 var TOKYO_FEET_Y = 581;
-var TOKYO_SCALE2 = 4;
-var SEATED_FOOT_OFFSET = 21 * TOKYO_SCALE2;
+var TOKYO_SCALE3 = 4;
+var SEATED_FOOT_OFFSET = 21 * TOKYO_SCALE3;
 var SEATED_FIRST_FRAME = 42;
 var SEATED_FRAME_COUNT = 4;
 function openStory() {
@@ -44209,7 +45109,7 @@ var Title = {
       frame: SEATED_FIRST_FRAME,
       x: TOKYO_X,
       y: TOKYO_FEET_Y - SEATED_FOOT_OFFSET,
-      scale: TOKYO_SCALE2,
+      scale: TOKYO_SCALE3,
       layer: "world",
       z: 1
     });
@@ -45161,7 +46061,7 @@ function spawnParkWildlife(interactions) {
 var INTERACTION_RANGE = 92;
 var REST_SECONDS = 2;
 var PORTAL_X = 6210;
-var PORTAL_HEIGHT2 = 235;
+var PORTAL_HEIGHT3 = 235;
 var TREAT_POSITIONS = [
   [470, 515],
   [1190, 510],
@@ -45322,7 +46222,7 @@ function spawnParkActivities() {
     parkSparkles(2980, 500);
     say("A shower of golden stars! The mystery crate says: follow your nose into the garden.");
   } });
-  const portal = spawnRiftPortal("park-portal", PORTAL_X, PARK_GROUND, PORTAL_HEIGHT2);
+  const portal = spawnRiftPortal("park-portal", PORTAL_X, PARK_GROUND, PORTAL_HEIGHT3);
   portal.setOpen(badges().every(Boolean));
   interactions.push({
     x: () => PORTAL_X,
@@ -45414,7 +46314,7 @@ function spawnParkActivities() {
 }
 
 // game/scenes/Playground.ts
-var GRAVITY2 = 1500;
+var GRAVITY3 = 1500;
 var Playground = {
   name: "play",
   enter() {
@@ -45422,7 +46322,7 @@ var Playground = {
     game.camera.snap(deterministicMath.max(640, deterministicMath.min(PARK_WIDTH - 640, run.spawnX + 90)), 360, 1);
     game.touch.visible = getTouchOverride() ?? isMobileView();
     spawnParkMap();
-    game.physics.gravity(0, GRAVITY2);
+    game.physics.gravity(0, GRAVITY3);
     const tokyo = spawnTokyo(run.spawnX, PARK_GROUND);
     const activities = spawnParkActivities();
     game.rig.follow(tokyo);
@@ -45602,8 +46502,8 @@ var LEVEL_SELECT_X = 366;
 var MEADOW_BUTTON_Y = 467;
 var TOKYO_X2 = 917;
 var TOKYO_FEET_Y2 = 614;
-var TOKYO_SCALE3 = 4;
-var CARRY_FOOT_OFFSET = 21 * TOKYO_SCALE3;
+var TOKYO_SCALE4 = 4;
+var CARRY_FOOT_OFFSET = 21 * TOKYO_SCALE4;
 var IDLE_FRAME_COUNT = 8;
 function startHome() {
   game.scenes.go("home");
@@ -45716,7 +46616,7 @@ var Story = {
       texture: "tokyo-carry-plushie",
       x: TOKYO_X2,
       y: TOKYO_FEET_Y2 - CARRY_FOOT_OFFSET,
-      scale: TOKYO_SCALE3,
+      scale: TOKYO_SCALE4,
       layer: "world",
       z: 1
     });
@@ -46350,10 +47250,10 @@ function spawnHomeFootShadow(x, width) {
 // game/scenes/Home.ts
 var WALL_WIDTH = 28;
 var ROOM_FADE_TIME = 0.22;
-var GRAVITY3 = 1500;
+var GRAVITY4 = 1500;
 var INTERACT_RANGE = 72;
 var INTERACT_HEIGHT = 32;
-var TOKYO_SCALE4 = 1.95;
+var TOKYO_SCALE5 = 1.95;
 var HOME_JUMP = { launchSpeed: 748, releaseSpeed: 730 };
 var TOKYO_SHADOW_WIDTH = 89;
 var SURFACE_PROBE_OFFSET = 4;
@@ -46381,7 +47281,7 @@ var BALL_SIZE = 25;
 var PLUSHIE_SIZE = 42;
 var BOWL_SIZE = 60;
 var TOY_DROP_OFFSET = 44;
-var RESTING_FOOT_OFFSET = 21 * TOKYO_SCALE4 * TOKYO_ART_SCALE;
+var RESTING_FOOT_OFFSET = 21 * TOKYO_SCALE5 * TOKYO_ART_SCALE;
 var EAT_MUZZLE_OFFSET = 53;
 var EAT_TIME = 1.05;
 var EAT_FRAMES = [48, 49, 50, 51, 52, 51, 52, 53, 54, 55];
@@ -46453,14 +47353,14 @@ var Home = {
       game.camera.snap(cameraX, height / 2, 1);
     }
     frameRoom(home.room, entry);
-    game.physics.gravity(0, GRAVITY3);
+    game.physics.gravity(0, GRAVITY4);
     game.touch.visible = getTouchOverride() ?? isMobileView();
     const { lamp, shade: shade2 } = spawnHomeInterior();
     const doors = spawnHomeDoors();
     spawnRoomBounds();
     let enteringRoom = false;
     const busy = () => enteringRoom || home.phase === "eating" || home.phase === "sleeping";
-    const tokyo = spawnTokyo(entry, HOME_WALK_Y, () => !busy(), TOKYO_SCALE4, HOME_JUMP);
+    const tokyo = spawnTokyo(entry, HOME_WALK_Y, () => !busy(), TOKYO_SCALE5, HOME_JUMP);
     game.rig.follow(tokyo);
     const tokyoShadow = spawnHomeFootShadow(entry, TOKYO_SHADOW_WIDTH);
     const members = HOME_FAMILY.map(({ id: id2 }, i) => {
@@ -46539,7 +47439,7 @@ var Home = {
       frame: LOW_TOKYO_FRAME,
       x: 0,
       y: 0,
-      scale: TOKYO_SCALE4 * TOKYO_ART_SCALE,
+      scale: TOKYO_SCALE5 * TOKYO_ART_SCALE,
       layer: "world",
       z: 10,
       visible: false
@@ -46734,7 +47634,7 @@ var Home = {
       quietTokyo.visible = true;
       quietTokyo.x = x;
       quietTokyo.y = y;
-      quietTokyo.sx = facing * TOKYO_SCALE4 * TOKYO_ART_SCALE;
+      quietTokyo.sx = facing * TOKYO_SCALE5 * TOKYO_ART_SCALE;
     }
     function eatTreats() {
       home.phase = "eating";
@@ -46948,7 +47848,6 @@ var Home = {
 var SCREEN_W = 1280;
 var FLOOR = 576;
 var LEVEL_FLOORS = {
-  2: 570,
   3: 522,
   4: 543,
   5: 558,
@@ -46958,21 +47857,20 @@ var LEVEL_FLOORS = {
   9: 560
 };
 var FLOOR_HEIGHT = 48;
-var GRAVITY4 = 1500;
+var GRAVITY5 = 1500;
 var WALKING_START = 120;
-var EXIT_X = 1172;
+var EXIT_X2 = 1172;
 var EXIT_RANGE2 = 62;
-var PORTAL_HEIGHT3 = 142;
+var PORTAL_HEIGHT4 = 142;
 var CHAT_RANGE = 68;
 var ACTION_HEIGHT = 68;
 var LIGHTS = [204, 467, 730, 993, 1174];
 var HAZARD_TOUCH_X = 48;
 var HAZARD_TOUCH_Y = 45;
-var FAMILY_SCALE = 1.48;
+var FAMILY_SCALE2 = 1.48;
 var FAMILY_ACTION_HEIGHT = 130;
-var KENNEL_LATCH_X = 424;
-var WAKE_X = 1040;
 var REUNION_SECONDS = 2.8;
+var ORB_LOCATIONS = { 3: 625, 4: 747, 5: 709, 6: 922, 7: 876, 8: 1002, 9: 924 };
 var FAMILY = [
   { id: "sandesh", name: "Sandesh" },
   { id: "sushil", name: "Sushil" },
@@ -46990,10 +47888,10 @@ var Journey = {
     let elapsed = 0;
     let stumbleTime = 0;
     let hazardCooldown = 0;
-    let doorOpen = stage !== 2;
     let reunionActive = false;
     let reunionTimer = 0;
     let wakeReady = false;
+    let orbCollected = false;
     let wasInteract = false;
     let interactRequested = false;
     const hazards = [];
@@ -47002,9 +47900,13 @@ var Journey = {
       game.scenes.go("dream-start");
       return;
     }
+    if (stage === 2) {
+      game.scenes.go("kennel");
+      return;
+    }
     run.scene = "journey";
     game.camera.snap(SCREEN_W / 2, 360, 1);
-    game.physics.gravity(0, GRAVITY4);
+    game.physics.gravity(0, GRAVITY5);
     game.touch.visible = getTouchOverride() ?? isMobileView();
     if (stage === 7) {
       const { lamp, shade: shade2 } = spawnHomeRoom();
@@ -47031,12 +47933,7 @@ var Journey = {
         body: { type: "static", friction: 0 }
       });
     }
-    const tokyo = spawnTokyo(
-      WALKING_START,
-      floor2,
-      () => stumbleTime <= 0,
-      stage === 2 ? 1.12 : 1.5
-    );
+    const tokyo = spawnTokyo(WALKING_START, floor2, () => stumbleTime <= 0);
     if (stage >= 8 && journey.plushie) tokyo.carry("plushie");
     if (stage < 9) {
       for (let i = 0; i < LIGHTS.length; i++) {
@@ -47053,48 +47950,19 @@ var Journey = {
         });
       }
     }
-    const portal = stage < 9 ? spawnRiftPortal("journey-exit-portal", EXIT_X, floor2, PORTAL_HEIGHT3) : null;
+    const portal = spawnRiftPortal("journey-exit-portal", EXIT_X2, floor2, PORTAL_HEIGHT4);
+    const orb = spawnDreamOrb("journey-orb", ORB_LOCATIONS[stage], floor2, stage < 6);
+    const goal = game.text("", 34, 44, {
+      size: 17,
+      font: "mono-bold",
+      color: "#fff1d1",
+      align: "left",
+      stroke: { color: "#18121f", width: 3 }
+    });
     showDreamTitle(info.name);
     const prompt = spawnDreamPrompt(() => {
       interactRequested = true;
     });
-    if (stage === 2) {
-      const gate = game.spawn({
-        id: "kennel-front-gate",
-        texture: "dream-gate",
-        x: 647,
-        y: floor2 - 82,
-        scale: DREAM_GATE_SCALE,
-        layer: "world",
-        z: 6,
-        frame: 0
-      });
-      const gateWall = game.spawn({
-        id: "kennel-gate-collision",
-        x: 647,
-        y: floor2 - 81,
-        width: 54,
-        height: 165,
-        visible: false,
-        layer: "world",
-        body: { type: "static", friction: 0 }
-      });
-      game.spawn({
-        id: "kennel-gate-latch",
-        texture: "dream-latch",
-        x: KENNEL_LATCH_X,
-        y: floor2 - 28,
-        width: 54,
-        height: 58,
-        layer: "world",
-        z: 8
-      });
-      targets.push({ x: KENNEL_LATCH_X, label: "Open gate", ready: () => !doorOpen, act: () => {
-        doorOpen = true;
-        gate.setFrame(1);
-        gateWall.destroy();
-      } });
-    }
     if (stage === 3) {
       game.spawn({
         id: "first-house-way-out",
@@ -47266,8 +48134,8 @@ var Journey = {
         id: "dream-family-" + person.id,
         texture: "family-" + person.id,
         x: 1060,
-        y: floor2 - FAMILY_GROUND_OFFSET * FAMILY_SCALE,
-        scale: FAMILY_SCALE,
+        y: floor2 - FAMILY_GROUND_OFFSET * FAMILY_SCALE2,
+        scale: FAMILY_SCALE2,
         layer: "world",
         z: 7
       });
@@ -47310,32 +48178,39 @@ var Journey = {
         });
       } });
     }
-    const familyGoalReady = () => {
-      if (stage === 2) return doorOpen && journey.rescued.includes("sandesh");
+    const storyGoalReady = () => {
       if (stage === 6) return journey.visitedCats.length >= 2 && journey.rescued.includes("reshika");
       if (stage === 7) return journey.puzzleStep >= 2 && journey.rescued.includes("senny");
       if (stage === 8) return journey.plushie;
+      if (stage === 9) return wakeReady;
       if (info.family) return journey.rescued.includes(info.family);
       return true;
     };
-    if (portal) {
-      portal.setOpen(familyGoalReady());
-      targets.push({
-        x: EXIT_X,
-        label: "Enter the rift",
-        sound: RIFT_SOUND,
-        ready: familyGoalReady,
-        act: completeDreamStage
-      });
-    } else {
-      targets.push({
-        x: WAKE_X,
-        height: FAMILY_ACTION_HEIGHT,
-        label: "Wake up",
-        ready: () => wakeReady,
-        act: completeDreamStage
-      });
+    function orbAvailable() {
+      if (stage === 6) return journey.visitedCats.length >= 2;
+      if (stage === 7) return journey.puzzleStep >= 2;
+      if (stage === 8) return journey.plushie;
+      if (stage === 9) return wakeReady;
+      return true;
     }
+    function goalText() {
+      if (!orbAvailable()) {
+        if (stage === 6) return "Greet both cats to reveal the orb";
+        if (stage === 7) return "Press moon, then star to reveal the orb";
+        if (stage === 8) return "Find the plushie to reveal the orb";
+        return reunionActive ? "Wait for the morning light" : "Hug the family to reveal the orb";
+      }
+      if (!orbCollected) return "Collect the glowing orb";
+      if (!storyGoalReady() && info.family) return "Greet " + FAMILY.find((person) => person.id === info.family).name;
+      return stage === 9 ? "Enter the rift to wake up" : "Enter the rift";
+    }
+    targets.push({
+      x: EXIT_X2,
+      label: stage === 9 ? "Wake up" : "Enter the rift",
+      sound: RIFT_SOUND,
+      ready: () => orbCollected && storyGoalReady(),
+      act: completeDreamStage
+    });
     game.step("journey-world", (dt) => {
       elapsed += dt;
       if (stumbleTime > 0) stumbleTime = deterministicMath.max(0, stumbleTime - dt);
@@ -47345,7 +48220,6 @@ var Journey = {
       const interactPressed = interactRequested || game.controls.justPressed("interact") || interact && !wasInteract;
       interactRequested = false;
       wasInteract = interact;
-      portal?.setOpen(familyGoalReady());
       for (const hazard of hazards) {
         hazard.sprite.x += hazard.direction * hazard.speed * dt;
         if (hazard.sprite.x <= hazard.low || hazard.sprite.x >= hazard.high) {
@@ -47367,7 +48241,7 @@ var Journey = {
           const glow = game.spawn({
             id: "spring-morning-light",
             texture: "dream-light",
-            x: WAKE_X,
+            x: EXIT_X2,
             y: floor2 - 64,
             width: 210,
             alpha: 0,
@@ -47377,9 +48251,16 @@ var Journey = {
           game.tween.to(glow, { alpha: 1 }, { duration: 0.55, ease: "easeOutSine" });
         }
       }
-      const near = targets.filter((target) => !target.ready || target.ready()).map((target) => ({ target, distance: deterministicMath.abs(playerX - target.x) })).filter((entry) => entry.distance <= (entry.target.x === EXIT_X ? EXIT_RANGE2 : CHAT_RANGE)).sort((a, b) => a.distance - b.distance)[0]?.target;
+      orb.setVisible(orbAvailable());
+      if (orb.tryCollect(tokyo)) {
+        orbCollected = true;
+        portal.setOpen(true);
+      }
+      const hint = goalText();
+      if (goal.text !== hint) goal.text = hint;
+      const near = targets.filter((target) => !target.ready || target.ready()).map((target) => ({ target, distance: deterministicMath.abs(playerX - target.x) })).filter((entry) => entry.distance <= (entry.target.x === EXIT_X2 ? EXIT_RANGE2 : CHAT_RANGE)).sort((a, b) => a.distance - b.distance)[0]?.target;
       if (near) {
-        const top = portal && near.x === EXIT_X ? portal.y - PORTAL_HEIGHT3 / 2 : floor2 - (near.height ?? ACTION_HEIGHT);
+        const top = near.x === EXIT_X2 ? portal.y - PORTAL_HEIGHT4 / 2 : floor2 - (near.height ?? ACTION_HEIGHT);
         const tapped = prompt.show(near.label, near.x, top, dt);
         if (interactPressed || tapped) {
           game.sound.play(near.sound ?? INTERACT_SOUND);
@@ -47399,7 +48280,7 @@ var Journey = {
 // game/scenes/Ending.ts
 var ROOM_WIDTH = 1280;
 var ROOM_HEIGHT = 720;
-var FAMILY_SCALE2 = 1.48;
+var FAMILY_SCALE3 = 1.48;
 var GREETING_RANGE = 64;
 var ACTION_FRAME_TIME = 0.2;
 var MESSAGE_SECONDS = 3.6;
@@ -47467,8 +48348,8 @@ var Ending = {
         id: "morning-" + member.id,
         texture: "family-" + member.id,
         x: member.x,
-        y: HOME_FLOOR - FAMILY_GROUND_OFFSET * FAMILY_SCALE2,
-        scale: FAMILY_SCALE2,
+        y: HOME_FLOOR - FAMILY_GROUND_OFFSET * FAMILY_SCALE3,
+        scale: FAMILY_SCALE3,
         layer: "world",
         z: 7
       });
@@ -47787,6 +48668,7 @@ configureLoadingScreen();
 paintArt();
 prepareDialogueAudio();
 prepareActionAudio();
+prepareDreamMusic();
 game.ui.theme = "block";
 game.controls.bind("jump", { keys: ["Space", "ArrowUp", "KeyW", "Touch:jump"], pad: ["a"] });
 game.controls.bind("run", { keys: ["ShiftLeft", "ShiftRight", "Touch:run"], pad: ["x"] });
@@ -47851,6 +48733,7 @@ game.scenes.register(LevelSelect);
 game.scenes.register(Home);
 game.scenes.register(DreamStart);
 game.scenes.register(Journey);
+game.scenes.register(Kennel);
 game.scenes.register(Ending);
 game.scenes.register(Celebration);
 addDebugControls();
